@@ -1,0 +1,27 @@
+default_ai_provider: mock
+providers:
+  mock:
+    enabled: true
+    implementation: local deterministic mock
+  litellm:
+    enabled: false
+    future_only: true
+  openrouter:
+    enabled: false
+    future_only: true
+  nvidia_nim:
+    enabled: false
+    future_only: true
+  gemini:
+    enabled: false
+    future_only: true
+  groq:
+    enabled: false
+    future_only: true
+  openai:
+    enabled: false
+    future_only: true
+  local_openai_compatible:
+    enabled: false
+    future_only: true
+

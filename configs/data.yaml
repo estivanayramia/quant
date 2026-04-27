@@ -1,0 +1,9 @@
+demo_data_dir: data/demo
+symbols:
+  - BTC-USD
+  - ETH-USD
+  - SPY
+  - QQQ
+timezone: UTC
+seed: 42
+

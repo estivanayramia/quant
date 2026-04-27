@@ -1,1 +1,83 @@
-# quant
+# quant-os-factory
+
+`quant-os-factory` is a local-first QuantOps foundation for deterministic research, event replay, simulated execution, risk review, and reporting.
+
+It is not a generic AI trading bot, an LLM-controlled trader, or a get-rich-quick system. Milestone 1 is simulation only. It cannot place live trades, does not require broker or exchange keys, and does not include real broker integrations.
+
+## Safety Warning
+
+This repository is a deterministic simulation foundation. It does not guarantee profit, is not live-trading ready, and must not be used with real money in Milestone 1.
+
+AI may research, critique, summarize, monitor, and propose improvements. Deterministic code owns execution, sizing, exits, reconciliation, risk decisions, kill switches, and state recovery.
+
+## Install
+
+```bash
+make install
+```
+
+Python 3.11+ is required.
+
+## Smoke Workflow
+
+```bash
+make smoke
+```
+
+The smoke workflow seeds deterministic demo data, validates data quality, runs baseline and placebo simulations, rebuilds DuckDB read models from the JSONL event ledger, generates reports, and runs a lightweight test subset.
+
+## Common Commands
+
+```bash
+make seed-demo
+make validate-data
+make backtest
+make tournament
+make shadow
+make rebuild
+make report
+make test
+```
+
+The Typer CLI is also available after install:
+
+```bash
+quant-os smoke
+```
+
+## Repository Structure
+
+- `src/quant_os/core`: framework-independent primitives, events, commands, errors, IDs, time.
+- `src/quant_os/domain`: orders, fills, positions, strategy, risk, kill switch, quarantine, portfolio state.
+- `src/quant_os/ports`: interfaces for market data, broker execution, AI, alerts, event store, read models, strategies, reports.
+- `src/quant_os/adapters`: local Parquet data, simulated broker, mock AI, mock alerts, JSONL ledger, DuckDB projections, local reports.
+- `src/quant_os/research`: deterministic strategies, backtests, metrics, placebo, ablation, walk-forward, tournaments, slippage stress.
+- `src/quant_os/execution`: execution engine, OMS, PMS, state machine, fill simulator, reconciliation.
+- `src/quant_os/risk`: risk firewall, limits, no-trade checks, sizing, drawdown.
+- `src/quant_os/governance`: registry, promotion, quarantine, capital unlock rules.
+- `src/quant_os/projections`: event-ledger rebuilds into DuckDB read models.
+- `src/quant_os/ops`: health, logging, reporting, forensics.
+- `configs`: local-safe defaults. Live trading is disabled by default.
+- `docs`: architecture, risk, AI boundary, live-trading policy, future integrations, and ADRs.
+
+## Architecture Overview
+
+The system is a hexagonal modular monolith. The OMS/PMS and append-only event ledger are the authoritative write side. DuckDB is a disposable CQRS-lite read model used for analytics and reports. Commands mutate state only through deterministic domain and execution services. Every important state transition appends an immutable domain event.
+
+The research control plane can generate candidate orders and reports. The execution control plane performs deterministic checks, simulated order handling, fills, reconciliation, and risk enforcement. The risk firewall has final authority.
+
+## Milestone Roadmap
+
+- Phase 1: local deterministic simulation foundation, event replay, risk firewall, mocked AI, mocked execution, reports.
+- Phase 2: improved shadow mode, paper-mode abstraction, slippage/spread simulation, data drift checks, report history.
+- Phase 3: Freqtrade dry-run adapter for crypto, still no live trading.
+- Phase 4: Lumibot + Alpaca Paper adapter for equities paper trading.
+- Phase 5: QuantConnect/LEAN external validation lane.
+- Phase 6: tiny live crypto canary through Freqtrade only after extensive gates.
+- Phase 7: Telegram/Discord alerts only, with no order authority.
+- Phase 8: AI provider mesh for research/reporting only.
+- Phase 9: NautilusTrader evaluation if the simpler stack becomes a bottleneck.
+
+## Live Trading Disclaimer
+
+Milestone 1 disables live trading everywhere by default. No real broker SDKs, exchange SDKs, live endpoints, real API keys, leverage, options, futures, or withdrawal permissions are implemented.

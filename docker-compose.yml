@@ -1,0 +1,13 @@
+services:
+  quant-os:
+    image: python:3.11-slim
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    command: bash -lc "pip install -e '.[dev]' && quant-os smoke"
+    environment:
+      ENABLE_LIVE_TRADING: "false"
+      ENVIRONMENT: local
+      AI_PROVIDER: mock
+      BROKER_PROVIDER: simulated
+

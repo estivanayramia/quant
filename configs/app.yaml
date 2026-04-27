@@ -1,0 +1,6 @@
+environment: local
+log_level: INFO
+event_store_path: data/events/events.jsonl
+read_model_path: data/read_models/quant_os.duckdb
+report_dir: reports
+

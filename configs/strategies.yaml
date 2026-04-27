@@ -1,0 +1,10 @@
+strategies:
+  baseline_ma:
+    enabled: true
+    description: "Deterministic moving-average baseline for simulation."
+    quarantined: false
+  placebo_random:
+    enabled: true
+    description: "Seeded random placebo strategy for comparison."
+    quarantined: false
+

@@ -1,0 +1,14 @@
+symbols:
+  BTC-USD:
+    asset_class: crypto_spot
+    enabled: true
+  ETH-USD:
+    asset_class: crypto_spot
+    enabled: true
+  SPY:
+    asset_class: equity
+    enabled: true
+  QQQ:
+    asset_class: equity
+    enabled: true
+

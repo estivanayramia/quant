@@ -1,0 +1,7 @@
+mode: simulated
+broker: simulated
+live_trading_enabled: false
+require_risk_approval: true
+require_client_order_id: true
+require_event_logging: true
+
