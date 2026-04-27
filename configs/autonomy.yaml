@@ -1,0 +1,8 @@
+autonomy_enabled: true
+live_trading_enabled: false
+paper_trading_enabled: false
+dry_run_enabled: false
+external_alerts_enabled: false
+real_ai_providers_enabled: false
+default_runbook: full_safe_autonomous_cycle
+

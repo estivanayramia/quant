@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from quant_os.core.events import EventType, make_event
 from quant_os.domain.quarantine import StrategyQuarantineState
-from quant_os.domain.strategy import StrategyRecord
+from quant_os.domain.strategy import StrategyRecord, StrategyStatus
 from quant_os.ports.event_store import EventStorePort
 
 
@@ -19,6 +19,7 @@ class StrategyRegistry:
         self.quarantine_state.quarantine(strategy_id, reason)
         if strategy_id in self.records:
             self.records[strategy_id].quarantined = True
+            self.records[strategy_id].status = StrategyStatus.QUARANTINED
         if self.event_store is not None:
             self.event_store.append(
                 make_event(
@@ -32,6 +33,7 @@ class StrategyRegistry:
         self.quarantine_state.release(strategy_id)
         if strategy_id in self.records:
             self.records[strategy_id].quarantined = False
+            self.records[strategy_id].status = StrategyStatus.RESEARCH
         if self.event_store is not None:
             self.event_store.append(
                 make_event(EventType.STRATEGY_RELEASED, strategy_id, {"strategy_id": strategy_id})
@@ -39,3 +41,9 @@ class StrategyRegistry:
 
     def is_quarantined(self, strategy_id: str) -> bool:
         return self.quarantine_state.is_quarantined(strategy_id)
+
+    def transition(self, strategy_id: str, status: StrategyStatus) -> None:
+        if status in {StrategyStatus.PAPER, StrategyStatus.CANARY_CANDIDATE}:
+            msg = "paper/canary promotion is future-gated and disabled in Milestone 2"
+            raise RuntimeError(msg)
+        self.records[strategy_id].status = status

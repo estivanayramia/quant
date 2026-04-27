@@ -1,4 +1,4 @@
-.PHONY: install format lint test test-cov seed-demo validate-data backtest tournament shadow rebuild report smoke clean
+.PHONY: install format lint test test-cov seed-demo validate-data backtest tournament shadow rebuild report smoke autonomous autonomous-daemon autonomous-status watchdog drift alerts-test clean
 
 install:
 	python -m pip install -e ".[dev]"
@@ -35,6 +35,24 @@ rebuild:
 
 report:
 	python -m quant_os.cli report
+
+autonomous:
+	python -m quant_os.cli autonomous run-once
+
+autonomous-daemon:
+	python -m quant_os.cli autonomous daemon --interval-minutes 60 --max-cycles 1
+
+autonomous-status:
+	python -m quant_os.cli autonomous status
+
+watchdog:
+	python -m quant_os.cli watchdog
+
+drift:
+	python -m quant_os.cli drift
+
+alerts-test:
+	python -m quant_os.cli alerts-test
 
 smoke:
 	python -m quant_os.cli smoke

@@ -1,0 +1,8 @@
+watchdog:
+  require_live_trading_disabled: true
+  require_no_real_broker_keys: true
+  require_no_withdrawal_permissions: true
+  require_kill_switch_check: true
+  require_event_ledger_writable: true
+  require_read_model_rebuildable: true
+
