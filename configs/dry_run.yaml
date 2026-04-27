@@ -1,0 +1,9 @@
+dry_run_enabled: false
+provider: simulated
+mode: dry_run
+live_trading_allowed: false
+freqtrade:
+  enabled: false
+  dry_run: true
+  live_trading_allowed: false
+

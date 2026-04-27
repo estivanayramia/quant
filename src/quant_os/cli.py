@@ -7,10 +7,19 @@ from rich import print
 
 from quant_os.adapters.event_store_jsonl import JsonlEventStore
 from quant_os.adapters.market_data_parquet import LocalParquetMarketData
+from quant_os.autonomy.daemon import daemon_status, run_daemon, stop_daemon
+from quant_os.autonomy.supervisor import Supervisor
+from quant_os.autonomy.tasks import run_drift_checks
 from quant_os.core.commands import CandidateOrder
+from quant_os.core.events import EventType, make_event
 from quant_os.data.demo_data import seed_demo_data
+from quant_os.data.loaders import load_yaml
 from quant_os.data.quality import validate_ohlcv
 from quant_os.data.warehouse import ensure_local_dirs
+from quant_os.domain.strategy import StrategyRecord
+from quant_os.governance.registry import StrategyRegistry
+from quant_os.integrations.freqtrade.config_writer import write_freqtrade_dry_run_config
+from quant_os.integrations.telegram.alert_adapter import TelegramAlertAdapter
 from quant_os.ops.reporting import generate_daily_report
 from quant_os.projections.rebuild import rebuild_read_models as rebuild_read_models_projection
 from quant_os.research.backtest import run_backtest
@@ -18,8 +27,14 @@ from quant_os.research.strategies import baseline_ma_candidates
 from quant_os.research.tournament import run_tournament
 from quant_os.risk.firewall import RiskFirewall
 from quant_os.risk.limits import RiskLimits
+from quant_os.security.live_trading_guard import live_trading_guard
+from quant_os.watchdog.health_checks import run_watchdog
 
 app = typer.Typer(help="Local deterministic QuantOps simulation foundation.")
+autonomous_app = typer.Typer(help="Autonomous safe-mode runbooks.")
+strategy_app = typer.Typer(help="Strategy governance commands.")
+app.add_typer(autonomous_app, name="autonomous")
+app.add_typer(strategy_app, name="strategy")
 
 
 def _event_store() -> JsonlEventStore:
@@ -101,6 +116,112 @@ def report() -> None:
     print({"report": "reports/daily_report.md", "summary_keys": sorted(payload.keys())})
 
 
+@app.command("guard-live")
+def guard_live() -> None:
+    result = live_trading_guard()
+    if not result.passed:
+        print({"passed": False, "reasons": result.reasons})
+        raise typer.Exit(1)
+    print({"passed": True, "guard": "live_trading_guard"})
+
+
+@app.command("watchdog")
+def watchdog_command() -> None:
+    store = _event_store()
+    report_payload = run_watchdog(store)
+    store.append(
+        make_event(
+            EventType.WATCHDOG_PASSED if report_payload.passed else EventType.WATCHDOG_FAILED,
+            "watchdog",
+            report_payload.to_dict(),
+        )
+    )
+    print({"watchdog": report_payload.status, "report": "reports/watchdog/latest_health.json"})
+    if not report_payload.passed:
+        raise typer.Exit(1)
+
+
+@app.command("drift")
+def drift_command() -> None:
+    summary = run_drift_checks(_event_store())
+    print({"drift": summary["status"], "report": "reports/drift/latest_drift.json"})
+
+
+@app.command("alerts-test")
+def alerts_test() -> None:
+    adapter = TelegramAlertAdapter(enabled=False)
+    adapter.send_summary("Quant OS mock alert test. Alerts only; no trading authority.")
+    print({"provider": "mock_telegram", "messages": adapter.sent_messages})
+
+
+@app.command("freqtrade-config")
+def freqtrade_config() -> None:
+    path = write_freqtrade_dry_run_config()
+    print({"freqtrade_config": str(path), "dry_run": True, "live_trading_allowed": False})
+
+
+@autonomous_app.command("run-once")
+def autonomous_run_once(runbook: str = "full_safe_autonomous_cycle") -> None:
+    state = Supervisor().run_once(runbook)
+    print(
+        {
+            "run_id": state.run_id,
+            "status": state.status.value,
+            "report": "reports/autonomy/latest_run.json",
+        }
+    )
+    if state.status.value != "completed":
+        raise typer.Exit(1)
+
+
+@autonomous_app.command("daemon")
+def autonomous_daemon(
+    interval_minutes: int = typer.Option(60, min=1),
+    max_cycles: int | None = typer.Option(None),
+) -> None:
+    result = run_daemon(interval_minutes=interval_minutes, max_cycles=max_cycles)
+    print(result.__dict__)
+
+
+@autonomous_app.command("status")
+def autonomous_status() -> None:
+    print(daemon_status())
+
+
+@autonomous_app.command("stop")
+def autonomous_stop() -> None:
+    print(stop_daemon())
+
+
+@strategy_app.command("list")
+def strategy_list() -> None:
+    registry = _strategy_registry()
+    print({"strategies": [record.model_dump(mode="json") for record in registry.records.values()]})
+
+
+@strategy_app.command("quarantine")
+def strategy_quarantine(strategy_id: str, reason: str = typer.Option(..., "--reason")) -> None:
+    registry = _strategy_registry()
+    registry.quarantine(strategy_id, reason)
+    print({"strategy_id": strategy_id, "status": "quarantined", "reason": reason})
+
+
+@strategy_app.command("release")
+def strategy_release(strategy_id: str, reason: str = typer.Option(..., "--reason")) -> None:
+    registry = _strategy_registry()
+    registry.release(strategy_id)
+    print({"strategy_id": strategy_id, "status": "research", "reason": reason})
+
+
+@strategy_app.command("status")
+def strategy_status(strategy_id: str) -> None:
+    registry = _strategy_registry()
+    record = registry.records.get(strategy_id)
+    if record is None:
+        raise typer.BadParameter(f"unknown strategy {strategy_id}")
+    print(record.model_dump(mode="json"))
+
+
 @app.command()
 def smoke() -> None:
     ensure_local_dirs()
@@ -112,6 +233,33 @@ def smoke() -> None:
     rebuild_read_models()
     report()
     print("[green]smoke completed[/green]")
+
+
+def _strategy_registry() -> StrategyRegistry:
+    registry = StrategyRegistry(_event_store())
+    config = load_yaml("configs/strategies.yaml")
+    for strategy_id, raw in (config.get("strategies") or {}).items():
+        registry.register(
+            StrategyRecord(
+                strategy_id=strategy_id,
+                name=strategy_id,
+                enabled=bool(raw.get("enabled", True)),
+                quarantined=bool(raw.get("quarantined", False)),
+                notes=str(raw.get("description", "")),
+            )
+        )
+    for event in _event_store().read_all():
+        if event.event_type == EventType.STRATEGY_QUARANTINED:
+            strategy_id = str(event.payload.get("strategy_id", event.aggregate_id))
+            if strategy_id in registry.records:
+                registry.records[strategy_id].quarantined = True
+                registry.records[strategy_id].status = "quarantined"
+        if event.event_type == EventType.STRATEGY_RELEASED:
+            strategy_id = str(event.payload.get("strategy_id", event.aggregate_id))
+            if strategy_id in registry.records:
+                registry.records[strategy_id].quarantined = False
+                registry.records[strategy_id].status = "research"
+    return registry
 
 
 if __name__ == "__main__":

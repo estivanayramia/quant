@@ -20,6 +20,9 @@ data/read_models/
 reports/*.md
 reports/*.json
 reports/*.csv
+reports/**/*.md
+reports/**/*.json
+reports/**/*.csv
 logs/
 
 .DS_Store

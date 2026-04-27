@@ -1,0 +1,6 @@
+scheduler:
+  mode: manual
+  interval_minutes: 60
+  max_consecutive_failures: 3
+  stop_on_failure: true
+

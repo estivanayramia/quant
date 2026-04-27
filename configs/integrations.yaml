@@ -1,0 +1,13 @@
+integrations:
+  freqtrade:
+    enabled: false
+    mode: dry_run_only
+    live_trading_allowed: false
+  alpaca:
+    enabled: false
+    mode: paper_only
+    live_trading_allowed: false
+  ai:
+    provider: mock
+    allow_real_provider_calls: false
+

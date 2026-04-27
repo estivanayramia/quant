@@ -1,0 +1,13 @@
+drift:
+  enable_data_drift_checks: true
+  enable_feature_drift_checks: true
+  enable_performance_drift_checks: true
+  enable_slippage_drift_checks: true
+  quarantine_on_drift: true
+  mean_return_shift_threshold: 0.05
+  volatility_shift_pct_threshold: 0.75
+  volume_shift_pct_threshold: 1.0
+  feature_zscore_threshold: 3.0
+  max_drawdown_threshold: -0.10
+  win_rate_collapse_threshold: 0.25
+

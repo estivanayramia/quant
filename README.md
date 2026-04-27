@@ -1,5 +1,7 @@
 # quant-os-factory
 
+![CI](https://github.com/estivanayramia/quant/actions/workflows/ci.yml/badge.svg)
+
 `quant-os-factory` is a local-first QuantOps foundation for deterministic research, event replay, simulated execution, risk review, and reporting.
 
 It is not a generic AI trading bot, an LLM-controlled trader, or a get-rich-quick system. Milestone 1 is simulation only. It cannot place live trades, does not require broker or exchange keys, and does not include real broker integrations.
@@ -44,6 +46,27 @@ The Typer CLI is also available after install:
 ```bash
 quant-os smoke
 ```
+
+## Autonomous Safe Ops
+
+Phase 2 adds an autonomous operations control plane for safe local/shadow/paper/dry-run-ready modes:
+
+```bash
+make autonomous
+make watchdog
+make drift
+make alerts-test
+```
+
+Daemon mode is local-only and guarded:
+
+```bash
+quant-os autonomous daemon --interval-minutes 60
+quant-os autonomous status
+quant-os autonomous stop
+```
+
+This is now autonomous in safe local/shadow/paper/dry-run-ready modes, not live-money autonomous.
 
 ## Repository Structure
 

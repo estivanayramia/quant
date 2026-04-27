@@ -1,0 +1,8 @@
+paper_trading_enabled: false
+provider: simulated
+mode: paper
+live_trading_allowed: false
+alpaca:
+  paper_trading_enabled: false
+  live_trading_allowed: false
+

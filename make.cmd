@@ -51,6 +51,30 @@ if "%TARGET%"=="report" (
   python -m quant_os.cli report
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="autonomous" (
+  python -m quant_os.cli autonomous run-once
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="autonomous-daemon" (
+  python -m quant_os.cli autonomous daemon --interval-minutes 60 --max-cycles 1
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="autonomous-status" (
+  python -m quant_os.cli autonomous status
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="watchdog" (
+  python -m quant_os.cli watchdog
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="drift" (
+  python -m quant_os.cli drift
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="alerts-test" (
+  python -m quant_os.cli alerts-test
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="smoke" (
   python -m quant_os.cli smoke
   if errorlevel 1 exit /b !ERRORLEVEL!

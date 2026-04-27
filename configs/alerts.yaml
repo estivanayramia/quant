@@ -1,0 +1,8 @@
+alerts:
+  provider: mock
+  telegram_enabled: false
+  discord_enabled: false
+  send_on_success: false
+  send_on_failure: true
+  send_daily_summary: true
+
