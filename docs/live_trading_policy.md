@@ -2,9 +2,10 @@
 
 Live trading is disabled in Milestone 1.
 
+Phase 3 adds a Freqtrade dry-run container scaffold only. It must keep `dry_run: true`, blank exchange credentials, no withdrawals, spot-only trading, no leverage, no futures, no margin, no shorts, disabled Telegram command authority, and disabled API server by default.
+
 Future tiny-live gates require weeks of shadow and paper stability, reconciliation tests, slippage tests, kill-switch tests, explicit API-key rules, no withdrawal permissions, recommended IP allowlists, tiny max order notional, and max open positions of 1.
 
 Tiny live crypto may only be considered after the gates and through a later Freqtrade path. Equities live trading may only be considered after broker restrictions, order rules, and session behavior are verified.
 
 This repo is not safe for real money.
-

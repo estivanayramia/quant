@@ -19,7 +19,10 @@ from quant_os.data.warehouse import ensure_local_dirs
 from quant_os.domain.strategy import StrategyRecord
 from quant_os.governance.registry import StrategyRegistry
 from quant_os.integrations.freqtrade.config_writer import write_freqtrade_dry_run_config
+from quant_os.integrations.freqtrade.dry_run_adapter import FreqtradeDryRunAdapter
+from quant_os.integrations.freqtrade.strategy_exporter import export_quant_os_strategy
 from quant_os.integrations.telegram.alert_adapter import TelegramAlertAdapter
+from quant_os.ops.freqtrade_reporting import write_freqtrade_status_report
 from quant_os.ops.reporting import generate_daily_report
 from quant_os.projections.rebuild import rebuild_read_models as rebuild_read_models_projection
 from quant_os.research.backtest import run_backtest
@@ -33,8 +36,10 @@ from quant_os.watchdog.health_checks import run_watchdog
 app = typer.Typer(help="Local deterministic QuantOps simulation foundation.")
 autonomous_app = typer.Typer(help="Autonomous safe-mode runbooks.")
 strategy_app = typer.Typer(help="Strategy governance commands.")
+freqtrade_app = typer.Typer(help="Freqtrade dry-run-only commands.")
 app.add_typer(autonomous_app, name="autonomous")
 app.add_typer(strategy_app, name="strategy")
+app.add_typer(freqtrade_app, name="freqtrade")
 
 
 def _event_store() -> JsonlEventStore:
@@ -158,6 +163,61 @@ def alerts_test() -> None:
 def freqtrade_config() -> None:
     path = write_freqtrade_dry_run_config()
     print({"freqtrade_config": str(path), "dry_run": True, "live_trading_allowed": False})
+
+
+@freqtrade_app.command("generate-config")
+def freqtrade_generate_config() -> None:
+    path = FreqtradeDryRunAdapter().generate_config()
+    print({"freqtrade_config": str(path), "dry_run": True, "live_trading_allowed": False})
+
+
+@freqtrade_app.command("validate")
+def freqtrade_validate() -> None:
+    result = FreqtradeDryRunAdapter().validate_config()
+    print({"passed": result.passed, "config_path": result.config_path, "reasons": result.reasons})
+
+
+@freqtrade_app.command("export-strategy")
+def freqtrade_export_strategy() -> None:
+    path = export_quant_os_strategy()
+    print({"strategy_path": str(path), "dry_run_research_only": True})
+
+
+@freqtrade_app.command("status")
+def freqtrade_status() -> None:
+    status = write_freqtrade_status_report()
+    print({"status": status, "report": "reports/freqtrade/latest_status.json"})
+
+
+@freqtrade_app.command("command-preview")
+def freqtrade_command_preview() -> None:
+    print({"docker_command_preview": FreqtradeDryRunAdapter().build_docker_command()})
+
+
+@freqtrade_app.command("manifest")
+def freqtrade_manifest() -> None:
+    adapter = FreqtradeDryRunAdapter()
+    path = adapter.write_run_manifest()
+    print({"manifest": str(path), "live_trading_enabled": False})
+
+
+@freqtrade_app.command("dry-run-check")
+def freqtrade_dry_run_check() -> None:
+    adapter = FreqtradeDryRunAdapter()
+    if not Path(adapter.config_path).exists():
+        adapter.generate_config()
+    if not Path(adapter.strategy_path).exists():
+        adapter.export_strategy()
+    result = adapter.validate_config()
+    manifest = adapter.write_run_manifest()
+    write_freqtrade_status_report()
+    print(
+        {
+            "dry_run_ready": result.passed,
+            "manifest": str(manifest),
+            "live_trading_enabled": False,
+        }
+    )
 
 
 @autonomous_app.command("run-once")

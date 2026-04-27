@@ -17,6 +17,14 @@ build/
 data/demo/
 data/events/
 data/read_models/
+freqtrade/user_data/logs/*
+!freqtrade/user_data/logs/.gitkeep
+freqtrade/user_data/data/*
+!freqtrade/user_data/data/.gitkeep
+freqtrade/user_data/*.sqlite*
+freqtrade/user_data/*.db
+freqtrade/user_data/config/*.secret.json
+freqtrade/user_data/config/config.live*.json
 reports/*.md
 reports/*.json
 reports/*.csv
@@ -24,5 +32,7 @@ reports/**/*.md
 reports/**/*.json
 reports/**/*.csv
 logs/
+!freqtrade/user_data/logs/
+!freqtrade/user_data/logs/.gitkeep
 
 .DS_Store

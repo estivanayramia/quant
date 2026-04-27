@@ -68,6 +68,21 @@ quant-os autonomous stop
 
 This is now autonomous in safe local/shadow/paper/dry-run-ready modes, not live-money autonomous.
 
+## Freqtrade Dry-Run Container
+
+Phase 3 adds a disabled-by-default Freqtrade dry-run container lane:
+
+```bash
+make freqtrade-config
+make freqtrade-export-strategy
+make freqtrade-validate
+make freqtrade-dry-run-check
+make freqtrade-status
+make phase3-smoke
+```
+
+This is now Freqtrade dry-run-container-ready, not live-trading-ready.
+
 ## Repository Structure
 
 - `src/quant_os/core`: framework-independent primitives, events, commands, errors, IDs, time.

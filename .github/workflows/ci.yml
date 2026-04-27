@@ -22,3 +22,11 @@ jobs:
         run: python -m quant_os.cli smoke
       - name: Live trading guard
         run: python -m quant_os.cli guard-live
+      - name: Freqtrade dry-run config
+        run: python -m quant_os.cli freqtrade generate-config
+      - name: Freqtrade strategy export
+        run: python -m quant_os.cli freqtrade export-strategy
+      - name: Freqtrade safety validate
+        run: python -m quant_os.cli freqtrade validate
+      - name: Freqtrade dry-run check
+        run: python -m quant_os.cli freqtrade dry-run-check

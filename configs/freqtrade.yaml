@@ -1,0 +1,26 @@
+enabled: false
+mode: dry_run
+dry_run: true
+live_trading_allowed: false
+exchange: kraken
+stake_currency: USDT
+stake_amount: 10
+max_open_trades: 1
+trading_mode: spot
+margin_mode: ""
+allow_futures: false
+allow_margin: false
+allow_shorting: false
+allow_leverage: false
+timeframe: 5m
+strategy_name: QuantOSDryRunStrategy
+api_server_enabled: false
+telegram_enabled: false
+force_entry_enable: false
+initial_state: stopped
+pairs:
+  - BTC/USDT
+  - ETH/USDT
+max_dry_run_stake_amount: 25
+max_dry_run_open_trades: 1
+
