@@ -8,6 +8,7 @@ from typing import Any
 
 from quant_os.adapters.event_store_jsonl import JsonlEventStore
 from quant_os.adapters.market_data_parquet import LocalParquetMarketData
+from quant_os.autonomy.dataset_tasks import dataset_evidence_status
 from quant_os.autonomy.dryrun_monitoring_tasks import dryrun_monitoring_status
 from quant_os.autonomy.freqtrade_tasks import freqtrade_safe_lane_status
 from quant_os.autonomy.freqtrade_trade_tasks import freqtrade_trade_artifact_status
@@ -192,6 +193,7 @@ def task_callable(name: str, event_store: JsonlEventStore) -> Callable[[], dict[
         "dryrun_monitoring_status": lambda: dryrun_monitoring_status(event_store),
         "freqtrade_trade_artifact_status": lambda: freqtrade_trade_artifact_status(event_store),
         "strategy_research_status": strategy_research_status,
+        "dataset_evidence_status": dataset_evidence_status,
         "run_watchdog_health_checks": lambda: run_watchdog_checks(event_store),
         "generate_report": lambda: generate_reports(event_store),
         "send_mock_alert": lambda: send_mock_alert("Autonomous safe run completed."),

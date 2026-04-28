@@ -9,3 +9,5 @@ Phase 5 promotion readiness is intentionally strict. Dry-run readiness may be re
 Phase 6 can report trade-level reconciliation as unavailable, warning, pass, or fail. Even a passing dry-run trade-level reconciliation does not unlock live trading.
 
 Phase 7 can label strategies as `RESEARCH_ONLY`, `SHADOW_CANDIDATE`, `DRY_RUN_CANDIDATE`, `REJECTED`, or `NOT_ENOUGH_EVIDENCE`. It cannot label any strategy live-ready. Overfitting checks, placebo comparison, ablation, walk-forward validation, regime testing, and human review remain required before any later dry-run promotion.
+
+Phase 8 evidence scoring can label research evidence as insufficient through dry-run candidate quality. It still reports live promotion as `LIVE_BLOCKED`; synthetic data, even broad synthetic data, is not live-money evidence.

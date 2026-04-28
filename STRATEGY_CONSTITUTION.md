@@ -23,5 +23,7 @@
 21. Market-structure and SMC features are measurable research inputs, not proof of edge.
 22. Strategy leaderboards may rank research candidates but must never emit a live-ready status.
 23. Overfitting warnings block confidence and require human review before any future dry-run promotion.
+24. Synthetic expanded datasets are evidence plumbing only; they are not real market proof.
+25. Evidence scoring must always block live promotion until a future explicit human-approved live phase exists.
 
 This project starts as a local deterministic simulation foundation. It is not safe for real money.

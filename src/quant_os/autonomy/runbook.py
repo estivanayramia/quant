@@ -35,6 +35,7 @@ RUNBOOKS: dict[str, list[str]] = {
         "freqtrade_safe_lane_status",
         "dryrun_monitoring_status",
         "freqtrade_trade_artifact_status",
+        "dataset_evidence_status",
         "strategy_research_status",
         "generate_report",
     ],
@@ -78,6 +79,7 @@ RUNBOOKS: dict[str, list[str]] = {
         "freqtrade_safe_lane_status",
         "dryrun_monitoring_status",
         "freqtrade_trade_artifact_status",
+        "dataset_evidence_status",
         "strategy_research_status",
         "run_watchdog_health_checks",
         "generate_report",
@@ -195,6 +197,8 @@ class RunbookEngine:
             state.freqtrade_trade_artifacts_summary = result.details
         elif name == "strategy_research_status":
             state.strategy_research_summary = result.details
+        elif name == "dataset_evidence_status":
+            state.dataset_evidence_summary = result.details
         elif name == "generate_report":
             state.report_paths["daily_report"] = "reports/daily_report.md"
             state.report_paths["daily_report_json"] = "reports/daily_report.json"
@@ -269,6 +273,14 @@ class RunbookEngine:
                     "",
                     "## Strategy Research",
                     f"`{state.strategy_research_summary}`",
+                ]
+            )
+        if state.dataset_evidence_summary:
+            lines.extend(
+                [
+                    "",
+                    "## Dataset Evidence",
+                    f"`{state.dataset_evidence_summary}`",
                 ]
             )
         return "\n".join(lines) + "\n"

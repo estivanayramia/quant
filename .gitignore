@@ -15,6 +15,7 @@ build/
 *.egg-info/
 
 data/demo/
+data/demo_expanded/
 data/events/
 data/read_models/
 freqtrade/user_data/logs/*

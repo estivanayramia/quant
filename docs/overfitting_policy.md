@@ -14,3 +14,5 @@ Phase 7 checks warn or block when:
 The leaderboard uses a conservative score with penalties for drawdown, weak trade count, placebo weakness, and stress fragility. It is explicitly not sorted by total return alone.
 
 No strategy can become live-ready in Phase 7.
+
+Phase 8 adds dataset evidence checks. Weak symbol, timeframe, or regime coverage increases evidence penalties and can prevent research confidence even when a backtest looks attractive.

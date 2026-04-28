@@ -1,0 +1,65 @@
+enabled: true
+live_trading_allowed: false
+internet_required: false
+paid_data_required: false
+random_seed: 42
+
+expanded_demo:
+  enabled: true
+  symbols:
+    - BTC-USD
+    - ETH-USD
+    - SOL-USD
+    - SPY
+    - QQQ
+    - AAPL
+    - MSFT
+    - NVDA
+  timeframes:
+    - 5m
+    - 15m
+    - 1h
+    - 1d
+  days:
+    crypto_intraday: 90
+    equity_intraday: 90
+    daily: 365
+  regimes:
+    include_trending_up: true
+    include_trending_down: true
+    include_choppy: true
+    include_high_volatility: true
+    include_low_volatility: true
+    include_gap_events: true
+    include_volume_spikes: true
+
+quality:
+  require_schema_valid: true
+  require_no_duplicate_timestamps: true
+  require_ohlc_valid: true
+  require_no_future_leakage: true
+  require_monotonic_time: true
+  max_missing_pct_warn: 2.0
+  max_missing_pct_fail: 10.0
+  min_rows_per_symbol_warn: 500
+  min_rows_per_timeframe_warn: 500
+
+splits:
+  train_ratio: 0.6
+  validation_ratio: 0.2
+  test_ratio: 0.2
+  walk_forward_min_splits: 3
+  purge_gap_bars: 1
+
+evidence:
+  min_symbols_for_research_ready: 3
+  min_regimes_for_research_ready: 3
+  min_timeframes_for_research_ready: 2
+  min_total_trades_warn: 20
+  min_total_trades_research_ready: 50
+  min_walk_forward_splits_warn: 3
+  require_placebo_comparison: true
+  require_ablation: true
+  require_slippage_stress: true
+  require_regime_tests: true
+  live_promotion_allowed: false
