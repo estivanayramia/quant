@@ -1,0 +1,30 @@
+enabled: true
+require_live_trading_disabled: true
+require_freqtrade_dry_run: true
+require_no_keys: true
+history_window_days: 30
+freshness_warn_hours: 24
+freshness_fail_hours: 72
+divergence_warn_threshold: 0.25
+divergence_fail_threshold: 0.50
+max_allowed_safety_failures: 0
+max_allowed_live_danger_matches: 0
+promotion_check_enabled: true
+live_promotion_allowed: false
+
+comparison:
+  compare_config_hash: true
+  compare_strategy_hash: true
+  compare_pairs: true
+  compare_timeframe: true
+  compare_max_open_trades: true
+  compare_stake_amount: true
+  compare_dry_run_status: true
+  compare_risk_limits: true
+
+reporting:
+  write_json: true
+  write_markdown: true
+  include_history_table: true
+  include_blockers: true
+  include_next_commands: true

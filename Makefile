@@ -1,4 +1,4 @@
-.PHONY: install format lint test test-cov seed-demo validate-data backtest tournament shadow rebuild report smoke autonomous autonomous-daemon autonomous-status watchdog drift alerts-test freqtrade-config freqtrade-validate freqtrade-export-strategy freqtrade-status freqtrade-command-preview freqtrade-manifest freqtrade-dry-run-check freqtrade-docker-check freqtrade-dry-run-start freqtrade-dry-run-stop freqtrade-dry-run-logs freqtrade-dry-run-status freqtrade-dry-run-report freqtrade-ingest-logs freqtrade-reconcile freqtrade-operational-manifest phase3-smoke phase4-smoke clean
+.PHONY: install format lint test test-cov seed-demo validate-data backtest tournament shadow rebuild report smoke autonomous autonomous-daemon autonomous-status watchdog drift alerts-test freqtrade-config freqtrade-validate freqtrade-export-strategy freqtrade-status freqtrade-command-preview freqtrade-manifest freqtrade-dry-run-check freqtrade-docker-check freqtrade-dry-run-start freqtrade-dry-run-stop freqtrade-dry-run-logs freqtrade-dry-run-status freqtrade-dry-run-report freqtrade-ingest-logs freqtrade-reconcile freqtrade-operational-manifest dryrun-history dryrun-compare dryrun-divergence-check dryrun-monitor-report dryrun-promote-check dryrun-status phase3-smoke phase4-smoke phase5-smoke clean
 
 install:
 	python -m pip install -e ".[dev]"
@@ -102,6 +102,24 @@ freqtrade-reconcile:
 freqtrade-operational-manifest:
 	python -m quant_os.cli freqtrade operational-manifest
 
+dryrun-history:
+	python -m quant_os.cli dryrun history
+
+dryrun-compare:
+	python -m quant_os.cli dryrun compare
+
+dryrun-divergence-check:
+	python -m quant_os.cli dryrun divergence-check
+
+dryrun-monitor-report:
+	python -m quant_os.cli dryrun monitor-report
+
+dryrun-promote-check:
+	python -m quant_os.cli dryrun promote-check
+
+dryrun-status:
+	python -m quant_os.cli dryrun status
+
 phase3-smoke:
 	python -m quant_os.cli freqtrade generate-config
 	python -m quant_os.cli freqtrade export-strategy
@@ -121,6 +139,17 @@ phase4-smoke:
 	python -m quant_os.cli freqtrade ingest-logs
 	python -m quant_os.cli freqtrade reconcile
 	python -m quant_os.cli freqtrade dry-run-status
+	python -m quant_os.cli autonomous run-once
+	python -m quant_os.cli smoke
+	python -m pytest
+
+phase5-smoke:
+	$(MAKE) phase4-smoke
+	python -m quant_os.cli dryrun history
+	python -m quant_os.cli dryrun compare
+	python -m quant_os.cli dryrun divergence-check
+	python -m quant_os.cli dryrun monitor-report
+	python -m quant_os.cli dryrun promote-check
 	python -m quant_os.cli autonomous run-once
 	python -m quant_os.cli smoke
 	python -m pytest

@@ -18,5 +18,6 @@
 16. Freqtrade is dry-run-only until a future explicit human-approved phase.
 17. Freqtrade configs must never include exchange keys in this repo.
 18. Autonomous operations may report Freqtrade status but may not start Freqtrade by default.
+19. Dry-run comparison evidence may support research and shadow decisions, but live promotion remains blocked until a future explicit human-approved canary phase.
 
 This project starts as a local deterministic simulation foundation. It is not safe for real money.

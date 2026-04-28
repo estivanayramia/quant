@@ -8,6 +8,8 @@ The Freqtrade dry-run lane is guarded separately by a fail-closed safety validat
 
 Phase 4 reconciliation compares generated Freqtrade artifacts with QuantOS risk limits and marks unsafe drift as `FAIL`. Warnings such as Docker unavailable or no logs are non-live operational warnings, not permission to trade.
 
+Phase 5 dry-run divergence checks fail closed on unsafe Freqtrade artifacts: `dry_run` false, live flags, keys, futures, margin, leverage, shorting, missing config or strategy, strategy hash mismatch, or live-mode danger words.
+
 Every approval or rejection produces a risk decision event with reasons and a limits snapshot. The kill switch blocks all new orders. Strategy quarantine blocks all new orders from the quarantined strategy.
 
 Capital unlock is staged and conservative: shadow stability, paper stability, reconciliation tests, slippage tests, kill-switch drills, tiny notional limits, and explicit human approval are required before any future scaling.

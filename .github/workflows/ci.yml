@@ -36,3 +36,10 @@ jobs:
           python -m quant_os.cli freqtrade ingest-logs
           python -m quant_os.cli freqtrade reconcile
           python -m quant_os.cli freqtrade dry-run-status
+      - name: Dry-run comparison monitoring
+        run: |
+          python -m quant_os.cli dryrun history
+          python -m quant_os.cli dryrun compare
+          python -m quant_os.cli dryrun divergence-check
+          python -m quant_os.cli dryrun monitor-report
+          python -m quant_os.cli dryrun promote-check
