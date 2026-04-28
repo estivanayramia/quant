@@ -101,7 +101,7 @@ def _markdown(payload: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
-            "Trade-level Freqtrade-vs-QuantOS reconciliation is unavailable until structured Freqtrade dry-run trade artifacts are ingested. This report does not claim live readiness.",
+            "Trade-level Freqtrade-vs-QuantOS reconciliation depends on available local dry-run artifacts. Missing or partial artifacts are not treated as live readiness.",
         ]
     )
     return "\n".join(lines) + "\n"

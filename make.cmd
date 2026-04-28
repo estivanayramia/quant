@@ -139,6 +139,26 @@ if "%TARGET%"=="freqtrade-operational-manifest" (
   python -m quant_os.cli freqtrade operational-manifest
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="freqtrade-artifacts-scan" (
+  python -m quant_os.cli freqtrade artifacts-scan
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="freqtrade-trades-ingest" (
+  python -m quant_os.cli freqtrade trades-ingest
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="freqtrade-trades-normalize" (
+  python -m quant_os.cli freqtrade trades-normalize
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="freqtrade-trade-reconcile" (
+  python -m quant_os.cli freqtrade trade-reconcile
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="freqtrade-trade-report" (
+  python -m quant_os.cli freqtrade trade-report
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="dryrun-history" (
   python -m quant_os.cli dryrun history
   exit /b !ERRORLEVEL!
@@ -161,6 +181,14 @@ if "%TARGET%"=="dryrun-promote-check" (
 )
 if "%TARGET%"=="dryrun-status" (
   python -m quant_os.cli dryrun status
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="dryrun-trade-reconcile" (
+  python -m quant_os.cli dryrun trade-reconcile
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="dryrun-trade-report" (
+  python -m quant_os.cli dryrun trade-report
   exit /b !ERRORLEVEL!
 )
 if "%TARGET%"=="phase3-smoke" (
@@ -217,6 +245,26 @@ if "%TARGET%"=="phase5-smoke" (
   python -m quant_os.cli dryrun monitor-report
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli dryrun promote-check
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomous run-once
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="phase6-smoke" (
+  call "%~f0" phase5-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli freqtrade artifacts-scan
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli freqtrade trades-ingest
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli freqtrade trades-normalize
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli freqtrade trade-reconcile
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli freqtrade trade-report
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomous run-once
   if errorlevel 1 exit /b !ERRORLEVEL!

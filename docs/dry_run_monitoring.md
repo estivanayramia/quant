@@ -25,6 +25,8 @@ This is not live trading. It does not use exchange API keys, does not require Do
 
 Trade-level comparison is intentionally reported as unavailable until structured Freqtrade dry-run trade artifacts are ingested. The system does not fake that reconciliation.
 
+Phase 6 adds the first trade-artifact ingestion path. If safe local artifacts are present, QuantOS can normalize and reconcile them. If artifacts are missing or partially understood, the report remains `UNAVAILABLE` or `WARN`.
+
 ## Promotion Readiness
 
 Phase 5 can report `DRY_RUN_READY` for local dry-run monitoring evidence when safety checks pass, but live promotion always remains `TINY_LIVE_BLOCKED`.

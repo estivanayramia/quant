@@ -1,0 +1,3 @@
+2026-04-01 00:00:00 INFO Dry-run trade entry BTC/USDT buy simulated
+2026-04-01 00:05:00 WARNING Dry-run slippage warning BTC/USDT
+2026-04-01 00:10:00 ERROR Dry-run parser sample error

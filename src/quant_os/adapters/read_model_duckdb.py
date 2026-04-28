@@ -98,6 +98,32 @@ class DuckDBReadModelStore:
             )
             """
         )
+        con.execute(
+            """
+            create table freqtrade_dryrun_trades (
+                record_id varchar,
+                source varchar,
+                source_file varchar,
+                strategy_name varchar,
+                pair varchar,
+                symbol varchar,
+                side varchar,
+                status varchar,
+                open_date varchar,
+                close_date varchar,
+                open_rate double,
+                close_rate double,
+                amount double,
+                stake_amount double,
+                profit_abs double,
+                profit_ratio double,
+                exit_reason varchar,
+                dry_run boolean,
+                parsed_at varchar,
+                raw_payload_json varchar
+            )
+            """
+        )
 
     def _insert_events(self, con: duckdb.DuckDBPyConnection, events: list[DomainEvent]) -> None:
         rows = [

@@ -110,6 +110,21 @@ make phase5-smoke
 
 This remains dry-run evidence only. Live promotion reports `TINY_LIVE_BLOCKED`; the system is not live-trading-ready.
 
+## Freqtrade Trade Artifact Reconciliation
+
+Phase 6 adds local dry-run trade artifact scanning, ingestion, normalization, and trade-level reconciliation:
+
+```bash
+make freqtrade-artifacts-scan
+make freqtrade-trades-ingest
+make freqtrade-trades-normalize
+make freqtrade-trade-reconcile
+make freqtrade-trade-report
+make phase6-smoke
+```
+
+If no structured Freqtrade dry-run trade artifacts exist, the system reports `UNAVAILABLE` or `WARN` rather than inventing trade evidence.
+
 ## Repository Structure
 
 - `src/quant_os/core`: framework-independent primitives, events, commands, errors, IDs, time.
@@ -138,10 +153,11 @@ The research control plane can generate candidate orders and reports. The execut
 - Phase 3: Freqtrade dry-run adapter for crypto, still no live trading.
 - Phase 4: Freqtrade dry-run operational runner, log ingestion, and reconciliation.
 - Phase 5: Dry-run comparison monitoring, local history, divergence checks, and strict live-blocked promotion readiness.
-- Phase 6: tiny live crypto canary through Freqtrade only after extensive gates.
-- Phase 7: Telegram/Discord alerts only, with no order authority.
-- Phase 8: AI provider mesh for research/reporting only.
-- Phase 9: NautilusTrader evaluation if the simpler stack becomes a bottleneck.
+- Phase 6: Freqtrade dry-run trade artifact ingestion and trade-level reconciliation, still with live promotion blocked.
+- Phase 7: tiny live crypto canary through Freqtrade only after extensive gates.
+- Phase 8: Telegram/Discord alerts only, with no order authority.
+- Phase 9: AI provider mesh for research/reporting only.
+- Phase 10: NautilusTrader evaluation if the simpler stack becomes a bottleneck.
 
 ## Live Trading Disclaimer
 

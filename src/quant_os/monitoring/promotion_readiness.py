@@ -7,6 +7,7 @@ from typing import Any
 from quant_os.monitoring.divergence import check_dryrun_divergence
 from quant_os.monitoring.dryrun_comparison import build_dryrun_comparison
 from quant_os.monitoring.dryrun_history import DRYRUN_ROOT
+from quant_os.monitoring.trade_level_readiness import trade_level_readiness_status
 
 LIVE_BLOCKERS = [
     "No multi-week dry-run evidence yet.",
@@ -15,6 +16,7 @@ LIVE_BLOCKERS = [
     "No API-key permission verification exists.",
     "No live canary policy implementation exists.",
     "No human approval gate implementation exists.",
+    "No live-specific incident response runbook exists.",
     "Live trading is disabled by constitution.",
 ]
 
@@ -22,11 +24,14 @@ LIVE_BLOCKERS = [
 def check_promotion_readiness(write: bool = True) -> dict[str, Any]:
     comparison = build_dryrun_comparison(write=True)
     divergence = check_dryrun_divergence(write=True)
+    trade_level = trade_level_readiness_status()
     blockers = []
     if comparison["status"] == "FAIL":
         blockers.append("DRY_RUN_COMPARISON_FAILED")
     if divergence["status"] == "FAIL":
         blockers.append("DRY_RUN_DIVERGENCE_FAILED")
+    if trade_level["status"] == "FAIL":
+        blockers.append("TRADE_LEVEL_RECONCILIATION_FAILED")
     unsafe_failures = comparison.get("unsafe_failures", []) + divergence.get("failures", [])
     dry_run_ready = not unsafe_failures and divergence["status"] in {"PASS", "WARN"}
     status = "DRY_RUN_READY" if dry_run_ready else "NOT_ELIGIBLE"
@@ -40,6 +45,8 @@ def check_promotion_readiness(write: bool = True) -> dict[str, Any]:
         "blockers": sorted(set(blockers)),
         "warnings": comparison.get("warnings", []) + divergence.get("warnings", []),
         "live_blockers": LIVE_BLOCKERS,
+        "trade_level_reconciliation_status": trade_level["status"],
+        "trade_level_reconciliation_available": trade_level["trade_level_reconciliation_available"],
         "next_allowed_statuses": ["research", "shadow", "dry_run_ready"],
         "explicitly_not_allowed": ["paper_without_future_gate", "tiny_live", "live_trading"],
     }

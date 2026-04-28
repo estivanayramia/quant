@@ -43,3 +43,10 @@ jobs:
           python -m quant_os.cli dryrun divergence-check
           python -m quant_os.cli dryrun monitor-report
           python -m quant_os.cli dryrun promote-check
+      - name: Freqtrade trade artifact reconciliation
+        run: |
+          python -m quant_os.cli freqtrade artifacts-scan
+          python -m quant_os.cli freqtrade trades-ingest
+          python -m quant_os.cli freqtrade trades-normalize
+          python -m quant_os.cli freqtrade trade-reconcile
+          python -m quant_os.cli freqtrade trade-report

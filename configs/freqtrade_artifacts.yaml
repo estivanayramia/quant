@@ -1,0 +1,50 @@
+enabled: true
+live_trading_allowed: false
+dry_run_only: true
+
+scan:
+  base_paths:
+    - freqtrade/user_data
+    - reports/freqtrade
+  include_patterns:
+    - "*.json"
+    - "*.jsonl"
+    - "*.log"
+    - "*.txt"
+    - "*.sqlite"
+    - "*.db"
+  exclude_patterns:
+    - "*.env"
+    - "*secret*"
+    - "*key*"
+    - "*credential*"
+  max_file_size_mb: 50
+
+ingestion:
+  allow_sqlite_read: true
+  allow_json_read: true
+  allow_log_parse: true
+  preserve_raw_unknown_fields: true
+  fail_on_live_mode_evidence: true
+  fail_on_credentials_detected: true
+
+reconciliation:
+  enabled: true
+  compare_symbol: true
+  compare_side: true
+  compare_entry_time: true
+  compare_exit_time: true
+  compare_stake_amount: true
+  compare_pnl: true
+  compare_strategy: true
+  timestamp_tolerance_seconds: 300
+  notional_tolerance_pct: 20
+  pnl_tolerance_abs: 5
+  warn_on_missing_trade_level_data: true
+  fail_on_live_evidence: true
+
+promotion:
+  live_promotion_allowed: false
+  require_trade_level_reconciliation: true
+  minimum_dry_run_days_future: 14
+  minimum_trade_count_future: 100

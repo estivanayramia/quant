@@ -19,6 +19,8 @@ from quant_os.monitoring.dryrun_history import (
 )
 from quant_os.monitoring.freshness import dryrun_freshness_summary
 
+LATEST_TRADE_RECONCILIATION = Path("reports/freqtrade/trades/latest_trade_reconciliation.json")
+
 
 def build_dryrun_comparison(write: bool = True) -> dict[str, Any]:
     ensure_dryrun_monitoring_dirs()
@@ -45,14 +47,7 @@ def build_dryrun_comparison(write: bool = True) -> dict[str, Any]:
     _compare_logs(logs, add)
     _compare_operational(operational, add)
     _compare_reconciliation(reconciliation, add)
-    add(
-        "trade_level_comparison",
-        "UNAVAILABLE",
-        {
-            "reason": "Freqtrade dry-run trade DB/log schema is not ingested in Phase 5.",
-            "future_work": "Parse Freqtrade dry-run trade DB or structured API artifacts when available.",
-        },
-    )
+    _compare_trade_level(add)
 
     status = _aggregate_status(checks)
     payload = {
@@ -208,6 +203,27 @@ def _compare_reconciliation(reconciliation: dict[str, Any], add) -> None:
         "freqtrade_reconciliation_status",
         "FAIL" if status == "FAIL" else "WARN" if status in {"WARN", "UNAVAILABLE"} else "PASS",
         {"status": status},
+    )
+
+
+def _compare_trade_level(add) -> None:
+    trade_reconciliation = _read_json(LATEST_TRADE_RECONCILIATION)
+    if not trade_reconciliation:
+        add(
+            "trade_level_comparison",
+            "UNAVAILABLE",
+            {"reason": "No Phase 6 trade-level reconciliation report exists yet."},
+        )
+        return
+    status = trade_reconciliation.get("status")
+    add(
+        "trade_level_comparison",
+        "FAIL" if status == "FAIL" else "WARN" if status in {"WARN", "UNAVAILABLE"} else "PASS",
+        {
+            "status": status,
+            "available": trade_reconciliation.get("trade_level_comparison_available", False),
+            "report": str(LATEST_TRADE_RECONCILIATION),
+        },
     )
 
 
