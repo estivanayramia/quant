@@ -1,6 +1,7 @@
 # Freqtrade Dry-Run Container
 
 Phase 3 adds a Freqtrade dry-run container lane for crypto simulation comparison.
+Phase 4 adds explicit operational runner commands, log ingestion, operational status, and conservative reconciliation.
 
 ## What This Does
 
@@ -28,6 +29,13 @@ make freqtrade-dry-run-check
 make freqtrade-status
 make freqtrade-command-preview
 make phase3-smoke
+make freqtrade-docker-check
+make freqtrade-dry-run-start
+make freqtrade-dry-run-logs
+make freqtrade-ingest-logs
+make freqtrade-reconcile
+make freqtrade-dry-run-stop
+make phase4-smoke
 ```
 
 ## Manual Docker Preview
@@ -39,6 +47,8 @@ docker compose --profile freqtrade-dry-run run --rm freqtrade-dry-run --help
 ```
 
 The Docker profile is not started by default. Tests do not require Docker Desktop, internet, or a Freqtrade image pull.
+
+The autonomous daemon reports Freqtrade operational status but does not start the container by default. Container start remains an explicit user command.
 
 ## Safety Rules
 
@@ -53,4 +63,11 @@ Tiny live crypto canary remains a future phase and requires weeks of dry-run/pap
 ## Windows / Docker Desktop
 
 If Docker is unavailable, status will report `docker_available: false`. You can still generate config, validate safety, export strategy, and run tests.
+
+Operational reports are written under:
+
+- `reports/freqtrade/status/`
+- `reports/freqtrade/logs/`
+- `reports/freqtrade/reconciliation/`
+- `reports/freqtrade/manifests/`
 

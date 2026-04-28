@@ -103,6 +103,42 @@ if "%TARGET%"=="freqtrade-dry-run-check" (
   python -m quant_os.cli freqtrade dry-run-check
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="freqtrade-docker-check" (
+  python -m quant_os.cli freqtrade docker-check
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="freqtrade-dry-run-start" (
+  python -m quant_os.cli freqtrade dry-run-start
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="freqtrade-dry-run-stop" (
+  python -m quant_os.cli freqtrade dry-run-stop
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="freqtrade-dry-run-logs" (
+  python -m quant_os.cli freqtrade dry-run-logs
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="freqtrade-dry-run-status" (
+  python -m quant_os.cli freqtrade dry-run-status
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="freqtrade-dry-run-report" (
+  python -m quant_os.cli freqtrade dry-run-report
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="freqtrade-ingest-logs" (
+  python -m quant_os.cli freqtrade ingest-logs
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="freqtrade-reconcile" (
+  python -m quant_os.cli freqtrade reconcile
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="freqtrade-operational-manifest" (
+  python -m quant_os.cli freqtrade operational-manifest
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="phase3-smoke" (
   python -m quant_os.cli freqtrade generate-config
   if errorlevel 1 exit /b !ERRORLEVEL!
@@ -113,6 +149,30 @@ if "%TARGET%"=="phase3-smoke" (
   python -m quant_os.cli freqtrade dry-run-check
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli freqtrade status
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomous run-once
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="phase4-smoke" (
+  python -m quant_os.cli freqtrade generate-config
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli freqtrade export-strategy
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli freqtrade validate
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli freqtrade dry-run-check
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli freqtrade docker-check
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli freqtrade ingest-logs
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli freqtrade reconcile
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli freqtrade dry-run-status
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomous run-once
   if errorlevel 1 exit /b !ERRORLEVEL!
