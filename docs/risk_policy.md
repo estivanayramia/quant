@@ -10,6 +10,8 @@ Phase 4 reconciliation compares generated Freqtrade artifacts with QuantOS risk 
 
 Phase 5 dry-run divergence checks fail closed on unsafe Freqtrade artifacts: `dry_run` false, live flags, keys, futures, margin, leverage, shorting, missing config or strategy, strategy hash mismatch, or live-mode danger words.
 
+Phase 6 trade artifact parsers also fail closed on live-mode evidence, credentials, futures, margin, leverage, shorting, or `dry_run: false`. Unknown trade schemas are preserved as raw payloads and do not become source of truth.
+
 Every approval or rejection produces a risk decision event with reasons and a limits snapshot. The kill switch blocks all new orders. Strategy quarantine blocks all new orders from the quarantined strategy.
 
 Capital unlock is staged and conservative: shadow stability, paper stability, reconciliation tests, slippage tests, kill-switch drills, tiny notional limits, and explicit human approval are required before any future scaling.

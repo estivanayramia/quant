@@ -3,6 +3,7 @@
 Phase 3 adds a Freqtrade dry-run container lane for crypto simulation comparison.
 Phase 4 adds explicit operational runner commands, log ingestion, operational status, and conservative reconciliation.
 Phase 5 adds dry-run comparison monitoring, local history, divergence checks, freshness checks, and strict promotion readiness that still blocks live trading.
+Phase 6 adds local trade artifact ingestion and trade-level reconciliation when safe dry-run artifacts are available.
 
 ## What This Does
 
@@ -43,6 +44,12 @@ make dryrun-divergence-check
 make dryrun-monitor-report
 make dryrun-promote-check
 make phase5-smoke
+make freqtrade-artifacts-scan
+make freqtrade-trades-ingest
+make freqtrade-trades-normalize
+make freqtrade-trade-reconcile
+make freqtrade-trade-report
+make phase6-smoke
 ```
 
 ## Manual Docker Preview
@@ -78,4 +85,5 @@ Operational reports are written under:
 - `reports/freqtrade/reconciliation/`
 - `reports/freqtrade/manifests/`
 - `reports/dryrun/`
+- `reports/freqtrade/trades/`
 

@@ -1,0 +1,21 @@
+{
+  "trades": [
+    {
+      "id": 101,
+      "strategy": "QuantOSDryRunStrategy",
+      "pair": "BTC/USDT",
+      "is_open": false,
+      "open_date": "2026-04-01T00:00:00+00:00",
+      "close_date": "2026-04-01T01:00:00+00:00",
+      "open_rate": 50000.0,
+      "close_rate": 50100.0,
+      "amount": 0.0002,
+      "stake_amount": 10.0,
+      "profit_abs": 0.02,
+      "profit_ratio": 0.002,
+      "exit_reason": "roi",
+      "timeframe": "5m",
+      "dry_run": true
+    }
+  ]
+}

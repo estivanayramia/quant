@@ -18,12 +18,19 @@ from quant_os.data.quality import validate_ohlcv
 from quant_os.data.warehouse import ensure_local_dirs
 from quant_os.domain.strategy import StrategyRecord
 from quant_os.governance.registry import StrategyRegistry
+from quant_os.integrations.freqtrade.artifact_scanner import scan_freqtrade_artifacts
 from quant_os.integrations.freqtrade.config_writer import write_freqtrade_dry_run_config
 from quant_os.integrations.freqtrade.docker_ops import DockerOps
 from quant_os.integrations.freqtrade.dry_run_adapter import FreqtradeDryRunAdapter
 from quant_os.integrations.freqtrade.log_ingestion import ingest_freqtrade_logs
 from quant_os.integrations.freqtrade.runner import FreqtradeRunner
 from quant_os.integrations.freqtrade.strategy_exporter import export_quant_os_strategy
+from quant_os.integrations.freqtrade.trade_normalizer import (
+    ingest_trade_artifacts,
+    normalize_trade_artifacts,
+)
+from quant_os.integrations.freqtrade.trade_reconciliation import reconcile_freqtrade_trades
+from quant_os.integrations.freqtrade.trade_reporting import write_freqtrade_trade_report
 from quant_os.integrations.telegram.alert_adapter import TelegramAlertAdapter
 from quant_os.monitoring.divergence import check_dryrun_divergence
 from quant_os.monitoring.dryrun_comparison import build_dryrun_comparison
@@ -308,6 +315,74 @@ def freqtrade_operational_manifest() -> None:
     print({"manifest": str(path), "live_trading_enabled": False})
 
 
+@freqtrade_app.command("artifacts-scan")
+def freqtrade_artifacts_scan() -> None:
+    payload = scan_freqtrade_artifacts()
+    print(
+        {
+            "artifact_scan": payload["status"],
+            "artifacts_found": payload["artifacts_found"],
+            "report": "reports/freqtrade/trades/latest_artifact_scan.json",
+        }
+    )
+
+
+@freqtrade_app.command("trades-ingest")
+def freqtrade_trades_ingest() -> None:
+    payload = ingest_trade_artifacts()
+    print(
+        {
+            "ingestion": payload["status"],
+            "parsed_records": payload["parsed_records_count"],
+            "report": "reports/freqtrade/trades/latest_trades_ingested.json",
+        }
+    )
+    if payload["status"] == "FAIL":
+        raise typer.Exit(1)
+
+
+@freqtrade_app.command("trades-normalize")
+def freqtrade_trades_normalize() -> None:
+    payload = normalize_trade_artifacts()
+    print(
+        {
+            "normalization": payload["status"],
+            "normalized_records": payload["normalized_records_count"],
+            "report": "reports/freqtrade/trades/latest_trades_normalized.json",
+        }
+    )
+    if payload["status"] == "FAIL":
+        raise typer.Exit(1)
+
+
+@freqtrade_app.command("trade-reconcile")
+def freqtrade_trade_reconcile() -> None:
+    payload = reconcile_freqtrade_trades(event_store=_event_store())
+    print(
+        {
+            "trade_reconciliation": payload["status"],
+            "trade_level_comparison_available": payload["trade_level_comparison_available"],
+            "report": "reports/freqtrade/trades/latest_trade_reconciliation.json",
+        }
+    )
+    if payload["status"] == "FAIL":
+        raise typer.Exit(1)
+
+
+@freqtrade_app.command("trade-report")
+def freqtrade_trade_report() -> None:
+    payload = write_freqtrade_trade_report()
+    print(
+        {
+            "trade_report": payload["trade_reconciliation_status"],
+            "report": "reports/freqtrade/trades/latest_trade_report.md",
+            "live_trading_enabled": False,
+        }
+    )
+    if payload["trade_reconciliation_status"] == "FAIL":
+        raise typer.Exit(1)
+
+
 @dryrun_app.command("history")
 def dryrun_history() -> None:
     payload = append_history_record()
@@ -386,6 +461,16 @@ def dryrun_status() -> None:
             "live_promotion_status": payload["live_promotion_status"],
         }
     )
+
+
+@dryrun_app.command("trade-reconcile")
+def dryrun_trade_reconcile() -> None:
+    freqtrade_trade_reconcile()
+
+
+@dryrun_app.command("trade-report")
+def dryrun_trade_report() -> None:
+    freqtrade_trade_report()
 
 
 @autonomous_app.command("run-once")
