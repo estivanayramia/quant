@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 
 from quant_os.integrations.freqtrade.dry_run_adapter import FreqtradeDryRunAdapter
+from quant_os.integrations.freqtrade.operational_status import write_operational_status_report
+from quant_os.integrations.freqtrade.reconciliation import reconcile_freqtrade
 
 
 def write_freqtrade_status_report(
@@ -33,3 +35,14 @@ def write_freqtrade_status_report(
     ]
     (root / "latest_status.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     return status
+
+
+def write_freqtrade_dry_run_report() -> dict[str, object]:
+    status = write_operational_status_report()
+    reconciliation = reconcile_freqtrade()
+    return {
+        "dry_run_only": True,
+        "live_trading_enabled": False,
+        "operational_status": status,
+        "reconciliation": reconciliation,
+    }

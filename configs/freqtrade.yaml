@@ -23,4 +23,26 @@ pairs:
   - ETH/USDT
 max_dry_run_stake_amount: 25
 max_dry_run_open_trades: 1
+docker:
+  compose_file: docker-compose.yml
+  service: freqtrade-dry-run
+  profile: freqtrade-dry-run
+  project_name: quant-os-freqtrade
+  require_docker_check: true
+  allow_container_start: false
+  allow_container_stop: true
+  start_timeout_seconds: 60
+  logs_tail_lines: 300
+operational:
+  enabled: false
+  explicit_start_required: true
+  autonomous_start_allowed: false
+  ingest_logs_enabled: true
+  reconciliation_enabled: true
+  report_enabled: true
+artifacts:
+  logs_dir: reports/freqtrade/logs
+  status_dir: reports/freqtrade/status
+  reconciliation_dir: reports/freqtrade/reconciliation
+  manifests_dir: reports/freqtrade/manifests
 

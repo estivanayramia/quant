@@ -30,6 +30,8 @@ def write_freqtrade_dry_run_config(
     config: dict[str, Any] = {
         "dry_run": True,
         "live_trading_allowed": False,
+        "operational_enabled": False,
+        "autonomous_start_allowed": False,
         "trading_mode": "spot",
         "margin_mode": "",
         "max_open_trades": int(settings.get("max_open_trades", 1)),

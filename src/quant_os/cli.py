@@ -19,10 +19,16 @@ from quant_os.data.warehouse import ensure_local_dirs
 from quant_os.domain.strategy import StrategyRecord
 from quant_os.governance.registry import StrategyRegistry
 from quant_os.integrations.freqtrade.config_writer import write_freqtrade_dry_run_config
+from quant_os.integrations.freqtrade.docker_ops import DockerOps
 from quant_os.integrations.freqtrade.dry_run_adapter import FreqtradeDryRunAdapter
+from quant_os.integrations.freqtrade.log_ingestion import ingest_freqtrade_logs
+from quant_os.integrations.freqtrade.runner import FreqtradeRunner
 from quant_os.integrations.freqtrade.strategy_exporter import export_quant_os_strategy
 from quant_os.integrations.telegram.alert_adapter import TelegramAlertAdapter
-from quant_os.ops.freqtrade_reporting import write_freqtrade_status_report
+from quant_os.ops.freqtrade_reporting import (
+    write_freqtrade_dry_run_report,
+    write_freqtrade_status_report,
+)
 from quant_os.ops.reporting import generate_daily_report
 from quant_os.projections.rebuild import rebuild_read_models as rebuild_read_models_projection
 from quant_os.research.backtest import run_backtest
@@ -218,6 +224,81 @@ def freqtrade_dry_run_check() -> None:
             "live_trading_enabled": False,
         }
     )
+
+
+@freqtrade_app.command("docker-check")
+def freqtrade_docker_check() -> None:
+    docker = DockerOps()
+    print(
+        {
+            "docker_available": docker.docker_available(),
+            "compose_available": docker.compose_available(),
+            "required_for_ci": False,
+        }
+    )
+
+
+@freqtrade_app.command("dry-run-start")
+def freqtrade_dry_run_start() -> None:
+    result = FreqtradeRunner(_event_store()).start()
+    print(result.to_dict())
+    if result.status == "FAIL":
+        raise typer.Exit(1)
+
+
+@freqtrade_app.command("dry-run-stop")
+def freqtrade_dry_run_stop() -> None:
+    print(FreqtradeRunner(_event_store()).stop().to_dict())
+
+
+@freqtrade_app.command("dry-run-logs")
+def freqtrade_dry_run_logs() -> None:
+    payload = FreqtradeRunner(_event_store()).logs()
+    print({"logs": "reports/freqtrade/logs/latest_logs.json", **payload})
+
+
+@freqtrade_app.command("dry-run-status")
+def freqtrade_dry_run_status() -> None:
+    payload = FreqtradeRunner(_event_store()).status()
+    print({"status": payload, "report": "reports/freqtrade/status/latest_operational_status.json"})
+
+
+@freqtrade_app.command("dry-run-report")
+def freqtrade_dry_run_report() -> None:
+    payload = write_freqtrade_dry_run_report()
+    print(
+        {
+            "report": "reports/freqtrade/status/latest_operational_status.json",
+            "reconciliation": payload["reconciliation"]["status"],
+        }
+    )
+
+
+@freqtrade_app.command("ingest-logs")
+def freqtrade_ingest_logs() -> None:
+    payload = ingest_freqtrade_logs()
+    print({"logs": "reports/freqtrade/logs/latest_logs.json", **payload})
+
+
+@freqtrade_app.command("reconcile")
+def freqtrade_reconcile() -> None:
+    payload = FreqtradeRunner(_event_store()).reconcile()
+    print(
+        {
+            "reconciliation": payload["status"],
+            "report": "reports/freqtrade/reconciliation/latest_reconciliation.json",
+        }
+    )
+    if payload["status"] == "FAIL":
+        raise typer.Exit(1)
+
+
+@freqtrade_app.command("operational-manifest")
+def freqtrade_operational_manifest() -> None:
+    path = DockerOps().write_operation_manifest(
+        DockerOps().get_container_status(),
+    )
+    print({"manifest": str(path), "live_trading_enabled": False})
 
 
 @autonomous_app.command("run-once")

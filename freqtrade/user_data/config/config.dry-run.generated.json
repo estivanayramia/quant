@@ -2,6 +2,7 @@
   "api_server": {
     "enabled": false
   },
+  "autonomous_start_allowed": false,
   "bot_name": "quant-os-dry-run",
   "cancel_open_orders_on_exit": true,
   "dry_run": true,
@@ -27,6 +28,7 @@
   "live_trading_allowed": false,
   "margin_mode": "",
   "max_open_trades": 1,
+  "operational_enabled": false,
   "shorting": false,
   "stake_amount": 10.0,
   "stake_currency": "USDT",

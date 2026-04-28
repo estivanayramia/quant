@@ -83,6 +83,18 @@ make phase3-smoke
 
 This is now Freqtrade dry-run-container-ready, not live-trading-ready.
 
+Phase 4 adds explicit dry-run operational commands:
+
+```bash
+make freqtrade-docker-check
+make freqtrade-dry-run-status
+make freqtrade-ingest-logs
+make freqtrade-reconcile
+make phase4-smoke
+```
+
+Container start remains explicit: `make freqtrade-dry-run-start`.
+
 ## Repository Structure
 
 - `src/quant_os/core`: framework-independent primitives, events, commands, errors, IDs, time.

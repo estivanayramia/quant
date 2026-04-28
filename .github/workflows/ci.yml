@@ -30,3 +30,9 @@ jobs:
         run: python -m quant_os.cli freqtrade validate
       - name: Freqtrade dry-run check
         run: python -m quant_os.cli freqtrade dry-run-check
+      - name: Freqtrade operational checks
+        run: |
+          python -m quant_os.cli freqtrade docker-check
+          python -m quant_os.cli freqtrade ingest-logs
+          python -m quant_os.cli freqtrade reconcile
+          python -m quant_os.cli freqtrade dry-run-status

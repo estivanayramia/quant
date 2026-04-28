@@ -1,4 +1,4 @@
-.PHONY: install format lint test test-cov seed-demo validate-data backtest tournament shadow rebuild report smoke autonomous autonomous-daemon autonomous-status watchdog drift alerts-test freqtrade-config freqtrade-validate freqtrade-export-strategy freqtrade-status freqtrade-command-preview freqtrade-manifest freqtrade-dry-run-check phase3-smoke clean
+.PHONY: install format lint test test-cov seed-demo validate-data backtest tournament shadow rebuild report smoke autonomous autonomous-daemon autonomous-status watchdog drift alerts-test freqtrade-config freqtrade-validate freqtrade-export-strategy freqtrade-status freqtrade-command-preview freqtrade-manifest freqtrade-dry-run-check freqtrade-docker-check freqtrade-dry-run-start freqtrade-dry-run-stop freqtrade-dry-run-logs freqtrade-dry-run-status freqtrade-dry-run-report freqtrade-ingest-logs freqtrade-reconcile freqtrade-operational-manifest phase3-smoke phase4-smoke clean
 
 install:
 	python -m pip install -e ".[dev]"
@@ -75,12 +75,52 @@ freqtrade-manifest:
 freqtrade-dry-run-check:
 	python -m quant_os.cli freqtrade dry-run-check
 
+freqtrade-docker-check:
+	python -m quant_os.cli freqtrade docker-check
+
+freqtrade-dry-run-start:
+	python -m quant_os.cli freqtrade dry-run-start
+
+freqtrade-dry-run-stop:
+	python -m quant_os.cli freqtrade dry-run-stop
+
+freqtrade-dry-run-logs:
+	python -m quant_os.cli freqtrade dry-run-logs
+
+freqtrade-dry-run-status:
+	python -m quant_os.cli freqtrade dry-run-status
+
+freqtrade-dry-run-report:
+	python -m quant_os.cli freqtrade dry-run-report
+
+freqtrade-ingest-logs:
+	python -m quant_os.cli freqtrade ingest-logs
+
+freqtrade-reconcile:
+	python -m quant_os.cli freqtrade reconcile
+
+freqtrade-operational-manifest:
+	python -m quant_os.cli freqtrade operational-manifest
+
 phase3-smoke:
 	python -m quant_os.cli freqtrade generate-config
 	python -m quant_os.cli freqtrade export-strategy
 	python -m quant_os.cli freqtrade validate
 	python -m quant_os.cli freqtrade dry-run-check
 	python -m quant_os.cli freqtrade status
+	python -m quant_os.cli autonomous run-once
+	python -m quant_os.cli smoke
+	python -m pytest
+
+phase4-smoke:
+	python -m quant_os.cli freqtrade generate-config
+	python -m quant_os.cli freqtrade export-strategy
+	python -m quant_os.cli freqtrade validate
+	python -m quant_os.cli freqtrade dry-run-check
+	python -m quant_os.cli freqtrade docker-check
+	python -m quant_os.cli freqtrade ingest-logs
+	python -m quant_os.cli freqtrade reconcile
+	python -m quant_os.cli freqtrade dry-run-status
 	python -m quant_os.cli autonomous run-once
 	python -m quant_os.cli smoke
 	python -m pytest
