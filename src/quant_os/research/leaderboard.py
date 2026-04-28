@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from quant_os.research.evidence_quality import latest_evidence_adjustment
 from quant_os.research.overfit_checks import run_overfit_checks
 from quant_os.research.regime_tests import run_regime_tests
 from quant_os.research.research_report import run_strategy_research
@@ -16,6 +17,7 @@ def build_strategy_leaderboard(symbol: str = "SPY") -> dict[str, Any]:
     overfit = run_overfit_checks(symbol)
     walk_forward = run_walk_forward_validation(symbol)
     regime = run_regime_tests(symbol)
+    evidence = latest_evidence_adjustment()
     placebo_return = float(
         research["results"]["random_placebo"]["metrics"].get("total_return", 0.0)
     )
@@ -31,6 +33,7 @@ def build_strategy_leaderboard(symbol: str = "SPY") -> dict[str, Any]:
         conservative_score = (
             total_return - (max_drawdown * 2.0) + trade_score + placebo_margin - stress_penalty
         )
+        conservative_score -= float(evidence["evidence_penalty"])
         if strategy_id == "no_trade":
             status = "REJECTED"
             conservative_score = -1.0
@@ -56,6 +59,7 @@ def build_strategy_leaderboard(symbol: str = "SPY") -> dict[str, Any]:
                     "trade_count_score": trade_score,
                     "placebo_margin": placebo_margin,
                     "stress_penalty": -stress_penalty,
+                    "evidence_penalty": -float(evidence["evidence_penalty"]),
                 },
             }
         )
@@ -74,6 +78,8 @@ def build_strategy_leaderboard(symbol: str = "SPY") -> dict[str, Any]:
         "walk_forward_status": walk_forward["status"],
         "regime_status": regime["status"],
         "overfit_status": overfit["status"],
+        "evidence_status": evidence["evidence_status"],
+        "evidence_penalty": evidence["evidence_penalty"],
         "live_promotion_status": "TINY_LIVE_BLOCKED",
         "ranking_note": "Ranking is conservative and is not sorted by total return alone.",
     }

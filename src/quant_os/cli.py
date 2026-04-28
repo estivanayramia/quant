@@ -12,7 +12,13 @@ from quant_os.autonomy.supervisor import Supervisor
 from quant_os.autonomy.tasks import run_drift_checks
 from quant_os.core.commands import CandidateOrder
 from quant_os.core.events import EventType, make_event
+from quant_os.data.dataset_manifest import build_dataset_manifest
+from quant_os.data.dataset_quality import run_dataset_quality
+from quant_os.data.dataset_splits import build_dataset_splits
 from quant_os.data.demo_data import seed_demo_data
+from quant_os.data.evidence_scoring import calculate_evidence_score
+from quant_os.data.expanded_demo_data import seed_expanded_demo_data
+from quant_os.data.leakage_checks import run_leakage_checks
 from quant_os.data.loaders import load_yaml
 from quant_os.data.quality import validate_ohlcv
 from quant_os.data.warehouse import ensure_local_dirs
@@ -48,6 +54,7 @@ from quant_os.research.backtest import run_backtest
 from quant_os.research.leaderboard import build_strategy_leaderboard
 from quant_os.research.overfit_checks import run_overfit_checks
 from quant_os.research.regime_tests import run_regime_tests
+from quant_os.research.research_evidence_report import write_research_evidence_report
 from quant_os.research.research_report import run_strategy_research, write_strategy_research_report
 from quant_os.research.strategies import baseline_ma_candidates
 from quant_os.research.strategy_ablation import run_strategy_ablation
@@ -64,11 +71,15 @@ features_app = typer.Typer(help="Deterministic feature-building commands.")
 strategy_app = typer.Typer(help="Strategy governance commands.")
 freqtrade_app = typer.Typer(help="Freqtrade dry-run-only commands.")
 dryrun_app = typer.Typer(help="Dry-run comparison monitoring commands.")
+dataset_app = typer.Typer(help="Offline dataset evidence commands.")
+evidence_app = typer.Typer(help="Research evidence report commands.")
 app.add_typer(autonomous_app, name="autonomous")
 app.add_typer(features_app, name="features")
 app.add_typer(strategy_app, name="strategy")
 app.add_typer(freqtrade_app, name="freqtrade")
 app.add_typer(dryrun_app, name="dryrun")
+app.add_typer(dataset_app, name="dataset")
+app.add_typer(evidence_app, name="evidence")
 
 
 def _event_store() -> JsonlEventStore:
@@ -480,6 +491,99 @@ def dryrun_trade_reconcile() -> None:
 @dryrun_app.command("trade-report")
 def dryrun_trade_report() -> None:
     freqtrade_trade_report()
+
+
+@dataset_app.command("seed-expanded")
+def dataset_seed_expanded() -> None:
+    payload = seed_expanded_demo_data()
+    print(
+        {
+            "dataset": "expanded_demo",
+            "rows": payload["rows"],
+            "symbols": payload["symbols"],
+            "timeframes": payload["timeframes"],
+            "live_trading_enabled": False,
+        }
+    )
+
+
+@dataset_app.command("manifest")
+def dataset_manifest() -> None:
+    payload = build_dataset_manifest()
+    print(
+        {
+            "status": payload["status"],
+            "dataset_id": payload["dataset_id"],
+            "rows": payload["rows"],
+            "report": "reports/datasets/latest_manifest.json",
+        }
+    )
+
+
+@dataset_app.command("quality")
+def dataset_quality() -> None:
+    payload = run_dataset_quality()
+    print(
+        {
+            "status": payload["status"],
+            "failures": payload["failures"],
+            "warnings_count": len(payload["warnings"]),
+            "report": "reports/datasets/latest_quality.json",
+        }
+    )
+    if payload["status"] == "FAIL":
+        raise typer.Exit(1)
+
+
+@dataset_app.command("splits")
+def dataset_splits() -> None:
+    payload = build_dataset_splits()
+    print(
+        {
+            "status": payload["status"],
+            "items": len(payload["items"]),
+            "report": "reports/datasets/latest_splits.json",
+        }
+    )
+
+
+@dataset_app.command("leakage-check")
+def dataset_leakage_check() -> None:
+    payload = run_leakage_checks()
+    print(
+        {
+            "status": payload["status"],
+            "target_leakage": payload["target_leakage"],
+            "report": "reports/datasets/latest_leakage_check.json",
+        }
+    )
+    if payload["status"] == "FAIL":
+        raise typer.Exit(1)
+
+
+@dataset_app.command("evidence-score")
+def dataset_evidence_score() -> None:
+    payload = calculate_evidence_score()
+    print(
+        {
+            "status": payload["final_evidence_status"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/evidence/latest_evidence_score.json",
+        }
+    )
+
+
+@evidence_app.command("research-report")
+def evidence_research_report() -> None:
+    payload = write_research_evidence_report()
+    print(
+        {
+            "status": payload["evidence_score"]["final_evidence_status"],
+            "quality": payload["dataset_quality_summary"]["status"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/evidence/latest_research_evidence_report.md",
+        }
+    )
 
 
 @features_app.command("build")

@@ -37,3 +37,5 @@ Reports are written under `reports/strategy/`. They are disposable research arti
 ## Promotion
 
 Phase 7 may label strategies as research-only, shadow candidates, or dry-run candidates. Live readiness remains blocked as `TINY_LIVE_BLOCKED`.
+
+Phase 8 adds dataset and evidence scoring inputs to the leaderboard. Weak dataset coverage, leakage failures, low regime coverage, and evidence weakness penalize research ranking.

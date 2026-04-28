@@ -223,6 +223,34 @@ if "%TARGET%"=="strategy-research-report" (
   python -m quant_os.cli strategy research-report
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="dataset-seed-expanded" (
+  python -m quant_os.cli dataset seed-expanded
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="dataset-manifest" (
+  python -m quant_os.cli dataset manifest
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="dataset-quality" (
+  python -m quant_os.cli dataset quality
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="dataset-splits" (
+  python -m quant_os.cli dataset splits
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="dataset-leakage-check" (
+  python -m quant_os.cli dataset leakage-check
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="dataset-evidence-score" (
+  python -m quant_os.cli dataset evidence-score
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="research-evidence-report" (
+  python -m quant_os.cli evidence research-report
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="phase3-smoke" (
   python -m quant_os.cli freqtrade generate-config
   if errorlevel 1 exit /b !ERRORLEVEL!
@@ -323,6 +351,30 @@ if "%TARGET%"=="phase7-smoke" (
   python -m quant_os.cli strategy leaderboard
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli strategy research-report
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomous run-once
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="phase8-smoke" (
+  call "%~f0" phase7-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli dataset seed-expanded
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli dataset manifest
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli dataset quality
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli dataset splits
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli dataset leakage-check
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli dataset evidence-score
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli evidence research-report
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomous run-once
   if errorlevel 1 exit /b !ERRORLEVEL!

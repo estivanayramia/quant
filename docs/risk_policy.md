@@ -14,6 +14,8 @@ Phase 6 trade artifact parsers also fail closed on live-mode evidence, credentia
 
 Phase 7 strategy research remains downstream of deterministic risk. Candidate strategies only produce simulated candidate orders and research reports. Overfitting warnings, weak placebo margins, low trade counts, and unstable walk-forward results prevent confidence and cannot override kill switch, quarantine, or live-trading guards.
 
+Phase 8 dataset evidence scoring is an input to research confidence only. Dataset quality, split leakage, or evidence failures can penalize or block research status, but no evidence report can override deterministic risk controls or enable live trading.
+
 Every approval or rejection produces a risk decision event with reasons and a limits snapshot. The kill switch blocks all new orders. Strategy quarantine blocks all new orders from the quarantined strategy.
 
 Capital unlock is staged and conservative: shadow stability, paper stability, reconciliation tests, slippage tests, kill-switch drills, tiny notional limits, and explicit human approval are required before any future scaling.

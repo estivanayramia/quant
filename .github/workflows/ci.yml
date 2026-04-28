@@ -60,3 +60,12 @@ jobs:
           python -m quant_os.cli strategy overfit-check
           python -m quant_os.cli strategy leaderboard
           python -m quant_os.cli strategy research-report
+      - name: Dataset evidence hardening
+        run: |
+          python -m quant_os.cli dataset seed-expanded
+          python -m quant_os.cli dataset manifest
+          python -m quant_os.cli dataset quality
+          python -m quant_os.cli dataset splits
+          python -m quant_os.cli dataset leakage-check
+          python -m quant_os.cli dataset evidence-score
+          python -m quant_os.cli evidence research-report
