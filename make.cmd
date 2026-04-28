@@ -251,6 +251,42 @@ if "%TARGET%"=="research-evidence-report" (
   python -m quant_os.cli evidence research-report
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="historical-import-csv" (
+  python -m quant_os.cli historical import-csv
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="historical-normalize" (
+  python -m quant_os.cli historical normalize
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="historical-manifest" (
+  python -m quant_os.cli historical manifest
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="historical-quality" (
+  python -m quant_os.cli historical quality
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="historical-splits" (
+  python -m quant_os.cli historical splits
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="historical-evidence-score" (
+  python -m quant_os.cli historical evidence-score
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="historical-research-report" (
+  python -m quant_os.cli historical research-report
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="historical-provider-check" (
+  python -m quant_os.cli historical provider-check
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="historical-status" (
+  python -m quant_os.cli historical status
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="phase3-smoke" (
   python -m quant_os.cli freqtrade generate-config
   if errorlevel 1 exit /b !ERRORLEVEL!
@@ -375,6 +411,32 @@ if "%TARGET%"=="phase8-smoke" (
   python -m quant_os.cli dataset evidence-score
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli evidence research-report
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomous run-once
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="phase9-smoke" (
+  call "%~f0" phase8-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli historical provider-check
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli historical import-csv
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli historical normalize
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli historical manifest
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli historical quality
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli historical splits
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli historical evidence-score
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli historical research-report
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomous run-once
   if errorlevel 1 exit /b !ERRORLEVEL!

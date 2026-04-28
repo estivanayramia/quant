@@ -69,3 +69,13 @@ jobs:
           python -m quant_os.cli dataset leakage-check
           python -m quant_os.cli dataset evidence-score
           python -m quant_os.cli evidence research-report
+      - name: Historical data ingestion
+        run: |
+          python -m quant_os.cli historical provider-check
+          python -m quant_os.cli historical import-csv
+          python -m quant_os.cli historical normalize
+          python -m quant_os.cli historical manifest
+          python -m quant_os.cli historical quality
+          python -m quant_os.cli historical splits
+          python -m quant_os.cli historical evidence-score
+          python -m quant_os.cli historical research-report

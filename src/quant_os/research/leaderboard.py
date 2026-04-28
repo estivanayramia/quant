@@ -18,6 +18,7 @@ def build_strategy_leaderboard(symbol: str = "SPY") -> dict[str, Any]:
     walk_forward = run_walk_forward_validation(symbol)
     regime = run_regime_tests(symbol)
     evidence = latest_evidence_adjustment()
+    historical_context = _latest_historical_context()
     placebo_return = float(
         research["results"]["random_placebo"]["metrics"].get("total_return", 0.0)
     )
@@ -34,6 +35,7 @@ def build_strategy_leaderboard(symbol: str = "SPY") -> dict[str, Any]:
             total_return - (max_drawdown * 2.0) + trade_score + placebo_margin - stress_penalty
         )
         conservative_score -= float(evidence["evidence_penalty"])
+        conservative_score -= historical_context["synthetic_only_penalty"]
         if strategy_id == "no_trade":
             status = "REJECTED"
             conservative_score = -1.0
@@ -60,7 +62,9 @@ def build_strategy_leaderboard(symbol: str = "SPY") -> dict[str, Any]:
                     "placebo_margin": placebo_margin,
                     "stress_penalty": -stress_penalty,
                     "evidence_penalty": -float(evidence["evidence_penalty"]),
+                    "synthetic_only_penalty": -historical_context["synthetic_only_penalty"],
                 },
+                "data_source_type": historical_context["data_source_type"],
             }
         )
     entries.sort(key=lambda item: item["conservative_score"], reverse=True)
@@ -80,6 +84,8 @@ def build_strategy_leaderboard(symbol: str = "SPY") -> dict[str, Any]:
         "overfit_status": overfit["status"],
         "evidence_status": evidence["evidence_status"],
         "evidence_penalty": evidence["evidence_penalty"],
+        "data_source_type": historical_context["data_source_type"],
+        "synthetic_only_penalty": historical_context["synthetic_only_penalty"],
         "live_promotion_status": "TINY_LIVE_BLOCKED",
         "ranking_note": "Ranking is conservative and is not sorted by total return alone.",
     }
@@ -108,3 +114,16 @@ def _write_leaderboard(payload: dict[str, Any]) -> None:
             f"score={entry['conservative_score']:.6f} live_ready={entry['live_ready']}"
         )
     (root / "latest_leaderboard.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _latest_historical_context() -> dict[str, Any]:
+    path = Path("reports/historical/evidence/latest_historical_evidence_score.json")
+    if not path.exists():
+        return {"data_source_type": "synthetic_only", "synthetic_only_penalty": 0.05}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {"data_source_type": "synthetic_only", "synthetic_only_penalty": 0.05}
+    status = str(payload.get("final_evidence_status", "HISTORICAL_INSUFFICIENT"))
+    penalty = 0.0 if status not in {"HISTORICAL_INSUFFICIENT", "HISTORICAL_WEAK"} else 0.025
+    return {"data_source_type": "historical_local_cache", "synthetic_only_penalty": penalty}

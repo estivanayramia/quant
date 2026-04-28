@@ -16,6 +16,7 @@ build/
 
 data/demo/
 data/demo_expanded/
+data/historical/
 data/events/
 data/read_models/
 freqtrade/user_data/logs/*

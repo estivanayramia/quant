@@ -16,6 +16,8 @@ Phase 7 strategy research remains downstream of deterministic risk. Candidate st
 
 Phase 8 dataset evidence scoring is an input to research confidence only. Dataset quality, split leakage, or evidence failures can penalize or block research status, but no evidence report can override deterministic risk controls or enable live trading.
 
+Phase 9 historical imports add source, license, quality, split, leakage, and evidence checks. Historical data can improve research evidence but cannot override risk controls, enable live trading, or authorize real broker/exchange keys.
+
 Every approval or rejection produces a risk decision event with reasons and a limits snapshot. The kill switch blocks all new orders. Strategy quarantine blocks all new orders from the quarantined strategy.
 
 Capital unlock is staged and conservative: shadow stability, paper stability, reconciliation tests, slippage tests, kill-switch drills, tiny notional limits, and explicit human approval are required before any future scaling.

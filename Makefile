@@ -1,4 +1,4 @@
-.PHONY: install format lint test test-cov seed-demo validate-data backtest tournament shadow rebuild report smoke autonomous autonomous-daemon autonomous-status watchdog drift alerts-test freqtrade-config freqtrade-validate freqtrade-export-strategy freqtrade-status freqtrade-command-preview freqtrade-manifest freqtrade-dry-run-check freqtrade-docker-check freqtrade-dry-run-start freqtrade-dry-run-stop freqtrade-dry-run-logs freqtrade-dry-run-status freqtrade-dry-run-report freqtrade-ingest-logs freqtrade-reconcile freqtrade-operational-manifest freqtrade-artifacts-scan freqtrade-trades-ingest freqtrade-trades-normalize freqtrade-trade-reconcile freqtrade-trade-report dryrun-history dryrun-compare dryrun-divergence-check dryrun-monitor-report dryrun-promote-check dryrun-status dryrun-trade-reconcile dryrun-trade-report features-build strategy-research strategy-ablation strategy-walk-forward strategy-regime-tests strategy-overfit-check strategy-leaderboard strategy-research-report dataset-seed-expanded dataset-manifest dataset-quality dataset-splits dataset-leakage-check dataset-evidence-score research-evidence-report phase3-smoke phase4-smoke phase5-smoke phase6-smoke phase7-smoke phase8-smoke clean
+.PHONY: install format lint test test-cov seed-demo validate-data backtest tournament shadow rebuild report smoke autonomous autonomous-daemon autonomous-status watchdog drift alerts-test freqtrade-config freqtrade-validate freqtrade-export-strategy freqtrade-status freqtrade-command-preview freqtrade-manifest freqtrade-dry-run-check freqtrade-docker-check freqtrade-dry-run-start freqtrade-dry-run-stop freqtrade-dry-run-logs freqtrade-dry-run-status freqtrade-dry-run-report freqtrade-ingest-logs freqtrade-reconcile freqtrade-operational-manifest freqtrade-artifacts-scan freqtrade-trades-ingest freqtrade-trades-normalize freqtrade-trade-reconcile freqtrade-trade-report dryrun-history dryrun-compare dryrun-divergence-check dryrun-monitor-report dryrun-promote-check dryrun-status dryrun-trade-reconcile dryrun-trade-report features-build strategy-research strategy-ablation strategy-walk-forward strategy-regime-tests strategy-overfit-check strategy-leaderboard strategy-research-report dataset-seed-expanded dataset-manifest dataset-quality dataset-splits dataset-leakage-check dataset-evidence-score research-evidence-report historical-import-csv historical-normalize historical-manifest historical-quality historical-splits historical-evidence-score historical-research-report historical-provider-check historical-status phase3-smoke phase4-smoke phase5-smoke phase6-smoke phase7-smoke phase8-smoke phase9-smoke clean
 
 install:
 	python -m pip install -e ".[dev]"
@@ -186,6 +186,33 @@ dataset-evidence-score:
 research-evidence-report:
 	python -m quant_os.cli evidence research-report
 
+historical-import-csv:
+	python -m quant_os.cli historical import-csv
+
+historical-normalize:
+	python -m quant_os.cli historical normalize
+
+historical-manifest:
+	python -m quant_os.cli historical manifest
+
+historical-quality:
+	python -m quant_os.cli historical quality
+
+historical-splits:
+	python -m quant_os.cli historical splits
+
+historical-evidence-score:
+	python -m quant_os.cli historical evidence-score
+
+historical-research-report:
+	python -m quant_os.cli historical research-report
+
+historical-provider-check:
+	python -m quant_os.cli historical provider-check
+
+historical-status:
+	python -m quant_os.cli historical status
+
 phase3-smoke:
 	python -m quant_os.cli freqtrade generate-config
 	python -m quant_os.cli freqtrade export-strategy
@@ -254,6 +281,20 @@ phase8-smoke:
 	python -m quant_os.cli dataset leakage-check
 	python -m quant_os.cli dataset evidence-score
 	python -m quant_os.cli evidence research-report
+	python -m quant_os.cli autonomous run-once
+	python -m quant_os.cli smoke
+	python -m pytest
+
+phase9-smoke:
+	$(MAKE) phase8-smoke
+	python -m quant_os.cli historical provider-check
+	python -m quant_os.cli historical import-csv
+	python -m quant_os.cli historical normalize
+	python -m quant_os.cli historical manifest
+	python -m quant_os.cli historical quality
+	python -m quant_os.cli historical splits
+	python -m quant_os.cli historical evidence-score
+	python -m quant_os.cli historical research-report
 	python -m quant_os.cli autonomous run-once
 	python -m quant_os.cli smoke
 	python -m pytest
