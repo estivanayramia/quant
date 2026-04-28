@@ -125,6 +125,24 @@ make phase6-smoke
 
 If no structured Freqtrade dry-run trade artifacts exist, the system reports `UNAVAILABLE` or `WARN` rather than inventing trade evidence.
 
+## Strategy Research Upgrade
+
+Phase 7 adds deterministic feature building, market-structure feature interfaces, candidate strategies, ablation, walk-forward validation, regime testing, overfitting checks, and a conservative strategy leaderboard:
+
+```bash
+make features-build
+make strategy-research
+make strategy-ablation
+make strategy-walk-forward
+make strategy-regime-tests
+make strategy-overfit-check
+make strategy-leaderboard
+make strategy-research-report
+make phase7-smoke
+```
+
+ICT/SMC concepts are represented only as measurable research features, not assumed edge. No Phase 7 strategy can become live-ready; live promotion remains `TINY_LIVE_BLOCKED`.
+
 ## Repository Structure
 
 - `src/quant_os/core`: framework-independent primitives, events, commands, errors, IDs, time.
@@ -154,10 +172,11 @@ The research control plane can generate candidate orders and reports. The execut
 - Phase 4: Freqtrade dry-run operational runner, log ingestion, and reconciliation.
 - Phase 5: Dry-run comparison monitoring, local history, divergence checks, and strict live-blocked promotion readiness.
 - Phase 6: Freqtrade dry-run trade artifact ingestion and trade-level reconciliation, still with live promotion blocked.
-- Phase 7: tiny live crypto canary through Freqtrade only after extensive gates.
+- Phase 7: Strategy research upgrade, market-structure features, ablation, walk-forward validation, overfitting controls, and conservative leaderboard.
 - Phase 8: Telegram/Discord alerts only, with no order authority.
 - Phase 9: AI provider mesh for research/reporting only.
-- Phase 10: NautilusTrader evaluation if the simpler stack becomes a bottleneck.
+- Phase 10: Tiny live crypto canary only after extensive future gates.
+- Phase 11: NautilusTrader evaluation if the simpler stack becomes a bottleneck.
 
 ## Live Trading Disclaimer
 

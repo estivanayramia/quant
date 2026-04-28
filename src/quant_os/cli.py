@@ -17,6 +17,7 @@ from quant_os.data.loaders import load_yaml
 from quant_os.data.quality import validate_ohlcv
 from quant_os.data.warehouse import ensure_local_dirs
 from quant_os.domain.strategy import StrategyRecord
+from quant_os.features.feature_report import write_feature_report
 from quant_os.governance.registry import StrategyRegistry
 from quant_os.integrations.freqtrade.artifact_scanner import scan_freqtrade_artifacts
 from quant_os.integrations.freqtrade.config_writer import write_freqtrade_dry_run_config
@@ -44,8 +45,14 @@ from quant_os.ops.freqtrade_reporting import (
 from quant_os.ops.reporting import generate_daily_report
 from quant_os.projections.rebuild import rebuild_read_models as rebuild_read_models_projection
 from quant_os.research.backtest import run_backtest
+from quant_os.research.leaderboard import build_strategy_leaderboard
+from quant_os.research.overfit_checks import run_overfit_checks
+from quant_os.research.regime_tests import run_regime_tests
+from quant_os.research.research_report import run_strategy_research, write_strategy_research_report
 from quant_os.research.strategies import baseline_ma_candidates
+from quant_os.research.strategy_ablation import run_strategy_ablation
 from quant_os.research.tournament import run_tournament
+from quant_os.research.walk_forward import run_walk_forward_validation
 from quant_os.risk.firewall import RiskFirewall
 from quant_os.risk.limits import RiskLimits
 from quant_os.security.live_trading_guard import live_trading_guard
@@ -53,10 +60,12 @@ from quant_os.watchdog.health_checks import run_watchdog
 
 app = typer.Typer(help="Local deterministic QuantOps simulation foundation.")
 autonomous_app = typer.Typer(help="Autonomous safe-mode runbooks.")
+features_app = typer.Typer(help="Deterministic feature-building commands.")
 strategy_app = typer.Typer(help="Strategy governance commands.")
 freqtrade_app = typer.Typer(help="Freqtrade dry-run-only commands.")
 dryrun_app = typer.Typer(help="Dry-run comparison monitoring commands.")
 app.add_typer(autonomous_app, name="autonomous")
+app.add_typer(features_app, name="features")
 app.add_typer(strategy_app, name="strategy")
 app.add_typer(freqtrade_app, name="freqtrade")
 app.add_typer(dryrun_app, name="dryrun")
@@ -473,6 +482,19 @@ def dryrun_trade_report() -> None:
     freqtrade_trade_report()
 
 
+@features_app.command("build")
+def features_build() -> None:
+    payload = write_feature_report()
+    print(
+        {
+            "features_built": True,
+            "rows": payload["rows"],
+            "report": payload["report_path"],
+            "live_trading_enabled": False,
+        }
+    )
+
+
 @autonomous_app.command("run-once")
 def autonomous_run_once(runbook: str = "full_safe_autonomous_cycle") -> None:
     state = Supervisor().run_once(runbook)
@@ -533,6 +555,81 @@ def strategy_status(strategy_id: str) -> None:
     if record is None:
         raise typer.BadParameter(f"unknown strategy {strategy_id}")
     print(record.model_dump(mode="json"))
+
+
+@strategy_app.command("research")
+def strategy_research(symbol: str = "SPY") -> None:
+    payload = run_strategy_research(symbol)
+    print(
+        {
+            "status": payload["status"],
+            "strategies_tested": len(payload["results"]),
+            "report": "reports/strategy/research/latest_research.json",
+            "live_promotion_status": payload["live_promotion_status"],
+        }
+    )
+
+
+@strategy_app.command("ablation")
+def strategy_ablation(symbol: str = "SPY") -> None:
+    payload = run_strategy_ablation(symbol)
+    print({"status": payload["status"], "report": "reports/strategy/ablation/latest_ablation.json"})
+
+
+@strategy_app.command("walk-forward")
+def strategy_walk_forward(symbol: str = "SPY") -> None:
+    payload = run_walk_forward_validation(symbol)
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/strategy/walk_forward/latest_walk_forward.json",
+        }
+    )
+
+
+@strategy_app.command("regime-tests")
+def strategy_regime_tests(symbol: str = "SPY") -> None:
+    payload = run_regime_tests(symbol)
+    print(
+        {"status": payload["status"], "report": "reports/strategy/regime/latest_regime_tests.json"}
+    )
+
+
+@strategy_app.command("overfit-check")
+def strategy_overfit_check(symbol: str = "SPY") -> None:
+    payload = run_overfit_checks(symbol)
+    print(
+        {
+            "status": payload["status"],
+            "warnings": payload["warnings"],
+            "report": "reports/strategy/overfit/latest_overfit_check.json",
+        }
+    )
+
+
+@strategy_app.command("leaderboard")
+def strategy_leaderboard(symbol: str = "SPY") -> None:
+    payload = build_strategy_leaderboard(symbol)
+    print(
+        {
+            "status": payload["status"],
+            "top_strategy": payload["top_strategy"],
+            "report": "reports/strategy/leaderboard/latest_leaderboard.json",
+            "live_promotion_status": payload["live_promotion_status"],
+        }
+    )
+
+
+@strategy_app.command("research-report")
+def strategy_research_report() -> None:
+    payload = write_strategy_research_report()
+    print(
+        {
+            "report": "reports/strategy/latest_research_report.md",
+            "strategies_tested": len(payload["strategy_list"]),
+            "live_promotion_status": payload["live_promotion_status"],
+        }
+    )
 
 
 @app.command()

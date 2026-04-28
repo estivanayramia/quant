@@ -50,3 +50,13 @@ jobs:
           python -m quant_os.cli freqtrade trades-normalize
           python -m quant_os.cli freqtrade trade-reconcile
           python -m quant_os.cli freqtrade trade-report
+      - name: Strategy research upgrade
+        run: |
+          python -m quant_os.cli features build
+          python -m quant_os.cli strategy research
+          python -m quant_os.cli strategy ablation
+          python -m quant_os.cli strategy walk-forward
+          python -m quant_os.cli strategy regime-tests
+          python -m quant_os.cli strategy overfit-check
+          python -m quant_os.cli strategy leaderboard
+          python -m quant_os.cli strategy research-report

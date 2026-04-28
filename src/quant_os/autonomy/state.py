@@ -51,6 +51,7 @@ class AutonomousRunState(BaseModel):
     freqtrade_summary: dict[str, Any] = Field(default_factory=dict)
     dryrun_monitoring_summary: dict[str, Any] = Field(default_factory=dict)
     freqtrade_trade_artifacts_summary: dict[str, Any] = Field(default_factory=dict)
+    strategy_research_summary: dict[str, Any] = Field(default_factory=dict)
     report_paths: dict[str, str] = Field(default_factory=dict)
 
 

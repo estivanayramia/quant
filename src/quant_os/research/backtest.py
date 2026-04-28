@@ -9,6 +9,7 @@ from quant_os.core.events import EventType, make_event
 from quant_os.domain.fills import Fill
 from quant_os.execution.engine import ExecutionEngine
 from quant_os.ports.event_store import EventStorePort
+from quant_os.research.candidate_strategies import candidate_orders_for_strategy
 from quant_os.research.metrics import calculate_metrics
 from quant_os.research.strategies import baseline_ma_candidates, placebo_random_candidates
 from quant_os.risk.firewall import RiskFirewall
@@ -105,5 +106,4 @@ def _candidates_for_strategy(
         return baseline_ma_candidates(frame, strategy_id=strategy_id)
     if strategy == "placebo_random":
         return placebo_random_candidates(frame, strategy_id=strategy_id, seed=seed)
-    msg = f"unknown strategy {strategy}"
-    raise ValueError(msg)
+    return candidate_orders_for_strategy(frame, strategy, strategy_id=strategy_id, seed=seed)
