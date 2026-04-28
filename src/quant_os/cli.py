@@ -25,6 +25,11 @@ from quant_os.integrations.freqtrade.log_ingestion import ingest_freqtrade_logs
 from quant_os.integrations.freqtrade.runner import FreqtradeRunner
 from quant_os.integrations.freqtrade.strategy_exporter import export_quant_os_strategy
 from quant_os.integrations.telegram.alert_adapter import TelegramAlertAdapter
+from quant_os.monitoring.divergence import check_dryrun_divergence
+from quant_os.monitoring.dryrun_comparison import build_dryrun_comparison
+from quant_os.monitoring.dryrun_history import append_history_record
+from quant_os.monitoring.monitoring_report import generate_dryrun_monitoring_report
+from quant_os.monitoring.promotion_readiness import check_promotion_readiness
 from quant_os.ops.freqtrade_reporting import (
     write_freqtrade_dry_run_report,
     write_freqtrade_status_report,
@@ -43,9 +48,11 @@ app = typer.Typer(help="Local deterministic QuantOps simulation foundation.")
 autonomous_app = typer.Typer(help="Autonomous safe-mode runbooks.")
 strategy_app = typer.Typer(help="Strategy governance commands.")
 freqtrade_app = typer.Typer(help="Freqtrade dry-run-only commands.")
+dryrun_app = typer.Typer(help="Dry-run comparison monitoring commands.")
 app.add_typer(autonomous_app, name="autonomous")
 app.add_typer(strategy_app, name="strategy")
 app.add_typer(freqtrade_app, name="freqtrade")
+app.add_typer(dryrun_app, name="dryrun")
 
 
 def _event_store() -> JsonlEventStore:
@@ -299,6 +306,86 @@ def freqtrade_operational_manifest() -> None:
         DockerOps().get_container_status(),
     )
     print({"manifest": str(path), "live_trading_enabled": False})
+
+
+@dryrun_app.command("history")
+def dryrun_history() -> None:
+    payload = append_history_record()
+    print(
+        {
+            "history": "reports/dryrun/latest_history.json",
+            "records_count": payload["records_count"],
+            "live_trading_enabled": False,
+        }
+    )
+
+
+@dryrun_app.command("compare")
+def dryrun_compare() -> None:
+    payload = build_dryrun_comparison()
+    print(
+        {
+            "comparison": payload["status"],
+            "report": "reports/dryrun/latest_comparison.json",
+            "live_trading_enabled": False,
+        }
+    )
+    if payload["status"] == "FAIL":
+        raise typer.Exit(1)
+
+
+@dryrun_app.command("divergence-check")
+def dryrun_divergence_check() -> None:
+    payload = check_dryrun_divergence()
+    print(
+        {
+            "divergence": payload["status"],
+            "score": payload["score"],
+            "report": "reports/dryrun/latest_divergence.json",
+        }
+    )
+    if payload["status"] == "FAIL":
+        raise typer.Exit(1)
+
+
+@dryrun_app.command("monitor-report")
+def dryrun_monitor_report() -> None:
+    payload = generate_dryrun_monitoring_report()
+    print(
+        {
+            "monitoring": payload["status"],
+            "report": payload["latest_report_path"],
+            "live_promotion_status": payload["live_promotion_status"],
+        }
+    )
+    if payload["status"] == "FAIL":
+        raise typer.Exit(1)
+
+
+@dryrun_app.command("promote-check")
+def dryrun_promote_check() -> None:
+    payload = check_promotion_readiness()
+    print(
+        {
+            "promotion": payload["status"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "live_eligible": payload["live_eligible"],
+        }
+    )
+
+
+@dryrun_app.command("status")
+def dryrun_status() -> None:
+    payload = generate_dryrun_monitoring_report()
+    print(
+        {
+            "status": payload["status"],
+            "comparison": payload["latest_comparison_status"],
+            "divergence": payload["latest_divergence_status"],
+            "promotion": payload["latest_promotion_status"],
+            "live_promotion_status": payload["live_promotion_status"],
+        }
+    )
 
 
 @autonomous_app.command("run-once")

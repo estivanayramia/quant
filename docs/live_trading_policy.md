@@ -6,6 +6,8 @@ Phase 3 adds a Freqtrade dry-run container scaffold only. It must keep `dry_run:
 
 Phase 4 may start and stop a Docker dry-run container only through explicit user commands. The autonomous daemon must not start Freqtrade by default.
 
+Phase 5 adds dry-run comparison monitoring only. It cannot enable live trading, cannot set `dry_run` to false, cannot use exchange keys, and cannot promote a strategy to live.
+
 Future tiny-live gates require weeks of shadow and paper stability, reconciliation tests, slippage tests, kill-switch tests, explicit API-key rules, no withdrawal permissions, recommended IP allowlists, tiny max order notional, and max open positions of 1.
 
 Tiny live crypto may only be considered after the gates and through a later Freqtrade path. Equities live trading may only be considered after broker restrictions, order rules, and session behavior are verified.

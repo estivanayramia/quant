@@ -95,6 +95,21 @@ make phase4-smoke
 
 Container start remains explicit: `make freqtrade-dry-run-start`.
 
+## Dry-Run Comparison Monitoring
+
+Phase 5 adds local dry-run history, comparison metrics, divergence checks, artifact freshness checks, and strict promotion readiness:
+
+```bash
+make dryrun-history
+make dryrun-compare
+make dryrun-divergence-check
+make dryrun-monitor-report
+make dryrun-promote-check
+make phase5-smoke
+```
+
+This remains dry-run evidence only. Live promotion reports `TINY_LIVE_BLOCKED`; the system is not live-trading-ready.
+
 ## Repository Structure
 
 - `src/quant_os/core`: framework-independent primitives, events, commands, errors, IDs, time.
@@ -121,8 +136,8 @@ The research control plane can generate candidate orders and reports. The execut
 - Phase 1: local deterministic simulation foundation, event replay, risk firewall, mocked AI, mocked execution, reports.
 - Phase 2: improved shadow mode, paper-mode abstraction, slippage/spread simulation, data drift checks, report history.
 - Phase 3: Freqtrade dry-run adapter for crypto, still no live trading.
-- Phase 4: Lumibot + Alpaca Paper adapter for equities paper trading.
-- Phase 5: QuantConnect/LEAN external validation lane.
+- Phase 4: Freqtrade dry-run operational runner, log ingestion, and reconciliation.
+- Phase 5: Dry-run comparison monitoring, local history, divergence checks, and strict live-blocked promotion readiness.
 - Phase 6: tiny live crypto canary through Freqtrade only after extensive gates.
 - Phase 7: Telegram/Discord alerts only, with no order authority.
 - Phase 8: AI provider mesh for research/reporting only.

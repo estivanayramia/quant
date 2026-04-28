@@ -8,6 +8,7 @@ from typing import Any
 
 from quant_os.adapters.event_store_jsonl import JsonlEventStore
 from quant_os.adapters.market_data_parquet import LocalParquetMarketData
+from quant_os.autonomy.dryrun_monitoring_tasks import dryrun_monitoring_status
 from quant_os.autonomy.freqtrade_tasks import freqtrade_safe_lane_status
 from quant_os.core.commands import CandidateOrder
 from quant_os.core.events import EventType, make_event
@@ -186,6 +187,7 @@ def task_callable(name: str, event_store: JsonlEventStore) -> Callable[[], dict[
         "rebuild_read_models": lambda: rebuild_models(event_store),
         "run_drift_checks": lambda: run_drift_checks(event_store),
         "freqtrade_safe_lane_status": freqtrade_safe_lane_status,
+        "dryrun_monitoring_status": lambda: dryrun_monitoring_status(event_store),
         "run_watchdog_health_checks": lambda: run_watchdog_checks(event_store),
         "generate_report": lambda: generate_reports(event_store),
         "send_mock_alert": lambda: send_mock_alert("Autonomous safe run completed."),

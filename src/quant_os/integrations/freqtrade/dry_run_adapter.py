@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 from dataclasses import dataclass
@@ -78,6 +79,8 @@ class FreqtradeDryRunAdapter:
             "strategy_path": self.strategy_path,
             "docker_command_preview": self.build_docker_command(),
             "safety_status": status,
+            "config_sha256": _sha256(Path(self.config_path)),
+            "strategy_sha256": _sha256(Path(self.strategy_path)),
             "generated_at": datetime.now(UTC).isoformat(),
             "mode": "dry_run",
             "live_trading_enabled": False,
@@ -86,3 +89,9 @@ class FreqtradeDryRunAdapter:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
         return path
+
+
+def _sha256(path: Path) -> str | None:
+    if not path.exists():
+        return None
+    return hashlib.sha256(path.read_bytes()).hexdigest()

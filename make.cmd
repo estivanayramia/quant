@@ -139,6 +139,30 @@ if "%TARGET%"=="freqtrade-operational-manifest" (
   python -m quant_os.cli freqtrade operational-manifest
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="dryrun-history" (
+  python -m quant_os.cli dryrun history
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="dryrun-compare" (
+  python -m quant_os.cli dryrun compare
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="dryrun-divergence-check" (
+  python -m quant_os.cli dryrun divergence-check
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="dryrun-monitor-report" (
+  python -m quant_os.cli dryrun monitor-report
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="dryrun-promote-check" (
+  python -m quant_os.cli dryrun promote-check
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="dryrun-status" (
+  python -m quant_os.cli dryrun status
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="phase3-smoke" (
   python -m quant_os.cli freqtrade generate-config
   if errorlevel 1 exit /b !ERRORLEVEL!
@@ -173,6 +197,26 @@ if "%TARGET%"=="phase4-smoke" (
   python -m quant_os.cli freqtrade reconcile
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli freqtrade dry-run-status
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomous run-once
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="phase5-smoke" (
+  call "%~f0" phase4-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli dryrun history
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli dryrun compare
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli dryrun divergence-check
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli dryrun monitor-report
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli dryrun promote-check
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomous run-once
   if errorlevel 1 exit /b !ERRORLEVEL!
