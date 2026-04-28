@@ -63,6 +63,34 @@ def local_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         yaml.safe_dump({"watchdog": {"require_live_trading_disabled": True}}),
         encoding="utf-8",
     )
+    Path("configs/freqtrade.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "enabled": False,
+                "mode": "dry_run",
+                "dry_run": True,
+                "live_trading_allowed": False,
+                "exchange": "kraken",
+                "stake_currency": "USDT",
+                "stake_amount": 10,
+                "max_open_trades": 1,
+                "trading_mode": "spot",
+                "margin_mode": "",
+                "allow_futures": False,
+                "allow_margin": False,
+                "allow_shorting": False,
+                "allow_leverage": False,
+                "timeframe": "5m",
+                "strategy_name": "QuantOSDryRunStrategy",
+                "api_server_enabled": False,
+                "telegram_enabled": False,
+                "force_entry_enable": False,
+                "initial_state": "stopped",
+                "pairs": ["BTC/USDT", "ETH/USDT"],
+            }
+        ),
+        encoding="utf-8",
+    )
     Path("configs/strategies.yaml").write_text(
         yaml.safe_dump(
             {

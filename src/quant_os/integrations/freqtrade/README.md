@@ -1,6 +1,12 @@
-# Freqtrade Scaffold
+# Freqtrade Dry-Run Scaffold
 
-Milestone 2 provides only a dry-run configuration writer. It does not install, start, or connect Freqtrade. Generated configs keep `dry_run: true`, blank keys, and `live_trading_allowed: false`.
+Phase 3 provides a Docker-profile Freqtrade dry-run lane. It does not install, start, or connect Freqtrade during tests. Generated configs keep `dry_run: true`, blank keys, spot-only trading, disabled Telegram/API server, and `live_trading_allowed: false`.
 
-Future Docker Compose profiles may wrap Freqtrade dry-run after explicit review.
+Manual preview:
+
+```bash
+docker compose --profile freqtrade-dry-run run --rm freqtrade-dry-run --help
+```
+
+Do not add exchange keys to generated configs.
 

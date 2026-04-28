@@ -75,6 +75,52 @@ if "%TARGET%"=="alerts-test" (
   python -m quant_os.cli alerts-test
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="freqtrade-config" (
+  python -m quant_os.cli freqtrade generate-config
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="freqtrade-validate" (
+  python -m quant_os.cli freqtrade validate
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="freqtrade-export-strategy" (
+  python -m quant_os.cli freqtrade export-strategy
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="freqtrade-status" (
+  python -m quant_os.cli freqtrade status
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="freqtrade-command-preview" (
+  python -m quant_os.cli freqtrade command-preview
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="freqtrade-manifest" (
+  python -m quant_os.cli freqtrade manifest
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="freqtrade-dry-run-check" (
+  python -m quant_os.cli freqtrade dry-run-check
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="phase3-smoke" (
+  python -m quant_os.cli freqtrade generate-config
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli freqtrade export-strategy
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli freqtrade validate
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli freqtrade dry-run-check
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli freqtrade status
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomous run-once
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="smoke" (
   python -m quant_os.cli smoke
   if errorlevel 1 exit /b !ERRORLEVEL!

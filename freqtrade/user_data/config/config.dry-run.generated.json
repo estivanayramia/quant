@@ -1,0 +1,39 @@
+{
+  "api_server": {
+    "enabled": false
+  },
+  "bot_name": "quant-os-dry-run",
+  "cancel_open_orders_on_exit": true,
+  "dry_run": true,
+  "exchange": {
+    "key": "",
+    "name": "kraken",
+    "pair_blacklist": [],
+    "pair_whitelist": [
+      "BTC/USDT",
+      "ETH/USDT"
+    ],
+    "password": "",
+    "secret": "",
+    "uid": ""
+  },
+  "force_entry_enable": false,
+  "futures": false,
+  "initial_state": "stopped",
+  "internals": {
+    "process_throttle_secs": 5
+  },
+  "leverage": 1,
+  "live_trading_allowed": false,
+  "margin_mode": "",
+  "max_open_trades": 1,
+  "shorting": false,
+  "stake_amount": 10.0,
+  "stake_currency": "USDT",
+  "strategy": "QuantOSDryRunStrategy",
+  "telegram": {
+    "enabled": false
+  },
+  "timeframe": "5m",
+  "trading_mode": "spot"
+}

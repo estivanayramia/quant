@@ -1,4 +1,4 @@
-.PHONY: install format lint test test-cov seed-demo validate-data backtest tournament shadow rebuild report smoke autonomous autonomous-daemon autonomous-status watchdog drift alerts-test clean
+.PHONY: install format lint test test-cov seed-demo validate-data backtest tournament shadow rebuild report smoke autonomous autonomous-daemon autonomous-status watchdog drift alerts-test freqtrade-config freqtrade-validate freqtrade-export-strategy freqtrade-status freqtrade-command-preview freqtrade-manifest freqtrade-dry-run-check phase3-smoke clean
 
 install:
 	python -m pip install -e ".[dev]"
@@ -53,6 +53,37 @@ drift:
 
 alerts-test:
 	python -m quant_os.cli alerts-test
+
+freqtrade-config:
+	python -m quant_os.cli freqtrade generate-config
+
+freqtrade-validate:
+	python -m quant_os.cli freqtrade validate
+
+freqtrade-export-strategy:
+	python -m quant_os.cli freqtrade export-strategy
+
+freqtrade-status:
+	python -m quant_os.cli freqtrade status
+
+freqtrade-command-preview:
+	python -m quant_os.cli freqtrade command-preview
+
+freqtrade-manifest:
+	python -m quant_os.cli freqtrade manifest
+
+freqtrade-dry-run-check:
+	python -m quant_os.cli freqtrade dry-run-check
+
+phase3-smoke:
+	python -m quant_os.cli freqtrade generate-config
+	python -m quant_os.cli freqtrade export-strategy
+	python -m quant_os.cli freqtrade validate
+	python -m quant_os.cli freqtrade dry-run-check
+	python -m quant_os.cli freqtrade status
+	python -m quant_os.cli autonomous run-once
+	python -m quant_os.cli smoke
+	python -m pytest
 
 smoke:
 	python -m quant_os.cli smoke

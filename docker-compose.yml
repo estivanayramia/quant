@@ -11,3 +11,21 @@ services:
       AI_PROVIDER: mock
       BROKER_PROVIDER: simulated
 
+  freqtrade-dry-run:
+    image: freqtradeorg/freqtrade:stable
+    profiles:
+      - freqtrade-dry-run
+    working_dir: /freqtrade
+    volumes:
+      - ./freqtrade/user_data:/freqtrade/user_data
+    command:
+      - trade
+      - --config
+      - /freqtrade/user_data/config/config.dry-run.generated.json
+      - --strategy
+      - QuantOSDryRunStrategy
+      - --strategy-path
+      - /freqtrade/user_data/strategies
+    environment:
+      ENABLE_LIVE_TRADING: "false"
+

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 
 import yaml
@@ -24,7 +25,11 @@ def test_no_real_api_keys_or_live_default(local_project):
 def test_no_real_broker_sdks_imported():
     blocked = ["alpaca", "freqtrade", "nautilus_trader", "quantconnect", "ccxt"]
     source_files = list(Path("src").rglob("*.py"))
-    combined = "\n".join(path.read_text(encoding="utf-8").lower() for path in source_files)
-    for name in blocked:
-        assert f"import {name}" not in combined
-        assert f"from {name}" not in combined
+    for path in source_files:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    assert alias.name.split(".")[0] not in blocked
+            if isinstance(node, ast.ImportFrom) and node.module:
+                assert node.module.split(".")[0] not in blocked

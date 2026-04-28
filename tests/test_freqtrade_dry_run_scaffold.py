@@ -13,6 +13,8 @@ def test_freqtrade_config_is_dry_run_only(local_project):
     assert payload["live_trading_allowed"] is False
     assert payload["exchange"]["key"] == ""
     assert payload["exchange"]["secret"] == ""
+    assert payload["telegram"]["enabled"] is False
+    assert payload["api_server"]["enabled"] is False
 
 
 def test_freqtrade_adapter_disabled_by_default():

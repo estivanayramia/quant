@@ -32,6 +32,7 @@ RUNBOOKS: dict[str, list[str]] = {
         "run_tournament",
         "rebuild_read_models",
         "run_drift_checks",
+        "freqtrade_safe_lane_status",
         "generate_report",
     ],
     "shadow_cycle": [
@@ -71,6 +72,7 @@ RUNBOOKS: dict[str, list[str]] = {
         "run_shadow_mode",
         "rebuild_read_models",
         "run_drift_checks",
+        "freqtrade_safe_lane_status",
         "run_watchdog_health_checks",
         "generate_report",
         "send_mock_alert",
@@ -179,6 +181,8 @@ class RunbookEngine:
             state.shadow_summary = result.details
         elif name == "run_drift_checks":
             state.drift_summary = result.details
+        elif name == "freqtrade_safe_lane_status":
+            state.freqtrade_summary = result.details
         elif name == "generate_report":
             state.report_paths["daily_report"] = "reports/daily_report.md"
             state.report_paths["daily_report_json"] = "reports/daily_report.json"
@@ -229,6 +233,8 @@ class RunbookEngine:
         if state.failure_reasons:
             lines.extend(["", "## Failures"])
             lines.extend(f"- {reason}" for reason in state.failure_reasons)
+        if state.freqtrade_summary:
+            lines.extend(["", "## Freqtrade Dry-Run Lane", f"`{state.freqtrade_summary}`"])
         return "\n".join(lines) + "\n"
 
 

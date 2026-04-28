@@ -15,6 +15,7 @@
 13. Data drift, execution drift, or reconciliation drift can disable trading.
 14. Strategy quarantine blocks all trading for that strategy.
 15. Capital unlock rules are required before any scaling.
+16. Freqtrade is dry-run-only until a future explicit human-approved phase.
+17. Freqtrade configs must never include exchange keys in this repo.
 
 This project starts as a local deterministic simulation foundation. It is not safe for real money.
-
