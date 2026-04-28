@@ -191,6 +191,38 @@ if "%TARGET%"=="dryrun-trade-report" (
   python -m quant_os.cli dryrun trade-report
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="features-build" (
+  python -m quant_os.cli features build
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="strategy-research" (
+  python -m quant_os.cli strategy research
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="strategy-ablation" (
+  python -m quant_os.cli strategy ablation
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="strategy-walk-forward" (
+  python -m quant_os.cli strategy walk-forward
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="strategy-regime-tests" (
+  python -m quant_os.cli strategy regime-tests
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="strategy-overfit-check" (
+  python -m quant_os.cli strategy overfit-check
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="strategy-leaderboard" (
+  python -m quant_os.cli strategy leaderboard
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="strategy-research-report" (
+  python -m quant_os.cli strategy research-report
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="phase3-smoke" (
   python -m quant_os.cli freqtrade generate-config
   if errorlevel 1 exit /b !ERRORLEVEL!
@@ -265,6 +297,32 @@ if "%TARGET%"=="phase6-smoke" (
   python -m quant_os.cli freqtrade trade-reconcile
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli freqtrade trade-report
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomous run-once
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="phase7-smoke" (
+  call "%~f0" phase6-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli features build
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli strategy research
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli strategy ablation
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli strategy walk-forward
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli strategy regime-tests
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli strategy overfit-check
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli strategy leaderboard
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli strategy research-report
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomous run-once
   if errorlevel 1 exit /b !ERRORLEVEL!

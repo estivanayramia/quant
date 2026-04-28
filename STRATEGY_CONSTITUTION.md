@@ -20,5 +20,8 @@
 18. Autonomous operations may report Freqtrade status but may not start Freqtrade by default.
 19. Dry-run comparison evidence may support research and shadow decisions, but live promotion remains blocked until a future explicit human-approved canary phase.
 20. Trade artifact reconciliation may inspect local dry-run artifacts only and may never become permission to trade live.
+21. Market-structure and SMC features are measurable research inputs, not proof of edge.
+22. Strategy leaderboards may rank research candidates but must never emit a live-ready status.
+23. Overfitting warnings block confidence and require human review before any future dry-run promotion.
 
 This project starts as a local deterministic simulation foundation. It is not safe for real money.

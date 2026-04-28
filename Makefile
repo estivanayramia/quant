@@ -1,4 +1,4 @@
-.PHONY: install format lint test test-cov seed-demo validate-data backtest tournament shadow rebuild report smoke autonomous autonomous-daemon autonomous-status watchdog drift alerts-test freqtrade-config freqtrade-validate freqtrade-export-strategy freqtrade-status freqtrade-command-preview freqtrade-manifest freqtrade-dry-run-check freqtrade-docker-check freqtrade-dry-run-start freqtrade-dry-run-stop freqtrade-dry-run-logs freqtrade-dry-run-status freqtrade-dry-run-report freqtrade-ingest-logs freqtrade-reconcile freqtrade-operational-manifest freqtrade-artifacts-scan freqtrade-trades-ingest freqtrade-trades-normalize freqtrade-trade-reconcile freqtrade-trade-report dryrun-history dryrun-compare dryrun-divergence-check dryrun-monitor-report dryrun-promote-check dryrun-status dryrun-trade-reconcile dryrun-trade-report phase3-smoke phase4-smoke phase5-smoke phase6-smoke clean
+.PHONY: install format lint test test-cov seed-demo validate-data backtest tournament shadow rebuild report smoke autonomous autonomous-daemon autonomous-status watchdog drift alerts-test freqtrade-config freqtrade-validate freqtrade-export-strategy freqtrade-status freqtrade-command-preview freqtrade-manifest freqtrade-dry-run-check freqtrade-docker-check freqtrade-dry-run-start freqtrade-dry-run-stop freqtrade-dry-run-logs freqtrade-dry-run-status freqtrade-dry-run-report freqtrade-ingest-logs freqtrade-reconcile freqtrade-operational-manifest freqtrade-artifacts-scan freqtrade-trades-ingest freqtrade-trades-normalize freqtrade-trade-reconcile freqtrade-trade-report dryrun-history dryrun-compare dryrun-divergence-check dryrun-monitor-report dryrun-promote-check dryrun-status dryrun-trade-reconcile dryrun-trade-report features-build strategy-research strategy-ablation strategy-walk-forward strategy-regime-tests strategy-overfit-check strategy-leaderboard strategy-research-report phase3-smoke phase4-smoke phase5-smoke phase6-smoke phase7-smoke clean
 
 install:
 	python -m pip install -e ".[dev]"
@@ -141,6 +141,30 @@ dryrun-trade-reconcile:
 dryrun-trade-report:
 	python -m quant_os.cli dryrun trade-report
 
+features-build:
+	python -m quant_os.cli features build
+
+strategy-research:
+	python -m quant_os.cli strategy research
+
+strategy-ablation:
+	python -m quant_os.cli strategy ablation
+
+strategy-walk-forward:
+	python -m quant_os.cli strategy walk-forward
+
+strategy-regime-tests:
+	python -m quant_os.cli strategy regime-tests
+
+strategy-overfit-check:
+	python -m quant_os.cli strategy overfit-check
+
+strategy-leaderboard:
+	python -m quant_os.cli strategy leaderboard
+
+strategy-research-report:
+	python -m quant_os.cli strategy research-report
+
 phase3-smoke:
 	python -m quant_os.cli freqtrade generate-config
 	python -m quant_os.cli freqtrade export-strategy
@@ -182,6 +206,20 @@ phase6-smoke:
 	python -m quant_os.cli freqtrade trades-normalize
 	python -m quant_os.cli freqtrade trade-reconcile
 	python -m quant_os.cli freqtrade trade-report
+	python -m quant_os.cli autonomous run-once
+	python -m quant_os.cli smoke
+	python -m pytest
+
+phase7-smoke:
+	$(MAKE) phase6-smoke
+	python -m quant_os.cli features build
+	python -m quant_os.cli strategy research
+	python -m quant_os.cli strategy ablation
+	python -m quant_os.cli strategy walk-forward
+	python -m quant_os.cli strategy regime-tests
+	python -m quant_os.cli strategy overfit-check
+	python -m quant_os.cli strategy leaderboard
+	python -m quant_os.cli strategy research-report
 	python -m quant_os.cli autonomous run-once
 	python -m quant_os.cli smoke
 	python -m pytest

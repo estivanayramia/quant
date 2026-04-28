@@ -1,0 +1,49 @@
+enabled: true
+live_trading_allowed: false
+strategy_promotion_live_allowed: false
+require_placebo_comparison: true
+require_ablation: true
+require_walk_forward: true
+require_regime_tests: true
+require_overfit_checks: true
+minimum_trades_for_research_signal: 20
+minimum_walk_forward_splits: 3
+max_parameter_count: 6
+max_backtest_variants_before_warning: 50
+random_seed: 42
+
+features:
+  build_technical: true
+  build_market_structure: true
+  build_smc_scoring: true
+  build_sessions: true
+  build_liquidity: true
+  build_volatility: true
+
+market_structure:
+  fvg_enabled: true
+  bos_choch_enabled: true
+  liquidity_sweep_enabled: true
+  order_block_placeholder_enabled: true
+  session_high_low_enabled: true
+  premium_discount_enabled: true
+
+validation:
+  fee_bps: 10
+  slippage_bps: 15
+  stress_fee_multiplier: 2.0
+  stress_slippage_multiplier: 2.0
+  train_ratio: 0.6
+  validation_ratio: 0.2
+  test_ratio: 0.2
+  regime_labels:
+    - trending_up
+    - trending_down
+    - choppy
+    - high_volatility
+    - low_volatility
+
+promotion:
+  live_promotion_allowed: false
+  dry_run_candidate_allowed: true
+  require_human_review: true

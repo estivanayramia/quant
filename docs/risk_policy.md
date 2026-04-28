@@ -12,6 +12,8 @@ Phase 5 dry-run divergence checks fail closed on unsafe Freqtrade artifacts: `dr
 
 Phase 6 trade artifact parsers also fail closed on live-mode evidence, credentials, futures, margin, leverage, shorting, or `dry_run: false`. Unknown trade schemas are preserved as raw payloads and do not become source of truth.
 
+Phase 7 strategy research remains downstream of deterministic risk. Candidate strategies only produce simulated candidate orders and research reports. Overfitting warnings, weak placebo margins, low trade counts, and unstable walk-forward results prevent confidence and cannot override kill switch, quarantine, or live-trading guards.
+
 Every approval or rejection produces a risk decision event with reasons and a limits snapshot. The kill switch blocks all new orders. Strategy quarantine blocks all new orders from the quarantined strategy.
 
 Capital unlock is staged and conservative: shadow stability, paper stability, reconciliation tests, slippage tests, kill-switch drills, tiny notional limits, and explicit human approval are required before any future scaling.

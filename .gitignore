@@ -28,9 +28,11 @@ freqtrade/user_data/config/config.live*.json
 reports/*.md
 reports/*.json
 reports/*.csv
+reports/*.parquet
 reports/**/*.md
 reports/**/*.json
 reports/**/*.csv
+reports/**/*.parquet
 logs/
 !freqtrade/user_data/logs/
 !freqtrade/user_data/logs/.gitkeep

@@ -10,6 +10,8 @@ Phase 5 adds dry-run comparison monitoring only. It cannot enable live trading, 
 
 Phase 6 adds trade artifact ingestion and trade-level reconciliation only. It reads local dry-run artifacts conservatively, never contacts an exchange, and still keeps live promotion blocked.
 
+Phase 7 adds strategy research upgrades only. Candidate strategies, market-structure features, ablation, walk-forward validation, overfitting checks, and leaderboards cannot unlock live trading.
+
 Future tiny-live gates require weeks of shadow and paper stability, reconciliation tests, slippage tests, kill-switch tests, explicit API-key rules, no withdrawal permissions, recommended IP allowlists, tiny max order notional, and max open positions of 1.
 
 Tiny live crypto may only be considered after the gates and through a later Freqtrade path. Equities live trading may only be considered after broker restrictions, order rules, and session behavior are verified.

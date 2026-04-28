@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import json
+import os
+import threading
 from pathlib import Path
 
 from quant_os.core.events import DomainEvent
+
+_APPEND_LOCK = threading.Lock()
 
 
 class JsonlEventStore:
@@ -12,8 +16,13 @@ class JsonlEventStore:
         self.path.parent.mkdir(parents=True, exist_ok=True)
 
     def append(self, event: DomainEvent) -> None:
-        with self.path.open("a", encoding="utf-8") as handle:
-            handle.write(event.model_dump_json() + "\n")
+        payload = (event.model_dump_json() + "\n").encode("utf-8")
+        with _APPEND_LOCK:
+            fd = os.open(self.path, os.O_APPEND | os.O_CREAT | os.O_WRONLY)
+            try:
+                os.write(fd, payload)
+            finally:
+                os.close(fd)
 
     def read_all(self) -> list[DomainEvent]:
         if not self.path.exists():
