@@ -18,8 +18,13 @@ from quant_os.data.dataset_splits import build_dataset_splits
 from quant_os.data.demo_data import seed_demo_data
 from quant_os.data.evidence_scoring import calculate_evidence_score
 from quant_os.data.expanded_demo_data import seed_expanded_demo_data
+from quant_os.data.historical_import import import_historical_csv
+from quant_os.data.historical_manifest import build_historical_manifest
+from quant_os.data.historical_normalize import normalize_latest_historical
+from quant_os.data.historical_quality import run_historical_quality
 from quant_os.data.leakage_checks import run_leakage_checks
 from quant_os.data.loaders import load_yaml
+from quant_os.data.provider_check import check_historical_providers
 from quant_os.data.quality import validate_ohlcv
 from quant_os.data.warehouse import ensure_local_dirs
 from quant_os.domain.strategy import StrategyRecord
@@ -51,6 +56,11 @@ from quant_os.ops.freqtrade_reporting import (
 from quant_os.ops.reporting import generate_daily_report
 from quant_os.projections.rebuild import rebuild_read_models as rebuild_read_models_projection
 from quant_os.research.backtest import run_backtest
+from quant_os.research.historical_evidence import (
+    build_historical_splits,
+    calculate_historical_evidence_score,
+)
+from quant_os.research.historical_research_report import write_historical_research_report
 from quant_os.research.leaderboard import build_strategy_leaderboard
 from quant_os.research.overfit_checks import run_overfit_checks
 from quant_os.research.regime_tests import run_regime_tests
@@ -73,6 +83,7 @@ freqtrade_app = typer.Typer(help="Freqtrade dry-run-only commands.")
 dryrun_app = typer.Typer(help="Dry-run comparison monitoring commands.")
 dataset_app = typer.Typer(help="Offline dataset evidence commands.")
 evidence_app = typer.Typer(help="Research evidence report commands.")
+historical_app = typer.Typer(help="Historical data ingestion commands.")
 app.add_typer(autonomous_app, name="autonomous")
 app.add_typer(features_app, name="features")
 app.add_typer(strategy_app, name="strategy")
@@ -80,6 +91,7 @@ app.add_typer(freqtrade_app, name="freqtrade")
 app.add_typer(dryrun_app, name="dryrun")
 app.add_typer(dataset_app, name="dataset")
 app.add_typer(evidence_app, name="evidence")
+app.add_typer(historical_app, name="historical")
 
 
 def _event_store() -> JsonlEventStore:
@@ -584,6 +596,146 @@ def evidence_research_report() -> None:
             "report": "reports/evidence/latest_research_evidence_report.md",
         }
     )
+
+
+@historical_app.command("import-csv")
+def historical_import_csv(
+    path: Path = Path("tests/fixtures/historical/sample_ohlcv_standard.csv"),
+    symbol: str | None = None,
+    timeframe: str = "1d",
+    source_name: str = "fixture_local",
+) -> None:
+    payload = import_historical_csv(
+        path,
+        symbol=symbol,
+        timeframe=timeframe,
+        source_name=source_name,
+        allow_external_path=False,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "rows": payload["rows"],
+            "normalized_path": payload["normalized_path"],
+            "live_trading_enabled": False,
+        }
+    )
+
+
+@historical_app.command("normalize")
+def historical_normalize() -> None:
+    payload = normalize_latest_historical()
+    print(
+        {
+            "status": "NORMALIZED",
+            "rows": payload["rows"],
+            "normalized_path": payload["normalized_path"],
+            "live_trading_enabled": False,
+        }
+    )
+
+
+@historical_app.command("manifest")
+def historical_manifest() -> None:
+    payload = build_historical_manifest()
+    print(
+        {
+            "status": payload["status"],
+            "dataset_id": payload["dataset_id"],
+            "rows": payload["rows"],
+            "report": "reports/historical/manifests/latest_manifest.json",
+        }
+    )
+
+
+@historical_app.command("quality")
+def historical_quality() -> None:
+    payload = run_historical_quality()
+    print(
+        {
+            "status": payload["status"],
+            "failures": payload["failures"],
+            "warnings_count": len(payload["warnings"]),
+            "report": "reports/historical/quality/latest_quality.json",
+        }
+    )
+    if payload["status"] == "FAIL":
+        raise typer.Exit(1)
+
+
+@historical_app.command("splits")
+def historical_splits() -> None:
+    payload = build_historical_splits()
+    print(
+        {
+            "status": payload["status"],
+            "items": len(payload["items"]),
+            "report": "reports/historical/evidence/latest_splits.json",
+        }
+    )
+
+
+@historical_app.command("evidence-score")
+def historical_evidence_score() -> None:
+    payload = calculate_historical_evidence_score()
+    print(
+        {
+            "status": payload["final_evidence_status"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/historical/evidence/latest_historical_evidence_score.json",
+        }
+    )
+
+
+@historical_app.command("research-report")
+def historical_research_report() -> None:
+    payload = write_historical_research_report()
+    print(
+        {
+            "status": payload["evidence_score"]["final_evidence_status"],
+            "quality": payload["quality_summary"]["status"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/historical/evidence/latest_historical_research_report.md",
+        }
+    )
+
+
+@historical_app.command("provider-check")
+def historical_provider_check() -> None:
+    payload = check_historical_providers()
+    print(
+        {
+            "status": payload["status"],
+            "providers": payload["providers"],
+            "internet_required": payload["internet_required"],
+            "live_trading_enabled": False,
+        }
+    )
+
+
+@historical_app.command("status")
+def historical_status() -> None:
+    providers = check_historical_providers()
+    manifest = build_historical_manifest()
+    quality = run_historical_quality()
+    evidence = calculate_historical_evidence_score()
+    payload = {
+        "status": "PASS" if quality["status"] in {"PASS", "WARN"} else "FAIL",
+        "provider_status": providers["providers"],
+        "imported_datasets_count": 1 if manifest["rows"] else 0,
+        "latest_manifest_status": manifest["status"],
+        "latest_quality_status": quality["status"],
+        "latest_historical_evidence_status": evidence["final_evidence_status"],
+        "source_types": [manifest["source_type"]],
+        "blockers": evidence["blockers"],
+        "warnings": evidence["warnings"],
+        "latest_report_path": "reports/historical/evidence/latest_historical_evidence_score.md",
+        "live_promotion_status": "LIVE_BLOCKED",
+    }
+    from quant_os.data.historical_cache import write_status
+
+    write_status(payload)
+    print(payload)
 
 
 @features_app.command("build")

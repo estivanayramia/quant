@@ -1,0 +1,74 @@
+enabled: true
+live_trading_allowed: false
+internet_required: false
+paid_data_required: false
+allow_network_fetch: false
+allow_provider_downloads: false
+require_manifest: true
+require_quality_pass: true
+require_license_note: true
+
+storage:
+  raw_dir: data/historical/raw
+  normalized_dir: data/historical/normalized
+  cache_dir: data/historical/cache
+  manifest_dir: reports/historical/manifests
+  quality_dir: reports/historical/quality
+  evidence_dir: reports/historical/evidence
+
+import:
+  default_source_type: user_provided_file
+  allowed_file_types:
+    - csv
+    - parquet
+  max_file_size_mb: 250
+  preserve_raw_files: true
+  hash_raw_files: true
+  hash_normalized_files: true
+
+schema:
+  required_columns:
+    - timestamp
+    - symbol
+    - open
+    - high
+    - low
+    - close
+    - volume
+  optional_columns:
+    - timeframe
+    - source
+    - adjusted_close
+    - dividends
+    - splits
+
+quality:
+  require_ohlc_valid: true
+  require_monotonic_time: true
+  require_no_duplicate_timestamps: true
+  require_no_negative_prices: true
+  require_no_negative_volume: true
+  max_missing_pct_warn: 1.0
+  max_missing_pct_fail: 5.0
+  min_rows_warn: 500
+  future_timestamp_tolerance_minutes: 5
+
+providers:
+  local_file:
+    enabled: true
+  ccxt_public:
+    enabled: false
+    requires_network: true
+    requires_keys: false
+  yfinance_public:
+    enabled: false
+    requires_network: true
+    requires_keys: false
+
+evidence:
+  live_promotion_allowed: false
+  require_out_of_sample: true
+  require_walk_forward: true
+  require_placebo_comparison: true
+  require_slippage_stress: true
+  require_data_source_manifest: true
