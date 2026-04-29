@@ -1,0 +1,40 @@
+enabled: true
+live_trading_allowed: false
+dry_run_only: true
+paper_trading_allowed: false
+internet_required: false
+
+readiness:
+  minimum_successful_runs_future: 14
+  minimum_consecutive_days_future: 14
+  maximum_critical_incidents_allowed: 0
+  maximum_high_incidents_allowed: 0
+  maximum_medium_incidents_warn: 3
+  maximum_safety_guard_failures_allowed: 0
+  maximum_live_danger_events_allowed: 0
+  maximum_unexplained_failures_allowed: 0
+  require_dryrun_monitoring: true
+  require_dataset_evidence: true
+  require_strategy_research: true
+  require_trade_reconciliation: true
+  require_human_review: true
+  live_promotion_allowed: false
+
+stability:
+  max_top_strategy_flip_rate_warn: 0.5
+  min_runs_for_stability_future: 10
+  require_consistent_evidence_status: true
+
+freshness:
+  max_report_age_hours_warn: 24
+  max_report_age_hours_fail: 72
+  max_dataset_manifest_age_hours_warn: 72
+  max_reconciliation_age_hours_warn: 72
+
+incidents:
+  severity_levels:
+    - CRITICAL
+    - HIGH
+    - MEDIUM
+    - LOW
+    - INFO

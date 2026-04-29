@@ -79,3 +79,11 @@ jobs:
           python -m quant_os.cli historical splits
           python -m quant_os.cli historical evidence-score
           python -m quant_os.cli historical research-report
+      - name: Autonomous proving mode
+        run: |
+          python -m quant_os.cli proving run-once
+          python -m quant_os.cli proving status
+          python -m quant_os.cli proving history
+          python -m quant_os.cli proving incidents
+          python -m quant_os.cli proving readiness
+          python -m quant_os.cli proving report

@@ -38,6 +38,7 @@ RUNBOOKS: dict[str, list[str]] = {
         "dataset_evidence_status",
         "historical_data_status",
         "strategy_research_status",
+        "proving_mode_status",
         "generate_report",
     ],
     "shadow_cycle": [
@@ -83,6 +84,7 @@ RUNBOOKS: dict[str, list[str]] = {
         "dataset_evidence_status",
         "historical_data_status",
         "strategy_research_status",
+        "proving_mode_status",
         "run_watchdog_health_checks",
         "generate_report",
         "send_mock_alert",
@@ -203,6 +205,8 @@ class RunbookEngine:
             state.dataset_evidence_summary = result.details
         elif name == "historical_data_status":
             state.historical_data_summary = result.details
+        elif name == "proving_mode_status":
+            state.proving_mode_summary = result.details
         elif name == "generate_report":
             state.report_paths["daily_report"] = "reports/daily_report.md"
             state.report_paths["daily_report_json"] = "reports/daily_report.json"
@@ -293,6 +297,14 @@ class RunbookEngine:
                     "",
                     "## Historical Data",
                     f"`{state.historical_data_summary}`",
+                ]
+            )
+        if state.proving_mode_summary:
+            lines.extend(
+                [
+                    "",
+                    "## Proving Mode",
+                    f"`{state.proving_mode_summary}`",
                 ]
             )
         return "\n".join(lines) + "\n"

@@ -8,6 +8,7 @@ from rich import print
 from quant_os.adapters.event_store_jsonl import JsonlEventStore
 from quant_os.adapters.market_data_parquet import LocalParquetMarketData
 from quant_os.autonomy.daemon import daemon_status, run_daemon, stop_daemon
+from quant_os.autonomy.proving_cycle import run_proving_once
 from quant_os.autonomy.supervisor import Supervisor
 from quant_os.autonomy.tasks import run_drift_checks
 from quant_os.core.commands import CandidateOrder
@@ -55,6 +56,10 @@ from quant_os.ops.freqtrade_reporting import (
 )
 from quant_os.ops.reporting import generate_daily_report
 from quant_os.projections.rebuild import rebuild_read_models as rebuild_read_models_projection
+from quant_os.proving.incident_log import summarize_incidents
+from quant_os.proving.proving_report import write_proving_report
+from quant_os.proving.readiness import evaluate_proving_readiness
+from quant_os.proving.run_history import load_proving_history, write_proving_status
 from quant_os.research.backtest import run_backtest
 from quant_os.research.historical_evidence import (
     build_historical_splits,
@@ -84,6 +89,7 @@ dryrun_app = typer.Typer(help="Dry-run comparison monitoring commands.")
 dataset_app = typer.Typer(help="Offline dataset evidence commands.")
 evidence_app = typer.Typer(help="Research evidence report commands.")
 historical_app = typer.Typer(help="Historical data ingestion commands.")
+proving_app = typer.Typer(help="Autonomous proving-mode commands.")
 app.add_typer(autonomous_app, name="autonomous")
 app.add_typer(features_app, name="features")
 app.add_typer(strategy_app, name="strategy")
@@ -92,6 +98,7 @@ app.add_typer(dryrun_app, name="dryrun")
 app.add_typer(dataset_app, name="dataset")
 app.add_typer(evidence_app, name="evidence")
 app.add_typer(historical_app, name="historical")
+app.add_typer(proving_app, name="proving")
 
 
 def _event_store() -> JsonlEventStore:
@@ -736,6 +743,87 @@ def historical_status() -> None:
 
     write_status(payload)
     print(payload)
+
+
+@proving_app.command("run-once")
+def proving_run_once() -> None:
+    payload = run_proving_once(_event_store())
+    print(
+        {
+            "run_id": payload["record"]["run_id"],
+            "readiness": payload["readiness"]["readiness_status"],
+            "live_promotion_status": payload["readiness"]["live_promotion_status"],
+            "report": "reports/proving/latest_proving_report.md",
+        }
+    )
+
+
+@proving_app.command("status")
+def proving_status() -> None:
+    payload = write_proving_status()
+    print(
+        {
+            "status": payload["status"],
+            "history_records_count": payload["history_records_count"],
+            "current_success_streak": payload["streaks"]["current_success_streak"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/proving/latest_status.json",
+        }
+    )
+
+
+@proving_app.command("history")
+def proving_history() -> None:
+    records = load_proving_history()
+    status = write_proving_status(records)
+    print(
+        {
+            "history_records_count": len(records),
+            "successful_runs": status["streaks"]["successful_runs"],
+            "failed_runs": status["streaks"]["failed_runs"],
+            "live_promotion_status": "LIVE_BLOCKED",
+        }
+    )
+
+
+@proving_app.command("incidents")
+def proving_incidents() -> None:
+    payload = summarize_incidents()
+    print(
+        {
+            "incidents_count": payload["incidents_count"],
+            "unresolved_count": payload["unresolved_count"],
+            "by_severity": payload["by_severity"],
+            "live_promotion_status": payload["live_promotion_status"],
+        }
+    )
+
+
+@proving_app.command("readiness")
+def proving_readiness() -> None:
+    payload = evaluate_proving_readiness()
+    print(
+        {
+            "readiness": payload["readiness_status"],
+            "dry_run_proven": payload["dry_run_proven"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "blockers": payload["blockers"],
+            "report": "reports/proving/latest_readiness.json",
+        }
+    )
+
+
+@proving_app.command("report")
+def proving_report() -> None:
+    payload = write_proving_report()
+    print(
+        {
+            "readiness": payload["readiness_status"],
+            "history_records_count": payload["history_records_count"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/proving/latest_proving_report.md",
+        }
+    )
 
 
 @features_app.command("build")
