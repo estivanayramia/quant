@@ -287,6 +287,30 @@ if "%TARGET%"=="historical-status" (
   python -m quant_os.cli historical status
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="proving-run-once" (
+  python -m quant_os.cli proving run-once
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="proving-status" (
+  python -m quant_os.cli proving status
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="proving-history" (
+  python -m quant_os.cli proving history
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="proving-incidents" (
+  python -m quant_os.cli proving incidents
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="proving-readiness" (
+  python -m quant_os.cli proving readiness
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="proving-report" (
+  python -m quant_os.cli proving report
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="phase3-smoke" (
   python -m quant_os.cli freqtrade generate-config
   if errorlevel 1 exit /b !ERRORLEVEL!
@@ -437,6 +461,28 @@ if "%TARGET%"=="phase9-smoke" (
   python -m quant_os.cli historical evidence-score
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli historical research-report
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomous run-once
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="phase10-smoke" (
+  call "%~f0" phase9-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving run-once
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving status
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving history
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving incidents
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving readiness
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving report
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomous run-once
   if errorlevel 1 exit /b !ERRORLEVEL!

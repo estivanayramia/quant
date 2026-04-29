@@ -178,6 +178,22 @@ make phase9-smoke
 
 The default smoke path uses a tiny committed fixture. User-downloaded historical data is ignored under `data/historical/` and must include a source/license note. Historical data does not imply live readiness.
 
+## Autonomous Proving Mode
+
+Phase 10 adds multi-cycle proving evidence, incident history, streaks, freshness checks, stability checks, and proving readiness reports:
+
+```bash
+make proving-run-once
+make proving-status
+make proving-history
+make proving-incidents
+make proving-readiness
+make proving-report
+make phase10-smoke
+```
+
+Proving mode can accumulate dry-run evidence over time. It cannot unlock live trading; live promotion remains `LIVE_BLOCKED`.
+
 ## Repository Structure
 
 - `src/quant_os/core`: framework-independent primitives, events, commands, errors, IDs, time.
@@ -210,10 +226,11 @@ The research control plane can generate candidate orders and reports. The execut
 - Phase 7: Strategy research upgrade, market-structure features, ablation, walk-forward validation, overfitting controls, and conservative leaderboard.
 - Phase 8: Dataset expansion and evidence hardening with offline synthetic data, manifests, quality checks, leakage checks, and evidence scoring.
 - Phase 9: Historical data ingestion and offline cache-first data lake controls.
-- Phase 10: Telegram/Discord alerts only, with no order authority.
-- Phase 11: AI provider mesh for research/reporting only.
-- Phase 12: Tiny live crypto canary only after extensive future gates.
-- Phase 13: NautilusTrader evaluation if the simpler stack becomes a bottleneck.
+- Phase 10: Autonomous proving mode and long-run evidence accumulation.
+- Phase 11: Telegram/Discord alerts only, with no order authority.
+- Phase 12: AI provider mesh for research/reporting only.
+- Phase 13: Tiny live crypto canary only after extensive future gates.
+- Phase 14: NautilusTrader evaluation if the simpler stack becomes a bottleneck.
 
 ## Live Trading Disclaimer
 

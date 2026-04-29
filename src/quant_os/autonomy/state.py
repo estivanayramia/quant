@@ -54,6 +54,7 @@ class AutonomousRunState(BaseModel):
     strategy_research_summary: dict[str, Any] = Field(default_factory=dict)
     dataset_evidence_summary: dict[str, Any] = Field(default_factory=dict)
     historical_data_summary: dict[str, Any] = Field(default_factory=dict)
+    proving_mode_summary: dict[str, Any] = Field(default_factory=dict)
     report_paths: dict[str, str] = Field(default_factory=dict)
 
 
