@@ -36,7 +36,7 @@ def config_guard(config_dir: str | Path = "configs") -> GuardResult:
         configs, {"live_trading_enabled", "allow_live_trading", "live_trading_allowed"}
     )
     reasons.extend(f"LIVE_FLAG_TRUE:{path}" for path in live_true_paths)
-    withdrawal_paths = _find_keys_containing(configs, "withdraw")
+    withdrawal_paths = _find_unsafe_withdrawal_settings(configs)
     reasons.extend(f"WITHDRAWAL_SETTING_PRESENT:{path}" for path in withdrawal_paths)
     return GuardResult(
         passed=not reasons, reasons=reasons, details={"config_files": sorted(configs)}
@@ -69,4 +69,23 @@ def _find_keys_containing(value: Any, needle: str, prefix: str = "") -> list[str
     elif isinstance(value, list):
         for index, item in enumerate(value):
             found.extend(_find_keys_containing(item, needle, f"{prefix}[{index}]"))
+    return found
+
+
+def _find_unsafe_withdrawal_settings(value: Any, prefix: str = "") -> list[str]:
+    found: list[str] = []
+    if isinstance(value, dict):
+        for key, item in value.items():
+            path = f"{prefix}.{key}" if prefix else str(key)
+            key_text = str(key).lower()
+            if (
+                "withdraw" in key_text
+                and not key_text.startswith("require_no_")
+                and not (key_text == "withdrawal_permissions_allowed" and item is False)
+            ):
+                found.append(path)
+            found.extend(_find_unsafe_withdrawal_settings(item, path))
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            found.extend(_find_unsafe_withdrawal_settings(item, f"{prefix}[{index}]"))
     return found
