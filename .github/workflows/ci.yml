@@ -96,3 +96,12 @@ jobs:
           python -m quant_os.cli canary capital-ladder
           python -m quant_os.cli canary readiness
           python -m quant_os.cli canary report
+      - name: Canary rehearsal proof
+        run: |
+          python -m quant_os.cli canary permission-import
+          python -m quant_os.cli canary arm-token
+          python -m quant_os.cli canary preflight-rehearsal
+          python -m quant_os.cli canary stoploss-proof
+          python -m quant_os.cli canary rehearsal
+          python -m quant_os.cli canary final-gate
+          python -m quant_os.cli canary rehearsal-report

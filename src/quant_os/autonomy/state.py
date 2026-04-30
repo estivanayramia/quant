@@ -56,6 +56,7 @@ class AutonomousRunState(BaseModel):
     historical_data_summary: dict[str, Any] = Field(default_factory=dict)
     proving_mode_summary: dict[str, Any] = Field(default_factory=dict)
     canary_planning_summary: dict[str, Any] = Field(default_factory=dict)
+    canary_rehearsal_summary: dict[str, Any] = Field(default_factory=dict)
     report_paths: dict[str, str] = Field(default_factory=dict)
 
 

@@ -8,6 +8,7 @@ from typing import Any
 
 from quant_os.adapters.event_store_jsonl import JsonlEventStore
 from quant_os.adapters.market_data_parquet import LocalParquetMarketData
+from quant_os.autonomy.canary_rehearsal_tasks import canary_rehearsal_status
 from quant_os.autonomy.canary_tasks import canary_planning_status
 from quant_os.autonomy.dataset_tasks import dataset_evidence_status
 from quant_os.autonomy.dryrun_monitoring_tasks import dryrun_monitoring_status
@@ -200,6 +201,7 @@ def task_callable(name: str, event_store: JsonlEventStore) -> Callable[[], dict[
         "historical_data_status": historical_data_status,
         "proving_mode_status": proving_mode_status,
         "canary_planning_status": canary_planning_status,
+        "canary_rehearsal_status": canary_rehearsal_status,
         "run_watchdog_health_checks": lambda: run_watchdog_checks(event_store),
         "generate_report": lambda: generate_reports(event_store),
         "send_mock_alert": lambda: send_mock_alert("Autonomous safe run completed."),

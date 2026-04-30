@@ -1,0 +1,41 @@
+enabled: true
+live_trading_allowed: false
+rehearsal_only: true
+real_keys_allowed: false
+real_exchange_connectivity_allowed: false
+human_approval_required: true
+two_step_approval_required: true
+arming_token_required: true
+permission_manifest_required: true
+stoploss_proof_required: true
+
+permission_manifest:
+  required_local_file: true
+  allowed_scopes_future:
+    - trade_spot_only
+    - read_balances_optional
+  forbidden_scopes:
+    - withdraw
+    - transfer
+    - futures
+    - margin
+    - leverage
+    - short
+    - options
+    - universal
+    - admin
+
+arming:
+  token_required: true
+  token_expiry_minutes: 15
+  dual_confirmation_required: true
+  rehearsal_only: true
+
+stoploss_proof:
+  required_future: true
+  exchange_support_must_be_documented: true
+  fallback_block_if_unknown: true
+
+final_gate:
+  live_promotion_allowed: false
+  final_status_must_block_live: true

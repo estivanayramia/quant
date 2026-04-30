@@ -29,5 +29,6 @@
 27. Proving mode may prove repeated dry-run behavior, but never grants live-trading authority by itself.
 28. Tiny-live canary policy gates are planning scaffolds only and cannot unlock live trading.
 29. Human approval, permission checks, stoploss-on-exchange readiness, and incident runbooks are prerequisites, not authority to trade.
+30. Canary rehearsals, arming tokens, and final gates are proof scaffolds only and cannot create live order authority.
 
 This project starts as a local deterministic simulation foundation. It is not safe for real money.

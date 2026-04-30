@@ -40,6 +40,7 @@ RUNBOOKS: dict[str, list[str]] = {
         "strategy_research_status",
         "proving_mode_status",
         "canary_planning_status",
+        "canary_rehearsal_status",
         "generate_report",
     ],
     "shadow_cycle": [
@@ -87,6 +88,7 @@ RUNBOOKS: dict[str, list[str]] = {
         "strategy_research_status",
         "proving_mode_status",
         "canary_planning_status",
+        "canary_rehearsal_status",
         "run_watchdog_health_checks",
         "generate_report",
         "send_mock_alert",
@@ -211,6 +213,8 @@ class RunbookEngine:
             state.proving_mode_summary = result.details
         elif name == "canary_planning_status":
             state.canary_planning_summary = result.details
+        elif name == "canary_rehearsal_status":
+            state.canary_rehearsal_summary = result.details
         elif name == "generate_report":
             state.report_paths["daily_report"] = "reports/daily_report.md"
             state.report_paths["daily_report_json"] = "reports/daily_report.json"
@@ -317,6 +321,14 @@ class RunbookEngine:
                     "",
                     "## Canary Planning",
                     f"`{state.canary_planning_summary}`",
+                ]
+            )
+        if state.canary_rehearsal_summary:
+            lines.extend(
+                [
+                    "",
+                    "## Canary Rehearsal",
+                    f"`{state.canary_rehearsal_summary}`",
                 ]
             )
         return "\n".join(lines) + "\n"
