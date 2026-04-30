@@ -1,0 +1,13 @@
+exchange_name: rehearsal_fixture_exchange
+scope_list:
+  - trade_spot_only
+  - read_balances_optional
+withdrawal_enabled: false
+transfer_enabled: false
+futures_enabled: false
+margin_enabled: false
+leverage_enabled: false
+shorting_enabled: false
+admin_scope: false
+universal_scope: false
+notes: "Synthetic fixture only. No credentials. No live exchange connection."

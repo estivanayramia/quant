@@ -7,3 +7,6 @@ quarantine the strategy, run reconciliation, and write an incident record.
 The same fail-closed posture applies to connectivity loss, reconciliation
 failure, missing stoploss evidence, broad API permissions, strategy divergence,
 or future loss-cap breach evidence. No automatic restart is allowed.
+
+Phase 12 rehearsals preserve this runbook as a dry drill. They do not connect
+to any exchange and cannot place or cancel real orders.

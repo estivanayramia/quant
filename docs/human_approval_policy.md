@@ -7,3 +7,6 @@ rationale, scope, expiry, acknowledged risks, and a revocation path.
 Missing, expired, malformed, or revoked approvals block canary readiness. The
 approval registry is local scaffolding for auditability only; it is not an
 execution permission system.
+
+Phase 12 adds a two-step approval rehearsal and rehearsal-only arming token.
+Approval plus an arming token still cannot unlock live trading in this phase.

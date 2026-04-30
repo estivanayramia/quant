@@ -11,13 +11,19 @@ from quant_os.autonomy.daemon import daemon_status, run_daemon, stop_daemon
 from quant_os.autonomy.proving_cycle import run_proving_once
 from quant_os.autonomy.supervisor import Supervisor
 from quant_os.autonomy.tasks import run_drift_checks
+from quant_os.canary.arm_token import generate_arm_token
 from quant_os.canary.capital_ladder import build_capital_ladder
 from quant_os.canary.checklist import build_canary_checklist
+from quant_os.canary.final_gate import evaluate_final_gate, write_rehearsal_report
 from quant_os.canary.incident_drill import build_incident_drill
+from quant_os.canary.permissions_import import import_permission_manifest
 from quant_os.canary.policy import build_canary_policy
 from quant_os.canary.preflight import evaluate_canary_preflight
+from quant_os.canary.preflight_rehearsal import run_preflight_rehearsal
 from quant_os.canary.readiness import evaluate_canary_readiness
+from quant_os.canary.rehearsal import run_canary_rehearsal
 from quant_os.canary.report import write_canary_report_bundle
+from quant_os.canary.stoploss_proof import build_stoploss_proof
 from quant_os.core.commands import CandidateOrder
 from quant_os.core.events import EventType, make_event
 from quant_os.data.dataset_manifest import build_dataset_manifest
@@ -924,6 +930,106 @@ def canary_report() -> None:
             "readiness_status": payload["readiness_status"],
             "live_promotion_status": payload["live_promotion_status"],
             "report": payload["latest_report_path"],
+        }
+    )
+
+
+@canary_app.command("permission-import")
+def canary_permission_import(
+    path: Path = Path("tests/fixtures/canary/permission_manifest_safe.yaml"),
+) -> None:
+    payload = import_permission_manifest(path)
+    print(
+        {
+            "status": payload["status"],
+            "scopes": payload["normalized_scope_list"],
+            "blockers": payload["blockers"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/canary/latest_permission_manifest.md",
+        }
+    )
+
+
+@canary_app.command("arm-token")
+def canary_arm_token() -> None:
+    payload = generate_arm_token()
+    print(
+        {
+            "status": payload["status"],
+            "token_id": payload["token_id"],
+            "rehearsal_only": payload["rehearsal_only"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/canary/latest_arm_token.md",
+        }
+    )
+
+
+@canary_app.command("preflight-rehearsal")
+def canary_preflight_rehearsal() -> None:
+    payload = run_preflight_rehearsal()
+    print(
+        {
+            "status": payload["status"],
+            "preflight_rehearsal_status": payload["preflight_rehearsal_status"],
+            "blockers": payload["blockers"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/canary/latest_preflight_rehearsal.md",
+        }
+    )
+
+
+@canary_app.command("stoploss-proof")
+def canary_stoploss_proof() -> None:
+    payload = build_stoploss_proof()
+    print(
+        {
+            "status": payload["status"],
+            "design_status": payload["design_status"],
+            "blockers": payload["blockers"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/canary/latest_stoploss_proof.md",
+        }
+    )
+
+
+@canary_app.command("rehearsal")
+def canary_rehearsal() -> None:
+    payload = run_canary_rehearsal()
+    print(
+        {
+            "status": payload["status"],
+            "rehearsal_status": payload["rehearsal_status"],
+            "placed_orders": payload["placed_orders"],
+            "exchange_connections": payload["exchange_connections"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/canary/latest_rehearsal.md",
+        }
+    )
+
+
+@canary_app.command("final-gate")
+def canary_final_gate() -> None:
+    payload = evaluate_final_gate()
+    print(
+        {
+            "status": payload["status"],
+            "final_gate_status": payload["final_gate_status"],
+            "rehearsal_ready": payload["rehearsal_ready"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/canary/latest_final_gate.md",
+        }
+    )
+
+
+@canary_app.command("rehearsal-report")
+def canary_rehearsal_report() -> None:
+    payload = write_rehearsal_report()
+    print(
+        {
+            "status": payload["status"],
+            "final_gate_status": payload["final_gate_status"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/canary/latest_rehearsal_report.md",
         }
     )
 

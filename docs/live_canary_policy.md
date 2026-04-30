@@ -14,3 +14,8 @@ evidence, zero unresolved incidents, trade reconciliation evidence, dataset and
 historical evidence, stoploss-on-exchange readiness, restricted API permission
 scope, withdrawal-disabled proof, rollback drill evidence, and explicit human
 approval. Even if those are satisfied, Phase 11 still returns LIVE_BLOCKED.
+
+Phase 12 adds rehearsal proof. It can import a local permission manifest,
+generate a rehearsal-only arming token, rehearse preflight, design stoploss
+proof requirements, and summarize a final gate. It still returns LIVE_BLOCKED
+and cannot place orders.
