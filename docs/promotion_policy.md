@@ -15,3 +15,5 @@ Phase 8 evidence scoring can label research evidence as insufficient through dry
 Phase 9 historical data ingestion can strengthen research evidence, but it does not unlock live trading. Historical evidence can support research, shadow, or dry-run review only; live promotion remains `LIVE_BLOCKED`.
 
 Phase 10 proving mode can report `DRY_RUN_PROVEN` after repeated safe cycles, but this is not live readiness. Live promotion remains blocked until a future explicit human-approved live canary phase exists.
+
+Phase 11 canary policy gates define approval, permission, preflight, incident, and capital-ladder requirements. They do not create a live-ready status and cannot grant execution authority.

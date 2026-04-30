@@ -194,6 +194,23 @@ make phase10-smoke
 
 Proving mode can accumulate dry-run evidence over time. It cannot unlock live trading; live promotion remains `LIVE_BLOCKED`.
 
+## Tiny-Live Canary Policy Gates
+
+Phase 11 adds tiny-live crypto canary policy, checklist, preflight, incident drill, rollback plan, capital ladder, permission checks, and readiness reports:
+
+```bash
+make canary-policy
+make canary-checklist
+make canary-preflight
+make canary-incident-drill
+make canary-capital-ladder
+make canary-readiness
+make canary-report
+make phase11-smoke
+```
+
+This is planning/gating only. No exchange keys are used, no real orders are possible, and live promotion remains `LIVE_BLOCKED`.
+
 ## Repository Structure
 
 - `src/quant_os/core`: framework-independent primitives, events, commands, errors, IDs, time.
@@ -227,10 +244,11 @@ The research control plane can generate candidate orders and reports. The execut
 - Phase 8: Dataset expansion and evidence hardening with offline synthetic data, manifests, quality checks, leakage checks, and evidence scoring.
 - Phase 9: Historical data ingestion and offline cache-first data lake controls.
 - Phase 10: Autonomous proving mode and long-run evidence accumulation.
-- Phase 11: Telegram/Discord alerts only, with no order authority.
-- Phase 12: AI provider mesh for research/reporting only.
-- Phase 13: Tiny live crypto canary only after extensive future gates.
-- Phase 14: NautilusTrader evaluation if the simpler stack becomes a bottleneck.
+- Phase 11: Tiny-live crypto canary policy gates and human approval scaffolding, with live still blocked.
+- Phase 12: Telegram/Discord alerts only, with no order authority.
+- Phase 13: AI provider mesh for research/reporting only.
+- Phase 14: Tiny live crypto canary only after extensive future gates.
+- Phase 15: NautilusTrader evaluation if the simpler stack becomes a bottleneck.
 
 ## Live Trading Disclaimer
 

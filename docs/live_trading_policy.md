@@ -18,6 +18,8 @@ Phase 9 adds local/cache-first historical data imports only. Historical data rep
 
 Phase 10 adds autonomous proving mode and long-run evidence accumulation. Proving readiness can describe dry-run evidence only and still reports live promotion as `LIVE_BLOCKED`.
 
+Phase 11 adds tiny-live canary policy gates only. It does not add a live adapter, exchange keys, or a `dry_run: false` path. Canary reports are planning artifacts and always keep live promotion blocked.
+
 Future tiny-live gates require weeks of shadow and paper stability, reconciliation tests, slippage tests, kill-switch tests, explicit API-key rules, no withdrawal permissions, recommended IP allowlists, tiny max order notional, and max open positions of 1.
 
 Tiny live crypto may only be considered after the gates and through a later Freqtrade path. Equities live trading may only be considered after broker restrictions, order rules, and session behavior are verified.

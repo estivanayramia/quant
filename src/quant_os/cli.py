@@ -11,6 +11,13 @@ from quant_os.autonomy.daemon import daemon_status, run_daemon, stop_daemon
 from quant_os.autonomy.proving_cycle import run_proving_once
 from quant_os.autonomy.supervisor import Supervisor
 from quant_os.autonomy.tasks import run_drift_checks
+from quant_os.canary.capital_ladder import build_capital_ladder
+from quant_os.canary.checklist import build_canary_checklist
+from quant_os.canary.incident_drill import build_incident_drill
+from quant_os.canary.policy import build_canary_policy
+from quant_os.canary.preflight import evaluate_canary_preflight
+from quant_os.canary.readiness import evaluate_canary_readiness
+from quant_os.canary.report import write_canary_report_bundle
 from quant_os.core.commands import CandidateOrder
 from quant_os.core.events import EventType, make_event
 from quant_os.data.dataset_manifest import build_dataset_manifest
@@ -90,6 +97,7 @@ dataset_app = typer.Typer(help="Offline dataset evidence commands.")
 evidence_app = typer.Typer(help="Research evidence report commands.")
 historical_app = typer.Typer(help="Historical data ingestion commands.")
 proving_app = typer.Typer(help="Autonomous proving-mode commands.")
+canary_app = typer.Typer(help="Tiny-live canary policy gates. Planning only.")
 app.add_typer(autonomous_app, name="autonomous")
 app.add_typer(features_app, name="features")
 app.add_typer(strategy_app, name="strategy")
@@ -99,6 +107,7 @@ app.add_typer(dataset_app, name="dataset")
 app.add_typer(evidence_app, name="evidence")
 app.add_typer(historical_app, name="historical")
 app.add_typer(proving_app, name="proving")
+app.add_typer(canary_app, name="canary")
 
 
 def _event_store() -> JsonlEventStore:
@@ -822,6 +831,99 @@ def proving_report() -> None:
             "history_records_count": payload["history_records_count"],
             "live_promotion_status": payload["live_promotion_status"],
             "report": "reports/proving/latest_proving_report.md",
+        }
+    )
+
+
+@canary_app.command("policy")
+def canary_policy() -> None:
+    payload = build_canary_policy()
+    print(
+        {
+            "status": payload["status"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/canary/latest_policy.md",
+        }
+    )
+
+
+@canary_app.command("checklist")
+def canary_checklist() -> None:
+    payload = build_canary_checklist()
+    print(
+        {
+            "status": payload["status"],
+            "blockers": payload["blockers"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/canary/latest_checklist.md",
+        }
+    )
+
+
+@canary_app.command("preflight")
+def canary_preflight() -> None:
+    payload = evaluate_canary_preflight()
+    print(
+        {
+            "status": payload["status"],
+            "preflight_status": payload["preflight_status"],
+            "blockers": payload["blockers"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/canary/latest_preflight.md",
+        }
+    )
+
+
+@canary_app.command("incident-drill")
+def canary_incident_drill() -> None:
+    payload = build_incident_drill()
+    print(
+        {
+            "status": payload["status"],
+            "scenarios": len(payload["scenarios"]),
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/canary/latest_incident_drill.md",
+        }
+    )
+
+
+@canary_app.command("capital-ladder")
+def canary_capital_ladder() -> None:
+    payload = build_capital_ladder()
+    print(
+        {
+            "status": payload["status"],
+            "current_stage": payload["current_stage"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/canary/latest_capital_ladder.md",
+        }
+    )
+
+
+@canary_app.command("readiness")
+def canary_readiness() -> None:
+    payload = evaluate_canary_readiness()
+    print(
+        {
+            "readiness": payload["readiness_status"],
+            "planning_status": payload["planning_status"],
+            "blockers": payload["blockers"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/canary/latest_readiness.md",
+        }
+    )
+
+
+@canary_app.command("report")
+def canary_report() -> None:
+    payload = write_canary_report_bundle()
+    print(
+        {
+            "status": payload["status"],
+            "preflight_status": payload["preflight_status"],
+            "readiness_status": payload["readiness_status"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": payload["latest_report_path"],
         }
     )
 

@@ -311,6 +311,34 @@ if "%TARGET%"=="proving-report" (
   python -m quant_os.cli proving report
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="canary-policy" (
+  python -m quant_os.cli canary policy
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="canary-checklist" (
+  python -m quant_os.cli canary checklist
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="canary-preflight" (
+  python -m quant_os.cli canary preflight
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="canary-incident-drill" (
+  python -m quant_os.cli canary incident-drill
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="canary-capital-ladder" (
+  python -m quant_os.cli canary capital-ladder
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="canary-readiness" (
+  python -m quant_os.cli canary readiness
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="canary-report" (
+  python -m quant_os.cli canary report
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="phase3-smoke" (
   python -m quant_os.cli freqtrade generate-config
   if errorlevel 1 exit /b !ERRORLEVEL!
@@ -483,6 +511,30 @@ if "%TARGET%"=="phase10-smoke" (
   python -m quant_os.cli proving readiness
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli proving report
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomous run-once
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="phase11-smoke" (
+  call "%~f0" phase10-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli canary policy
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli canary checklist
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli canary preflight
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli canary incident-drill
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli canary capital-ladder
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli canary readiness
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli canary report
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomous run-once
   if errorlevel 1 exit /b !ERRORLEVEL!

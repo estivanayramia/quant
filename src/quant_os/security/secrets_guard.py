@@ -53,7 +53,11 @@ def _find_withdrawal_settings(value: Any, prefix: str = "") -> list[str]:
         for key, item in value.items():
             path = f"{prefix}.{key}" if prefix else str(key)
             key_text = str(key).lower()
-            if "withdraw" in key_text and not key_text.startswith("require_no_"):
+            if (
+                "withdraw" in key_text
+                and not key_text.startswith("require_no_")
+                and not (key_text == "withdrawal_permissions_allowed" and item is False)
+            ):
                 found.append(path)
             found.extend(_find_withdrawal_settings(item, path))
     elif isinstance(value, list):

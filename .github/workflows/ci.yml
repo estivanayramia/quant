@@ -87,3 +87,12 @@ jobs:
           python -m quant_os.cli proving incidents
           python -m quant_os.cli proving readiness
           python -m quant_os.cli proving report
+      - name: Tiny-live canary policy gates
+        run: |
+          python -m quant_os.cli canary policy
+          python -m quant_os.cli canary checklist
+          python -m quant_os.cli canary preflight
+          python -m quant_os.cli canary incident-drill
+          python -m quant_os.cli canary capital-ladder
+          python -m quant_os.cli canary readiness
+          python -m quant_os.cli canary report

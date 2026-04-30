@@ -1,0 +1,52 @@
+enabled: false
+live_trading_allowed: false
+paper_trading_allowed: false
+dry_run_required: true
+human_approval_required: true
+exchange_keys_allowed: false
+withdrawal_permissions_allowed: false
+futures_allowed: false
+margin_allowed: false
+leverage_allowed: false
+shorting_allowed: false
+options_allowed: false
+
+preflight:
+  require_proving_status: DRY_RUN_PROVEN
+  require_min_successful_runs_future: 14
+  require_zero_unresolved_incidents: true
+  require_trade_reconciliation: true
+  require_dataset_evidence: true
+  require_historical_evidence: true
+  require_strategy_research: true
+  require_dryrun_monitoring: true
+  require_human_signoff: true
+  require_stoploss_on_exchange_future: true
+  require_ip_allowlist_future: true
+  require_api_key_scope_verification: true
+
+capital_ladder:
+  stage_0:
+    label: planning_only
+    max_order_notional: 0
+    live_allowed: false
+  stage_1_future:
+    label: tiny_canary
+    max_order_notional: 25
+    max_open_positions: 1
+    max_daily_loss_usd: 10
+    max_weekly_loss_usd: 25
+    live_allowed: false
+  stage_2_future:
+    label: still_tiny
+    max_order_notional: 50
+    max_open_positions: 1
+    max_daily_loss_usd: 20
+    max_weekly_loss_usd: 50
+    live_allowed: false
+
+approval:
+  require_two_step_acknowledgement: true
+  require_written_rationale: true
+  require_explicit_expiry: true
+  require_manual_revocation_path: true
