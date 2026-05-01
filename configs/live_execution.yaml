@@ -1,0 +1,35 @@
+enabled: false
+live_trading_allowed: false
+exchange_adapter_enabled: false
+exchange_name: canary_exchange
+spot_only: true
+allowed_symbols:
+  - BTC/USDT
+  - ETH/USDT
+max_order_notional_usd: 25
+max_open_positions: 1
+max_daily_loss_usd: 10
+max_weekly_loss_usd: 25
+require_permission_manifest: true
+require_approval_record: true
+require_arming_token: true
+require_stoploss_exchange_proof: true
+require_preflight_pass: true
+require_final_gate_pass: true
+require_reconciliation_before_fire: true
+require_reconciliation_after_fire: true
+allow_autonomous_start: false
+allow_reentry_same_session: false
+allow_more_than_one_order_attempt: false
+
+credentials:
+  local_file_required: true
+  env_allowed: false
+  repo_storage_allowed: false
+
+execution:
+  dry_run_fallback_allowed: false
+  live_order_enabled: false
+  fire_command_requires_explicit_flag: true
+  double_confirmation_required: true
+  emergency_stop_enabled: true

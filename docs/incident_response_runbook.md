@@ -10,3 +10,7 @@ or future loss-cap breach evidence. No automatic restart is allowed.
 
 Phase 12 rehearsals preserve this runbook as a dry drill. They do not connect
 to any exchange and cannot place or cancel real orders.
+
+Phase 13 `canary-live-stop` activates the live canary kill switch and blocks
+subsequent fire attempts until a future human-reviewed recovery workflow is
+defined.

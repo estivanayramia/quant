@@ -35,6 +35,11 @@ reports/**/*.md
 reports/**/*.json
 reports/**/*.csv
 reports/**/*.parquet
+reports/**/*.lock
+*.live-credentials.json
+*.live-credentials.yaml
+*.live-credentials.yml
+live-credentials.*
 logs/
 !freqtrade/user_data/logs/
 !freqtrade/user_data/logs/.gitkeep
