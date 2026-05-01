@@ -264,7 +264,7 @@ The research control plane can generate candidate orders and reports. The execut
 - Phase 10: Autonomous proving mode and long-run evidence accumulation.
 - Phase 11: Tiny-live crypto canary policy gates and human approval scaffolding, with live still blocked.
 - Phase 12: Canary rehearsal proof, permission manifest import, arming-token rehearsal, and stoploss proof design.
-- Phase 13: Telegram/Discord alerts only, with no order authority.
+- Phase 13: Tiny-live crypto canary execution lane, default-off and heavily gated.
 - Phase 14: AI provider mesh for research/reporting only.
 - Phase 15: Tiny live crypto canary only after extensive future gates.
 - Phase 16: NautilusTrader evaluation if the simpler stack becomes a bottleneck.

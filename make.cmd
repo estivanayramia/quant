@@ -367,6 +367,34 @@ if "%TARGET%"=="canary-rehearsal-report" (
   python -m quant_os.cli canary rehearsal-report
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="canary-live-prepare" (
+  python -m quant_os.cli canary live-prepare
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="canary-live-preflight" (
+  python -m quant_os.cli canary live-preflight
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="canary-live-fire" (
+  python -m quant_os.cli canary live-fire
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="canary-live-status" (
+  python -m quant_os.cli canary live-status
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="canary-live-reconcile" (
+  python -m quant_os.cli canary live-reconcile
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="canary-live-stop" (
+  python -m quant_os.cli canary live-stop
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="canary-live-report" (
+  python -m quant_os.cli canary live-report
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="phase3-smoke" (
   python -m quant_os.cli freqtrade generate-config
   if errorlevel 1 exit /b !ERRORLEVEL!
@@ -587,6 +615,28 @@ if "%TARGET%"=="phase12-smoke" (
   python -m quant_os.cli canary final-gate
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli canary rehearsal-report
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomous run-once
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="phase13-smoke" (
+  call "%~f0" phase12-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli canary live-prepare
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli canary live-preflight
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli canary live-status
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli canary live-reconcile
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli canary live-stop
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli canary live-report
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomous run-once
   if errorlevel 1 exit /b !ERRORLEVEL!

@@ -17,3 +17,5 @@ Phase 9 historical data ingestion can strengthen research evidence, but it does 
 Phase 10 proving mode can report `DRY_RUN_PROVEN` after repeated safe cycles, but this is not live readiness. Live promotion remains blocked until a future explicit human-approved live canary phase exists.
 
 Phase 11 canary policy gates define approval, permission, preflight, incident, and capital-ladder requirements. They do not create a live-ready status and cannot grant execution authority.
+
+Phase 13 does not make any strategy broadly live-ready. A tiny canary attempt, if ever manually armed, is a production-safety test only and not a profitability or promotion claim.

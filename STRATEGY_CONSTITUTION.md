@@ -30,5 +30,6 @@
 28. Tiny-live canary policy gates are planning scaffolds only and cannot unlock live trading.
 29. Human approval, permission checks, stoploss-on-exchange readiness, and incident runbooks are prerequisites, not authority to trade.
 30. Canary rehearsals, arming tokens, and final gates are proof scaffolds only and cannot create live order authority.
+31. Tiny-live canary execution is default-off, manual-only, spot-only, tiny-notional, one-position-max, and cannot be started by autonomous or AI workflows.
 
 This project starts as a local deterministic simulation foundation. It is not safe for real money.

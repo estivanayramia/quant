@@ -105,3 +105,11 @@ jobs:
           python -m quant_os.cli canary rehearsal
           python -m quant_os.cli canary final-gate
           python -m quant_os.cli canary rehearsal-report
+      - name: Tiny-live canary lane gated checks
+        run: |
+          python -m quant_os.cli canary live-prepare
+          python -m quant_os.cli canary live-preflight
+          python -m quant_os.cli canary live-status
+          python -m quant_os.cli canary live-reconcile
+          python -m quant_os.cli canary live-stop
+          python -m quant_os.cli canary live-report

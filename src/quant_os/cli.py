@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Annotated
 
 import typer
 from rich import print
@@ -58,6 +59,11 @@ from quant_os.integrations.freqtrade.trade_normalizer import (
 from quant_os.integrations.freqtrade.trade_reconciliation import reconcile_freqtrade_trades
 from quant_os.integrations.freqtrade.trade_reporting import write_freqtrade_trade_report
 from quant_os.integrations.telegram.alert_adapter import TelegramAlertAdapter
+from quant_os.live_canary.live_fire import fire_live_canary
+from quant_os.live_canary.live_preflight import prepare_live_canary, run_live_preflight
+from quant_os.live_canary.live_reconcile import reconcile_live_canary
+from quant_os.live_canary.live_report import write_live_canary_report_bundle
+from quant_os.live_canary.live_status import live_canary_status, stop_live_canary
 from quant_os.monitoring.divergence import check_dryrun_divergence
 from quant_os.monitoring.dryrun_comparison import build_dryrun_comparison
 from quant_os.monitoring.dryrun_history import append_history_record
@@ -103,7 +109,7 @@ dataset_app = typer.Typer(help="Offline dataset evidence commands.")
 evidence_app = typer.Typer(help="Research evidence report commands.")
 historical_app = typer.Typer(help="Historical data ingestion commands.")
 proving_app = typer.Typer(help="Autonomous proving-mode commands.")
-canary_app = typer.Typer(help="Tiny-live canary policy gates. Planning only.")
+canary_app = typer.Typer(help="Tiny-live canary policy gates and default-off execution lane.")
 app.add_typer(autonomous_app, name="autonomous")
 app.add_typer(features_app, name="features")
 app.add_typer(strategy_app, name="strategy")
@@ -1030,6 +1036,128 @@ def canary_rehearsal_report() -> None:
             "final_gate_status": payload["final_gate_status"],
             "live_promotion_status": payload["live_promotion_status"],
             "report": "reports/canary/latest_rehearsal_report.md",
+        }
+    )
+
+
+@canary_app.command("live-prepare")
+def canary_live_prepare(
+    credential_path: Annotated[Path | None, typer.Option("--credential-path")] = None,
+) -> None:
+    payload = prepare_live_canary(credential_path=credential_path)
+    print(
+        {
+            "status": payload["status"],
+            "credential_status": payload["credential_status"],
+            "adapter_available": payload["adapter_available"],
+            "blockers": payload["blockers"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/live_canary/latest_prepare.md",
+        }
+    )
+
+
+@canary_app.command("live-preflight")
+def canary_live_preflight(
+    symbol: str | None = typer.Option(None, "--symbol"),
+    notional_usd: float | None = typer.Option(None, "--notional-usd"),
+    credential_path: Annotated[Path | None, typer.Option("--credential-path")] = None,
+) -> None:
+    payload = run_live_preflight(
+        symbol=symbol,
+        notional_usd=notional_usd,
+        credential_path=credential_path,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "preflight_status": payload["preflight_status"],
+            "blockers": payload["blockers"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/live_canary/latest_preflight.md",
+        }
+    )
+
+
+@canary_app.command("live-fire")
+def canary_live_fire(
+    symbol: str = typer.Option("BTC/USDT", "--symbol"),
+    notional_usd: float = typer.Option(10.0, "--notional-usd"),
+    side: str = typer.Option("buy", "--side"),
+    confirm_live_fire: bool = typer.Option(False, "--confirm-live-fire"),
+    credential_path: Annotated[Path | None, typer.Option("--credential-path")] = None,
+) -> None:
+    payload = fire_live_canary(
+        symbol=symbol,
+        notional_usd=notional_usd,
+        side=side,
+        confirm_live_fire=confirm_live_fire,
+        credential_path=credential_path,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "real_order_possible": payload["real_order_possible"],
+            "real_order_attempted": payload["real_order_attempted"],
+            "blockers": payload["blockers"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/live_canary/latest_fire_attempt.md",
+        }
+    )
+
+
+@canary_app.command("live-status")
+def canary_live_status() -> None:
+    payload = live_canary_status()
+    print(
+        {
+            "status": payload["status"],
+            "adapter_available": payload["adapter_available"],
+            "open_position_count": payload["open_position_count"],
+            "live_fire_enabled": payload["live_fire_enabled"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/live_canary/latest_status.md",
+        }
+    )
+
+
+@canary_app.command("live-reconcile")
+def canary_live_reconcile() -> None:
+    payload = reconcile_live_canary()
+    print(
+        {
+            "status": payload["status"],
+            "observed_open_positions": payload["observed_open_positions"],
+            "blockers": payload["blockers"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/live_canary/latest_reconciliation.md",
+        }
+    )
+
+
+@canary_app.command("live-stop")
+def canary_live_stop() -> None:
+    payload = stop_live_canary()
+    print(
+        {
+            "status": payload["status"],
+            "kill_switch_status": payload["kill_switch_status"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/live_canary/latest_stop.md",
+        }
+    )
+
+
+@canary_app.command("live-report")
+def canary_live_report() -> None:
+    payload = write_live_canary_report_bundle()
+    print(
+        {
+            "status": payload["status"],
+            "prepare_status": payload["prepare_status"],
+            "preflight_status": payload["preflight_status"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": payload["latest_report_path"],
         }
     )
 

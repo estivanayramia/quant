@@ -15,6 +15,7 @@ from quant_os.autonomy.dryrun_monitoring_tasks import dryrun_monitoring_status
 from quant_os.autonomy.freqtrade_tasks import freqtrade_safe_lane_status
 from quant_os.autonomy.freqtrade_trade_tasks import freqtrade_trade_artifact_status
 from quant_os.autonomy.historical_data_tasks import historical_data_status
+from quant_os.autonomy.live_canary_tasks import live_canary_safe_status
 from quant_os.autonomy.proving_tasks import proving_mode_status
 from quant_os.autonomy.strategy_research_tasks import strategy_research_status
 from quant_os.core.commands import CandidateOrder
@@ -202,6 +203,7 @@ def task_callable(name: str, event_store: JsonlEventStore) -> Callable[[], dict[
         "proving_mode_status": proving_mode_status,
         "canary_planning_status": canary_planning_status,
         "canary_rehearsal_status": canary_rehearsal_status,
+        "live_canary_safe_status": live_canary_safe_status,
         "run_watchdog_health_checks": lambda: run_watchdog_checks(event_store),
         "generate_report": lambda: generate_reports(event_store),
         "send_mock_alert": lambda: send_mock_alert("Autonomous safe run completed."),

@@ -11,3 +11,8 @@ admin, and universal account permissions.
 Phase 12 supports local permission manifest import from JSON or YAML. The
 manifest must contain descriptive scopes only and must not contain credentials.
 Forbidden or ambiguous scopes fail closed.
+
+Phase 13 credential files must remain outside the repository. Permission
+manifests may describe future scopes, but forbidden scopes such as withdrawals,
+transfers, futures, margin, leverage, shorting, options, universal access, or
+admin access block the live canary lane.

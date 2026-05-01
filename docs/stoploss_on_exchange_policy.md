@@ -11,3 +11,6 @@ be reconciled after reconnect or restart.
 
 Until that proof exists, canary rehearsal and final gate reports must keep live
 blocked.
+
+Phase 13 treats stoploss-on-exchange support as a hard gate. Unknown or false
+adapter capability blocks fire attempts, including tiny canary attempts.
