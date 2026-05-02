@@ -367,6 +367,10 @@ if "%TARGET%"=="canary-rehearsal-report" (
   python -m quant_os.cli canary rehearsal-report
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="canary-exchange-capabilities" (
+  python -m quant_os.cli canary exchange-capabilities
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="canary-live-prepare" (
   python -m quant_os.cli canary live-prepare
   exit /b !ERRORLEVEL!
@@ -639,6 +643,29 @@ if "%TARGET%"=="phase13-smoke" (
   python -m quant_os.cli canary live-report
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomous run-once
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="phase14-smoke" (
+  python -m quant_os.cli canary exchange-capabilities
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli canary live-prepare
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli canary live-preflight
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli canary live-status
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli canary live-reconcile
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli canary live-stop
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli canary live-report
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  del /f /q reports\autonomy\run.lock 2>nul
+  python -m quant_os.cli autonomous run-once --runbook phase14_live_canary_cycle
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli smoke
   if errorlevel 1 exit /b !ERRORLEVEL!

@@ -1,7 +1,7 @@
 enabled: false
 live_trading_allowed: false
 exchange_adapter_enabled: false
-exchange_name: canary_exchange
+exchange_name: kraken
 spot_only: true
 allowed_symbols:
   - BTC/USDT
@@ -33,3 +33,25 @@ execution:
   fire_command_requires_explicit_flag: true
   double_confirmation_required: true
   emergency_stop_enabled: true
+
+adapter:
+  type: fake
+  real_adapter_enabled: false
+  real_adapter_name: kraken_spot_ccxt
+  optional_dependency_required: true
+  capability_probe_enabled: true
+  live_transport_enabled: false
+
+real_adapter:
+  local_settings_file_required: true
+  local_settings_inside_repo_allowed: false
+  local_settings_path: ""
+  account_mode: spot_only
+  read_balance_allowed: true
+  trade_allowed: true
+  withdrawals_allowed: false
+  futures_allowed: false
+  margin_allowed: false
+  leverage_allowed: false
+  shorts_allowed: false
+  options_allowed: false

@@ -6,6 +6,7 @@ from typing import Any
 
 from quant_os.governance.live_attempt_registry import latest_live_attempt
 from quant_os.live_canary.adapter import build_live_canary_adapter
+from quant_os.live_canary.capabilities import inspect_exchange_capabilities
 from quant_os.live_canary.config import load_live_execution_config
 from quant_os.live_canary.exchange_port import LiveCanaryExchangePort
 from quant_os.live_canary.live_kill_switch import (
@@ -29,6 +30,7 @@ def live_canary_status(
     config = load_live_execution_config()
     adapter = adapter or build_live_canary_adapter()
     capabilities = adapter.capabilities()
+    capability_report = inspect_exchange_capabilities(write=True)
     positions = adapter.get_open_positions() if capabilities.adapter_available else []
     kill_switch = read_live_kill_switch()
     attempt = latest_live_attempt()
@@ -41,6 +43,10 @@ def live_canary_status(
         else "READY_FOR_PREFLIGHT_RECHECK",
         "generated_at": datetime.now(UTC).isoformat(),
         "mode": "fake" if getattr(adapter, "is_fake", False) else "blocked",
+        "adapter_mode": capability_report["adapter_mode"],
+        "dependency_status": capability_report["dependency_status"],
+        "settings_status": capability_report["settings_status"],
+        "capability_status": capability_report["status"],
         "adapter_available": capabilities.adapter_available,
         "open_position_count": len(positions),
         "latest_attempt_status": attempt.get("status") if attempt else None,
@@ -71,12 +77,17 @@ def stop_live_canary(
     write: bool = True,
 ) -> dict[str, Any]:
     adapter = adapter or build_live_canary_adapter()
+    capability_report = inspect_exchange_capabilities(write=True)
     kill_switch = activate_live_kill_switch(reason=reason, path=kill_switch_path)
     adapter_stop = adapter.emergency_stop()
     payload = {
         "status": "STOPPED",
         "generated_at": datetime.now(UTC).isoformat(),
         "mode": "fake" if getattr(adapter, "is_fake", False) else "blocked",
+        "adapter_mode": capability_report["adapter_mode"],
+        "dependency_status": capability_report["dependency_status"],
+        "settings_status": capability_report["settings_status"],
+        "capability_status": capability_report["status"],
         "kill_switch_status": kill_switch["status"],
         "adapter_stop": adapter_stop,
         "real_order_possible": False,

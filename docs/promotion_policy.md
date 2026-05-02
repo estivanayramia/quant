@@ -19,3 +19,7 @@ Phase 10 proving mode can report `DRY_RUN_PROVEN` after repeated safe cycles, bu
 Phase 11 canary policy gates define approval, permission, preflight, incident, and capital-ladder requirements. They do not create a live-ready status and cannot grant execution authority.
 
 Phase 13 does not make any strategy broadly live-ready. A tiny canary attempt, if ever manually armed, is a production-safety test only and not a profitability or promotion claim.
+
+Phase 14 does not broaden promotion. A single exchange adapter can be inspected
+for capability, but it does not make any strategy live-ready and cannot bypass
+the tiny canary gate stack.

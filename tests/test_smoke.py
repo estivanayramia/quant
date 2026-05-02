@@ -24,12 +24,18 @@ def test_no_real_api_keys_or_live_default(local_project):
 
 def test_no_real_broker_sdks_imported():
     blocked = ["alpaca", "freqtrade", "nautilus_trader", "quantconnect", "ccxt"]
+    optional_single_exchange_adapter = Path("src/quant_os/live_canary/exchange_real.py")
     source_files = list(Path("src").rglob("*.py"))
     for path in source_files:
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
                 for alias in node.names:
+                    if (
+                        path == optional_single_exchange_adapter
+                        and alias.name.split(".")[0] == "ccxt"
+                    ):
+                        continue
                     assert alias.name.split(".")[0] not in blocked
             if isinstance(node, ast.ImportFrom) and node.module:
                 assert node.module.split(".")[0] not in blocked

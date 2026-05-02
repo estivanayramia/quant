@@ -24,3 +24,10 @@ Phase 13 adds a default-off tiny-live execution lane scaffold. It remains
 manual-only, tiny-notional, one-position-max, spot-only, and blocked unless
 local credentials outside the repo plus permission, approval, arming, stoploss,
 reconciliation, and final-gate checks all pass.
+
+Phase 14 adds one single-exchange real adapter integration path for the canary
+lane. The default remains fake-only and blocked. The real adapter requires
+explicit local settings outside the repo, guarded optional dependency loading,
+spot-only account mode, stoploss-on-exchange support, tiny symbol/notional
+limits, and all prior gates. Autonomous workflows still cannot invoke live
+fire.

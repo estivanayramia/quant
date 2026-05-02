@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from quant_os.live_canary.adapter import build_live_canary_adapter
+from quant_os.live_canary.capabilities import inspect_exchange_capabilities
 from quant_os.live_canary.exchange_port import LiveCanaryExchangePort
 from quant_os.live_canary.reporting import LIVE_CANARY_ROOT, write_live_canary_report
 
@@ -19,6 +20,7 @@ def reconcile_live_canary(
 ) -> dict[str, Any]:
     adapter = adapter or build_live_canary_adapter()
     capabilities = adapter.capabilities()
+    capability_report = inspect_exchange_capabilities(write=True)
     positions = adapter.get_open_positions() if capabilities.adapter_available else []
     blockers: list[str] = []
     warnings: list[str] = []
@@ -31,6 +33,10 @@ def reconcile_live_canary(
         "status": status,
         "generated_at": datetime.now(UTC).isoformat(),
         "mode": "fake" if getattr(adapter, "is_fake", False) else "blocked",
+        "adapter_mode": capability_report["adapter_mode"],
+        "dependency_status": capability_report["dependency_status"],
+        "settings_status": capability_report["settings_status"],
+        "capability_status": capability_report["status"],
         "adapter_available": capabilities.adapter_available,
         "expected_open_positions": expected_open_positions,
         "observed_open_positions": len(positions),

@@ -95,6 +95,13 @@ RUNBOOKS: dict[str, list[str]] = {
         "generate_report",
         "send_mock_alert",
     ],
+    "phase14_live_canary_cycle": [
+        "config_guard",
+        "secrets_guard",
+        "live_trading_guard",
+        "live_canary_safe_status",
+        "generate_report",
+    ],
 }
 
 

@@ -10,6 +10,7 @@ from quant_os.canary.permissions_import import validate_latest_permission_manife
 from quant_os.canary.stoploss_proof import build_stoploss_proof
 from quant_os.governance.live_canary_approval import live_canary_approval_guard
 from quant_os.live_canary.adapter import build_live_canary_adapter
+from quant_os.live_canary.capabilities import inspect_exchange_capabilities
 from quant_os.live_canary.config import live_execution_safety_blockers, load_live_execution_config
 from quant_os.live_canary.credential_loader import load_live_credentials
 from quant_os.live_canary.exchange_port import LiveCanaryExchangePort
@@ -38,6 +39,7 @@ def prepare_live_canary(
     config = load_live_execution_config()
     adapter = adapter or build_live_canary_adapter()
     capabilities = adapter.capabilities()
+    capability_report = inspect_exchange_capabilities(write=True)
     credential = load_live_credentials(credential_path)
     permission = validate_latest_permission_manifest()
     approval = live_canary_approval_guard()
@@ -58,6 +60,10 @@ def prepare_live_canary(
         "status": status,
         "generated_at": datetime.now(UTC).isoformat(),
         "mode": "fake" if getattr(adapter, "is_fake", False) else "blocked",
+        "adapter_mode": capability_report["adapter_mode"],
+        "dependency_status": capability_report["dependency_status"],
+        "settings_status": capability_report["settings_status"],
+        "capability_status": capability_report["status"],
         "real_order_possible": False,
         "real_order_attempted": False,
         "credential_status": credential["status"],
@@ -94,6 +100,7 @@ def run_live_preflight(
     config = load_live_execution_config()
     adapter = adapter or build_live_canary_adapter()
     capabilities = adapter.capabilities()
+    capability_report = inspect_exchange_capabilities(write=True)
     prepare = prepare_live_canary(credential_path=credential_path, adapter=adapter, write=True)
     live_guard = live_trading_guard()
     exchange_guard = live_exchange_guard()
@@ -119,6 +126,7 @@ def run_live_preflight(
         "proving_readiness": proving.get("readiness_status"),
         "unresolved_incidents": incidents.get("unresolved_count"),
         "kill_switch": kill_switch.get("status"),
+        "exchange_capabilities": capability_report["status"],
     }
     blockers = _unique(
         prepare["blockers"]
@@ -138,6 +146,8 @@ def run_live_preflight(
         + (["UNRESOLVED_INCIDENTS_PRESENT"] if incidents.get("unresolved_count", 0) else [])
         + (["LIVE_KILL_SWITCH_ACTIVE"] if kill_switch.get("active") else [])
     )
+    if capability_report["adapter_mode"] != "fake" and capability_report["status"] != "REAL_ADAPTER_CAPABLE":
+        blockers.extend(capability_report.get("blockers", []))
     if symbol is not None:
         symbol_check = validate_symbol_allowed(symbol)
         checks["symbol_allowlist"] = symbol_check["status"]
@@ -155,6 +165,10 @@ def run_live_preflight(
         "preflight_status": preflight_status,
         "generated_at": datetime.now(UTC).isoformat(),
         "mode": "fake" if getattr(adapter, "is_fake", False) else "blocked",
+        "adapter_mode": capability_report["adapter_mode"],
+        "dependency_status": capability_report["dependency_status"],
+        "settings_status": capability_report["settings_status"],
+        "capability_status": capability_report["status"],
         "real_order_possible": bool(not blockers and not getattr(adapter, "is_fake", False)),
         "real_order_attempted": False,
         "checks": checks,
