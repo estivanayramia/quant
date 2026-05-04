@@ -9,6 +9,7 @@ from rich import print
 from quant_os.adapters.event_store_jsonl import JsonlEventStore
 from quant_os.adapters.market_data_parquet import LocalParquetMarketData
 from quant_os.autonomy.daemon import daemon_status, run_daemon, stop_daemon
+from quant_os.autonomy.dry_run_proving import DryRunProvingConfig, run_dry_run_proving_cycle
 from quant_os.autonomy.proving_cycle import run_proving_once
 from quant_os.autonomy.supervisor import Supervisor
 from quant_os.autonomy.tasks import run_drift_checks
@@ -80,7 +81,9 @@ from quant_os.proving.incident_log import summarize_incidents
 from quant_os.proving.proving_report import write_proving_report
 from quant_os.proving.readiness import evaluate_proving_readiness
 from quant_os.proving.run_history import load_proving_history, write_proving_status
+from quant_os.readiness.sequence2 import write_sequence2_readiness_report
 from quant_os.replay.engine import ReplayEngine, ReplayOrderIntent
+from quant_os.replay.realism_report import write_replay_realism_report
 from quant_os.research.backtest import run_backtest
 from quant_os.research.calibration.diagnostics import calibration_diagnostics
 from quant_os.research.calibration.penalties import apply_edge_penalties
@@ -102,6 +105,7 @@ from quant_os.research.research_report import run_strategy_research, write_strat
 from quant_os.research.strategies import baseline_ma_candidates
 from quant_os.research.strategy_ablation import run_strategy_ablation
 from quant_os.research.tournament import run_tournament
+from quant_os.research.validation.walk_forward import run_crypto_walk_forward
 from quant_os.research.walk_forward import run_walk_forward_validation
 from quant_os.risk.firewall import RiskFirewall
 from quant_os.risk.limits import RiskLimits
@@ -125,6 +129,7 @@ evidence_app = typer.Typer(help="Research evidence report commands.")
 historical_app = typer.Typer(help="Historical data ingestion commands.")
 proving_app = typer.Typer(help="Autonomous proving-mode commands.")
 canary_app = typer.Typer(help="Tiny-live canary policy gates and default-off execution lane.")
+readiness_app = typer.Typer(help="Evidence-based readiness reports.")
 app.add_typer(autonomous_app, name="autonomous")
 app.add_typer(data_app, name="data")
 app.add_typer(features_app, name="features")
@@ -140,6 +145,7 @@ app.add_typer(evidence_app, name="evidence")
 app.add_typer(historical_app, name="historical")
 app.add_typer(proving_app, name="proving")
 app.add_typer(canary_app, name="canary")
+app.add_typer(readiness_app, name="readiness")
 
 
 def _event_store() -> JsonlEventStore:
@@ -297,6 +303,21 @@ def replay_run(periods: int = typer.Option(120, min=20)) -> None:
     )
 
 
+@replay_app.command("realism-report")
+def replay_realism_report(periods: int = typer.Option(120, min=20)) -> None:
+    payload = write_replay_realism_report(periods=periods)
+    print(
+        {
+            "status": payload["status"],
+            "fills": payload["fills"],
+            "rejections": payload["rejections"],
+            "realism_penalty_bps": payload["metrics"].get("realism_penalty_bps", 0.0),
+            "report": "reports/sequence2/replay_realism/latest_realism_report.json",
+            "live_trading_enabled": False,
+        }
+    )
+
+
 @calibration_app.command("run")
 def calibration_run() -> None:
     probability = estimate_signal_probability(
@@ -370,6 +391,27 @@ def validation_run_all() -> None:
 @validation_app.command("report")
 def validation_report() -> None:
     validation_run_all()
+
+
+@validation_app.command("walk-forward")
+def validation_walk_forward(periods: int = typer.Option(180, min=60)) -> None:
+    dataset = build_crypto_research_dataset(periods=periods)
+    payload = run_crypto_walk_forward(
+        dataset.frame,
+        train_bars=60,
+        validation_bars=30,
+        test_bars=30,
+        step_bars=30,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "split_count": payload["split_count"],
+            "warnings": payload["warnings"],
+            "report": "reports/sequence2/walk_forward/latest_walk_forward.json",
+            "live_trading_enabled": False,
+        }
+    )
 
 
 @app.command("watchdog")
@@ -1009,6 +1051,40 @@ def proving_report() -> None:
     )
 
 
+@proving_app.command("dry-run-proving")
+def proving_dry_run_proving(periods: int = typer.Option(180, min=60)) -> None:
+    payload = run_dry_run_proving_cycle(config=DryRunProvingConfig(periods=periods))
+    print(
+        {
+            "status": payload["status"],
+            "allowed_action_count": payload["allowed_action_count"],
+            "blocked_action_count": payload["blocked_action_count"],
+            "readiness": payload["readiness"]["status"],
+            "report": "reports/sequence2/proving/latest_proving_summary.json",
+            "live_trading_enabled": False,
+        }
+    )
+
+
+@proving_app.command("sequence2-report")
+def proving_sequence2_report(periods: int = typer.Option(180, min=60)) -> None:
+    proving_dry_run_proving(periods=periods)
+
+
+@readiness_app.command("report")
+def readiness_report() -> None:
+    payload = write_sequence2_readiness_report()
+    print(
+        {
+            "status": payload["status"],
+            "blockers": payload["blockers"],
+            "warnings": payload["warnings"],
+            "report": "reports/sequence2/readiness/latest_readiness.json",
+            "live_trading_enabled": False,
+        }
+    )
+
+
 @canary_app.command("policy")
 def canary_policy() -> None:
     payload = build_canary_policy()
@@ -1384,6 +1460,21 @@ def autonomous_status() -> None:
 @autonomous_app.command("stop")
 def autonomous_stop() -> None:
     print(stop_daemon())
+
+
+@autonomous_app.command("dry-run-proving")
+def autonomous_dry_run_proving(periods: int = typer.Option(180, min=60)) -> None:
+    payload = run_dry_run_proving_cycle(config=DryRunProvingConfig(periods=periods))
+    print(
+        {
+            "status": payload["status"],
+            "allowed_action_count": payload["allowed_action_count"],
+            "blocked_action_count": payload["blocked_action_count"],
+            "readiness": payload["readiness"]["status"],
+            "report": "reports/sequence2/proving/latest_proving_summary.json",
+            "live_trading_enabled": False,
+        }
+    )
 
 
 @strategy_app.command("list")
