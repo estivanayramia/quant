@@ -80,7 +80,15 @@ from quant_os.proving.incident_log import summarize_incidents
 from quant_os.proving.proving_report import write_proving_report
 from quant_os.proving.readiness import evaluate_proving_readiness
 from quant_os.proving.run_history import load_proving_history, write_proving_status
+from quant_os.replay.engine import ReplayEngine, ReplayOrderIntent
 from quant_os.research.backtest import run_backtest
+from quant_os.research.calibration.diagnostics import calibration_diagnostics
+from quant_os.research.calibration.penalties import apply_edge_penalties
+from quant_os.research.calibration.probabilities import estimate_signal_probability
+from quant_os.research.calibration.uncertainty import estimate_uncertainty
+from quant_os.research.crypto.features import build_crypto_features
+from quant_os.research.crypto.ingest import build_crypto_research_dataset
+from quant_os.research.crypto.reports import write_crypto_research_report
 from quant_os.research.historical_evidence import (
     build_historical_splits,
     calculate_historical_evidence_score,
@@ -98,11 +106,17 @@ from quant_os.research.walk_forward import run_walk_forward_validation
 from quant_os.risk.firewall import RiskFirewall
 from quant_os.risk.limits import RiskLimits
 from quant_os.security.live_trading_guard import live_trading_guard
+from quant_os.validation.runner import list_scenarios, run_all_scenarios, run_scenario
 from quant_os.watchdog.health_checks import run_watchdog
 
 app = typer.Typer(help="Local deterministic QuantOps simulation foundation.")
 autonomous_app = typer.Typer(help="Autonomous safe-mode runbooks.")
+data_app = typer.Typer(help="Market-agnostic data spine commands.")
 features_app = typer.Typer(help="Deterministic feature-building commands.")
+research_app = typer.Typer(help="Research lane commands.")
+replay_app = typer.Typer(help="Execution-aware offline replay commands.")
+calibration_app = typer.Typer(help="Signal calibration and edge scoring commands.")
+validation_app = typer.Typer(help="Autonomy behavioral validation commands.")
 strategy_app = typer.Typer(help="Strategy governance commands.")
 freqtrade_app = typer.Typer(help="Freqtrade dry-run-only commands.")
 dryrun_app = typer.Typer(help="Dry-run comparison monitoring commands.")
@@ -112,7 +126,12 @@ historical_app = typer.Typer(help="Historical data ingestion commands.")
 proving_app = typer.Typer(help="Autonomous proving-mode commands.")
 canary_app = typer.Typer(help="Tiny-live canary policy gates and default-off execution lane.")
 app.add_typer(autonomous_app, name="autonomous")
+app.add_typer(data_app, name="data")
 app.add_typer(features_app, name="features")
+app.add_typer(research_app, name="research")
+app.add_typer(replay_app, name="replay")
+app.add_typer(calibration_app, name="calibration")
+app.add_typer(validation_app, name="validation")
 app.add_typer(strategy_app, name="strategy")
 app.add_typer(freqtrade_app, name="freqtrade")
 app.add_typer(dryrun_app, name="dryrun")
@@ -209,6 +228,148 @@ def guard_live() -> None:
         print({"passed": False, "reasons": result.reasons})
         raise typer.Exit(1)
     print({"passed": True, "guard": "live_trading_guard"})
+
+
+@data_app.command("validate")
+def data_spine_validate(periods: int = typer.Option(120, min=20)) -> None:
+    dataset = build_crypto_research_dataset(periods=periods)
+    print(
+        {
+            "status": dataset.record.quality["status"],
+            "dataset_id": dataset.dataset_id,
+            "rows": dataset.record.rows,
+            "symbols": sorted(dataset.frame["symbol"].unique().tolist()),
+            "layer": dataset.record.layer.value,
+            "live_trading_enabled": False,
+        }
+    )
+
+
+@research_app.command("crypto-build")
+def research_crypto_build(periods: int = typer.Option(240, min=50)) -> None:
+    dataset = build_crypto_research_dataset(periods=periods)
+    payload = write_crypto_research_report(dataset.frame)
+    print(
+        {
+            "status": payload["status"],
+            "dataset_id": dataset.dataset_id,
+            "rows": payload["rows"],
+            "symbols": payload["symbols"],
+            "signals": payload["signal_count"],
+            "report": "reports/crypto/latest_research.json",
+            "live_trading_enabled": False,
+        }
+    )
+
+
+@replay_app.command("run")
+def replay_run(periods: int = typer.Option(120, min=20)) -> None:
+    dataset = build_crypto_research_dataset(periods=periods)
+    frame = build_crypto_features(dataset.frame)
+    btc = frame[frame["symbol"] == "BTC/USDT"].reset_index(drop=True)
+    intents = [
+        ReplayOrderIntent(
+            "sequence1_replay_smoke",
+            "BTC/USDT",
+            "BUY",
+            0.01,
+            btc.loc[5, "timestamp"],
+            reason_code="SEQUENCE1_SMOKE_ENTRY",
+        ),
+        ReplayOrderIntent(
+            "sequence1_replay_smoke",
+            "BTC/USDT",
+            "SELL",
+            0.01,
+            btc.loc[min(len(btc) - 1, 30), "timestamp"],
+            reason_code="SEQUENCE1_SMOKE_EXIT",
+        ),
+    ]
+    result = ReplayEngine(fee_bps=5.0, slippage_bps=3.0).run(frame, intents)
+    print(
+        {
+            "status": result.reconciliation["status"],
+            "fills": len(result.fills),
+            "rejections": len(result.rejections),
+            "metrics": result.metrics,
+            "live_trading_enabled": False,
+        }
+    )
+
+
+@calibration_app.command("run")
+def calibration_run() -> None:
+    probability = estimate_signal_probability(
+        raw_score=0.62,
+        volatility_regime="normal",
+        liquidity_score=0.75,
+        overextension_z=0.6,
+    )
+    uncertainty = estimate_uncertainty(
+        sample_size=120,
+        regime_observations=35,
+        feature_stability=0.72,
+    )
+    edge = apply_edge_penalties(
+        probability=probability,
+        payoff_ratio=1.05,
+        cost_bps=8.0,
+        correlated_signal_count=1,
+        liquidity_score=0.75,
+        overextension_z=0.6,
+        uncertainty=uncertainty,
+    )
+    diagnostics = calibration_diagnostics(
+        probabilities=[0.35, probability, 0.68, 0.25],
+        outcomes=[0, 1, 1, 0],
+        expected_returns_bps=[-2.0, edge.edge_bps, 7.0, -4.0],
+        equity_curve=[10_000.0, 9_998.0, 10_006.0, 10_011.0],
+        regimes=["low", "normal", "normal", "high"],
+    )
+    print(
+        {
+            "approved": edge.approved,
+            "probability": probability,
+            "uncertainty": uncertainty,
+            "edge_bps": edge.edge_bps,
+            "reason_codes": edge.reason_codes,
+            "diagnostics": diagnostics,
+            "live_trading_enabled": False,
+        }
+    )
+
+
+@validation_app.command("list-scenarios")
+def validation_list_scenarios() -> None:
+    print({"scenarios": [scenario.model_dump() for scenario in list_scenarios()]})
+
+
+@validation_app.command("run")
+def validation_run(scenario: str = typer.Option(..., "--scenario")) -> None:
+    outcome = run_scenario(scenario)
+    print(outcome.model_dump(mode="json"))
+    if outcome.status != "PASS":
+        raise typer.Exit(1)
+
+
+@validation_app.command("run-all")
+def validation_run_all() -> None:
+    summary = run_all_scenarios()
+    print(
+        {
+            "status": summary["status"],
+            "scenario_count": summary["scenario_count"],
+            "unsafe_action_failure_count": summary["unsafe_action_failure_count"],
+            "blocked_correctly_count": summary["blocked_correctly_count"],
+            "report": "reports/validation/latest_summary.json",
+            "live_trading_enabled": False,
+        }
+    )
+
+
+@validation_app.command("report")
+def validation_report() -> None:
+    validation_run_all()
 
 
 @app.command("watchdog")
