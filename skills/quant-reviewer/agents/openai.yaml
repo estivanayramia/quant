@@ -1,0 +1,6 @@
+interface:
+  display_name: "Quant Reviewer"
+  short_description: "Findings-first quant safety review"
+  default_prompt: "Use $quant-reviewer to review this quant repo diff for correctness and safety findings."
+policy:
+  allow_implicit_invocation: true

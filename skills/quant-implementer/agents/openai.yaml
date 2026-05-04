@@ -1,0 +1,6 @@
+interface:
+  display_name: "Quant Implementer"
+  short_description: "Safe scoped edits with validation mapping"
+  default_prompt: "Use $quant-implementer to make a scoped quant repo edit and run the right checks."
+policy:
+  allow_implicit_invocation: true

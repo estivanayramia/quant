@@ -1,0 +1,6 @@
+interface:
+  display_name: "Quant Debugger"
+  short_description: "Read-only reproduce-first diagnosis"
+  default_prompt: "Use $quant-debugger to reproduce and diagnose this quant repo failure without editing."
+policy:
+  allow_implicit_invocation: true

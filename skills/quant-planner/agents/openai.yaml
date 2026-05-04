@@ -1,0 +1,6 @@
+interface:
+  display_name: "Quant Planner"
+  short_description: "Small scoped plans with validation maps"
+  default_prompt: "Use $quant-planner to plan the smallest safe quant repo change and validation sequence."
+policy:
+  allow_implicit_invocation: true
