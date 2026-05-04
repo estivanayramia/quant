@@ -6,7 +6,7 @@ from typing import Any
 import pandas as pd
 
 from quant_os.core.errors import DataQualityError
-from quant_os.data.schemas import REQUIRED_OHLCV_COLUMNS
+from quant_os.data.schemas import CANONICAL_SCHEMAS, REQUIRED_OHLCV_COLUMNS, DatasetKind
 
 
 def validate_ohlcv(
@@ -51,3 +51,58 @@ def validate_ohlcv(
         "start": data["timestamp"].min().isoformat(),
         "end": data["timestamp"].max().isoformat(),
     }
+
+
+def validate_canonical_frame(frame: pd.DataFrame, kind: DatasetKind | str) -> dict[str, Any]:
+    dataset_kind = DatasetKind(kind)
+    schema = CANONICAL_SCHEMAS[dataset_kind]
+    missing = [column for column in schema.required_columns if column not in frame.columns]
+    if missing:
+        raise DataQualityError(f"MISSING_COLUMNS:{','.join(missing)}")
+    data = frame.copy()
+    if data[schema.required_columns].isnull().any().any():
+        raise DataQualityError("NULL_REQUIRED_VALUES")
+    if schema.timestamp_column in data.columns:
+        data[schema.timestamp_column] = pd.to_datetime(data[schema.timestamp_column], utc=True)
+    if data.duplicated(schema.primary_key).any():
+        raise DataQualityError("DUPLICATE_PRIMARY_KEY")
+    if dataset_kind == DatasetKind.CANDLE:
+        _validate_candles(data)
+    if dataset_kind in {DatasetKind.TRADE, DatasetKind.FILL} and (
+        data[["price", "quantity"]] <= 0
+    ).any().any():
+        raise DataQualityError("NON_POSITIVE_PRICE_OR_QUANTITY")
+    if dataset_kind == DatasetKind.ORDERBOOK_SNAPSHOT:
+        if (data[["bid_price", "ask_price", "bid_size", "ask_size"]] <= 0).any().any():
+            raise DataQualityError("NON_POSITIVE_ORDERBOOK_VALUE")
+        if (data["bid_price"] >= data["ask_price"]).any():
+            raise DataQualityError("CROSSED_ORDERBOOK")
+    symbols = sorted(data["symbol"].dropna().astype(str).unique().tolist()) if "symbol" in data else []
+    return {
+        "status": "PASS",
+        "rows": int(len(data)),
+        "dataset_kind": dataset_kind.value,
+        "dataset_version": schema.version,
+        "symbols": symbols,
+        "start": data[schema.timestamp_column].min().isoformat()
+        if schema.timestamp_column in data
+        else None,
+        "end": data[schema.timestamp_column].max().isoformat()
+        if schema.timestamp_column in data
+        else None,
+    }
+
+
+def _validate_candles(data: pd.DataFrame) -> None:
+    price_columns = ["open", "high", "low", "close"]
+    if (data[price_columns] <= 0).any().any():
+        raise DataQualityError("NON_POSITIVE_PRICE")
+    if (data["volume"] < 0).any():
+        raise DataQualityError("NEGATIVE_VOLUME")
+    if (data["high"] < data[["open", "close"]].max(axis=1)).any():
+        raise DataQualityError("INVALID_OHLC_HIGH")
+    if (data["low"] > data[["open", "close"]].min(axis=1)).any():
+        raise DataQualityError("INVALID_OHLC_LOW")
+    for key, group in data.groupby(["venue", "symbol", "timeframe"], sort=False):
+        if not group["timestamp"].is_monotonic_increasing:
+            raise DataQualityError(f"NON_MONOTONIC_TIME:{key}")

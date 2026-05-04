@@ -678,6 +678,38 @@ if "%TARGET%"=="smoke" (
   python -m pytest tests/test_smoke.py tests/test_risk_firewall.py tests/test_event_replay.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="crypto-research" (
+  python -m quant_os.cli data validate
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research crypto-build
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="replay-smoke" (
+  python -m quant_os.cli replay run
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="calibration-smoke" (
+  python -m quant_os.cli calibration run
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="validation-smoke" (
+  python -m quant_os.cli validation list-scenarios
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli validation run-all
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence1-smoke" (
+  call "%~f0" crypto-research
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" replay-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" calibration-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" validation-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence1_data_spine.py tests/test_sequence1_crypto_research.py tests/test_sequence1_replay.py tests/test_sequence1_calibration.py tests/test_sequence1_validation_engine.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="clean" (
   python -c "import shutil, pathlib; [shutil.rmtree(p, ignore_errors=True) for p in ['data/demo','data/events','data/read_models','.pytest_cache','.ruff_cache','htmlcov']]; [path.unlink() for path in pathlib.Path('reports').glob('*') if path.name != '.gitkeep']"
   exit /b !ERRORLEVEL!
