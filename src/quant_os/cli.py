@@ -106,6 +106,13 @@ from quant_os.research.historical_evidence import (
 from quant_os.research.historical_research_report import write_historical_research_report
 from quant_os.research.leaderboard import build_strategy_leaderboard
 from quant_os.research.overfit_checks import run_overfit_checks
+from quant_os.research.prediction_markets.candidate_predictions import (
+    write_prediction_candidate_report,
+    write_prediction_feature_report,
+)
+from quant_os.research.prediction_markets.historical_dataset import (
+    write_historical_dataset_report as write_prediction_historical_dataset_report,
+)
 from quant_os.research.prediction_markets.quality_report import (
     write_market_inventory_report,
     write_market_quality_report,
@@ -162,6 +169,13 @@ app.add_typer(readiness_app, name="readiness")
 
 DEFAULT_POLYMARKET_WALLET_FIXTURE = (
     Path("tests") / "fixtures" / "prediction_markets" / "polymarket_wallet_activity_sample.json"
+)
+DEFAULT_POLYMARKET_HISTORY_FIXTURE = (
+    Path("tests")
+    / "fixtures"
+    / "prediction_markets"
+    / "history"
+    / "polymarket_resolution_history_sample.json"
 )
 
 
@@ -367,6 +381,66 @@ def research_prediction_market_priority(
             "inventory_report": "reports/sequence20/market_inventory/latest_market_inventory.json",
             "priority_report": "reports/sequence20/research_priority/latest_research_priority.json",
             "live_trading_enabled": False,
+        }
+    )
+
+
+@research_app.command("prediction-history-build")
+def research_prediction_history_build(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    payload = write_prediction_historical_dataset_report(
+        fixture_path=fixture_path or DEFAULT_POLYMARKET_HISTORY_FIXTURE,
+    )
+    print(
+        {
+            "status": payload["research_readiness_status"],
+            "dataset_id": payload["dataset_id"],
+            "market_count": payload["market_count"],
+            "resolved_count": payload["resolution_summary"]["resolved_count"],
+            "ready_for_replay_design": payload["ready_for_replay_design"],
+            "report": "reports/sequence21/dataset/latest_dataset_summary.json",
+            "live_trading_enabled": False,
+        }
+    )
+
+
+@research_app.command("prediction-feature-report")
+def research_prediction_feature_report(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    payload = write_prediction_feature_report(
+        fixture_path=fixture_path or DEFAULT_POLYMARKET_HISTORY_FIXTURE,
+    )
+    print(
+        {
+            "status": "RESEARCH_ONLY",
+            "feature_count": payload["feature_count"],
+            "source_mode": payload["source_mode"],
+            "report": "reports/sequence21/features/latest_prediction_features.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("prediction-candidate-report")
+def research_prediction_candidate_report(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    payload = write_prediction_candidate_report(
+        fixture_path=fixture_path or DEFAULT_POLYMARKET_HISTORY_FIXTURE,
+    )
+    print(
+        {
+            "status": payload["research_readiness_status"],
+            "feature_count": payload["feature_count"],
+            "resolved_observation_count": payload["metrics"]["resolved_observation_count"],
+            "ready_for_replay_design": payload["ready_for_replay_design"],
+            "blockers": payload["blockers"],
+            "report": "reports/sequence21/prediction_candidates/latest_prediction_candidates.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
         }
     )
 
