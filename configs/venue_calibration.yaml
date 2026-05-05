@@ -1,0 +1,17 @@
+enabled: true
+live_trading_allowed: false
+allow_network_fetch: false
+fixture_path: tests/fixtures/venue/binance_public_snapshot.json
+venue: binance
+timeframe: 1m
+symbols:
+  - BTC/USDT
+  - ETH/USDT
+policy:
+  fee_bps_floor: 5.0
+  slippage_bps_floor: 3.0
+  spread_buffer_multiplier: 1.5
+  min_liquidity_score: 0.35
+  min_top_of_book_notional: 25000.0
+  max_quote_age_ms: 1000.0
+  max_spread_bps: 12.0

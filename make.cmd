@@ -710,6 +710,22 @@ if "%TARGET%"=="dry-run-proving-smoke" (
   python -m quant_os.cli proving dry-run-proving
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="venue-calibration-smoke" (
+  python -m quant_os.cli calibration venue-report
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="calibrated-edge-smoke" (
+  python -m quant_os.cli research calibrated-edge-report
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence3a-smoke" (
+  call "%~f0" venue-calibration-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" calibrated-edge-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence3_venue_calibration.py tests/test_sequence3_calibrated_edge.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="sequence2-smoke" (
   call "%~f0" replay-realism-smoke
   if errorlevel 1 exit /b !ERRORLEVEL!
