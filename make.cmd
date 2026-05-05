@@ -698,6 +698,32 @@ if "%TARGET%"=="validation-smoke" (
   python -m quant_os.cli validation run-all
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="replay-realism-smoke" (
+  python -m quant_os.cli replay realism-report
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="walk-forward-smoke" (
+  python -m quant_os.cli validation walk-forward
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="dry-run-proving-smoke" (
+  python -m quant_os.cli proving dry-run-proving
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence2-smoke" (
+  call "%~f0" replay-realism-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" walk-forward-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" dry-run-proving-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli validation run-all
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness report
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence2_replay_realism.py tests/test_sequence2_walk_forward.py tests/test_sequence2_dry_run_proving.py tests/test_sequence2_validation_readiness.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="sequence1-smoke" (
   call "%~f0" crypto-research
   if errorlevel 1 exit /b !ERRORLEVEL!
