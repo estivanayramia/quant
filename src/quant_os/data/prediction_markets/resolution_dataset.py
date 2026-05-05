@@ -18,7 +18,17 @@ def build_resolution_aware_dataset(fixture_path: str | Path) -> dict[str, Any]:
     path = Path(fixture_path)
     payload = load_prediction_market_history(path)
     source_hash = sha256_file(path)
-    markets = [_normalize_market(raw, source_path=path, source_hash=source_hash) for raw in payload["markets"]]
+    source_mode = str(payload.get("source_mode") or "fixture")
+    sequence = str(payload.get("sequence") or "21")
+    markets = [
+        _normalize_market(
+            raw,
+            source_path=path,
+            source_hash=source_hash,
+            source_mode=source_mode,
+        )
+        for raw in payload["markets"]
+    ]
     markets = sorted(markets, key=lambda item: item["market_id"])
     resolution_summary = _resolution_summary(markets)
     snapshot_count = sum(len(market["snapshots"]) for market in markets)
@@ -26,10 +36,11 @@ def build_resolution_aware_dataset(fixture_path: str | Path) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
         "dataset_id": "prediction_history_" + source_hash[:20],
+        "dataset_hash": source_hash,
         "generated_at": datetime.now(UTC).isoformat(),
-        "sequence": "21",
+        "sequence": sequence,
         "source": "polymarket",
-        "source_mode": str(payload.get("source_mode") or "fixture"),
+        "source_mode": source_mode,
         "source_path": str(path),
         "source_sha256": source_hash,
         "market_count": len(markets),
@@ -55,7 +66,13 @@ def build_resolution_aware_dataset(fixture_path: str | Path) -> dict[str, Any]:
     }
 
 
-def _normalize_market(raw: dict[str, Any], *, source_path: Path, source_hash: str) -> dict[str, Any]:
+def _normalize_market(
+    raw: dict[str, Any],
+    *,
+    source_path: Path,
+    source_hash: str,
+    source_mode: str,
+) -> dict[str, Any]:
     snapshots = sorted(
         [_normalize_snapshot(snapshot) for snapshot in raw.get("snapshots", []) if isinstance(snapshot, dict)],
         key=lambda item: item["timestamp"],
@@ -64,6 +81,8 @@ def _normalize_market(raw: dict[str, Any], *, source_path: Path, source_hash: st
     quality_gate = str(raw.get("quality_gate") or "UNKNOWN")
     resolution = _normalize_resolution(raw.get("resolution") or {})
     exclusion_reason = _exclusion_reason(binary=binary, quality_gate=quality_gate, resolution=resolution)
+    included = exclusion_reason is None
+    candidate_research_status = _candidate_research_status(included=included, resolution=resolution)
     return {
         "market_id": str(raw.get("market_id") or ""),
         "condition_id": str(raw.get("condition_id") or ""),
@@ -78,12 +97,14 @@ def _normalize_market(raw: dict[str, Any], *, source_path: Path, source_hash: st
         "reference_context": raw.get("reference_context") or {},
         "resolution": resolution,
         "snapshots": snapshots,
-        "included_in_candidate_research": exclusion_reason is None,
+        "included_in_candidate_research": included,
+        "candidate_research_status": candidate_research_status,
+        "candidate_inclusion_reason": raw.get("candidate_inclusion_reason"),
         "exclusion_reason": exclusion_reason,
         "provenance": {
             "source_path": str(source_path),
             "source_sha256": source_hash,
-            "source_mode": "fixture" if "tests/fixtures" in str(source_path).replace("\\", "/") else "cached",
+            "source_mode": source_mode,
         },
     }
 
@@ -120,8 +141,22 @@ def _exclusion_reason(*, binary: bool, quality_gate: str, resolution: dict[str, 
     return None
 
 
+def _candidate_research_status(*, included: bool, resolution: dict[str, Any]) -> str:
+    if not included:
+        return "EXCLUDED"
+    if resolution["status"] == "RESOLVED":
+        return "INCLUDED_RESOLVED"
+    return "INCLUDED_UNSCORED"
+
+
 def _resolution_summary(markets: list[dict[str, Any]]) -> dict[str, int]:
-    counts = {"resolved_count": 0, "unresolved_count": 0, "ambiguous_count": 0, "disputed_count": 0}
+    counts = {
+        "resolved_count": 0,
+        "unresolved_count": 0,
+        "ambiguous_count": 0,
+        "disputed_count": 0,
+        "excluded_count": 0,
+    }
     for market in markets:
         status = market["resolution"]["status"]
         if status == "RESOLVED":
@@ -132,6 +167,8 @@ def _resolution_summary(markets: list[dict[str, Any]]) -> dict[str, int]:
             counts["ambiguous_count"] += 1
         elif status == "DISPUTED":
             counts["disputed_count"] += 1
+        if not market["included_in_candidate_research"]:
+            counts["excluded_count"] += 1
     return counts
 
 

@@ -28,6 +28,11 @@ def _market_features(market: dict[str, Any]) -> dict[str, Any]:
     time_to_resolution = round((end_time - prediction_time).total_seconds() / 3600.0, 6)
     market_age = round((prediction_time - opened_at).total_seconds() / 3600.0, 6)
     heuristic_probability = _simple_calibrated_probability(current_probability)
+    quality_adjusted_probability = _quality_adjusted_probability(
+        current_probability,
+        liquidity=float(latest["liquidity"]),
+        wallet_concentration=float(latest["wallet_concentration"]),
+    )
     return {
         "market_id": market["market_id"],
         "condition_id": market["condition_id"],
@@ -38,6 +43,7 @@ def _market_features(market: dict[str, Any]) -> dict[str, Any]:
         "current_market_probability": current_probability,
         "naive_probability": 0.5,
         "simple_calibrated_probability": heuristic_probability,
+        "quality_adjusted_probability": quality_adjusted_probability,
         "price_drift_from_open": price_drift,
         "recent_price_drift": recent_drift,
         "market_age_hours": market_age,
@@ -57,6 +63,21 @@ def _market_features(market: dict[str, Any]) -> dict[str, Any]:
 
 def _simple_calibrated_probability(current_probability: float) -> float:
     return round((current_probability * 0.75) + 0.125, 6)
+
+
+def _quality_adjusted_probability(
+    current_probability: float,
+    *,
+    liquidity: float,
+    wallet_concentration: float,
+) -> float:
+    shrinkage = 0.0
+    if liquidity < 10_000.0:
+        shrinkage += 0.10
+    if wallet_concentration >= 0.55:
+        shrinkage += 0.10
+    adjusted = 0.5 + ((current_probability - 0.5) * (1.0 - min(shrinkage, 0.35)))
+    return round(adjusted, 6)
 
 
 def _prediction_label(resolution: dict[str, Any]) -> int | None:

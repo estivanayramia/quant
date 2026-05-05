@@ -23,6 +23,12 @@ def build_resolution_truth_labels(dataset: dict[str, Any]) -> list[dict[str, Any
                 "resolved_at": resolution.get("resolved_at"),
                 "truth_source": resolution.get("truth_source"),
                 "uncertainty": resolution.get("confidence") or "UNKNOWN",
+                "candidate_research_status": market.get("candidate_research_status"),
+                "excluded_from_candidate_research": not market.get(
+                    "included_in_candidate_research",
+                    False,
+                ),
+                "exclusion_reason": market.get("exclusion_reason"),
                 "join_keys": {
                     "source": "polymarket",
                     "market_id": market["market_id"],

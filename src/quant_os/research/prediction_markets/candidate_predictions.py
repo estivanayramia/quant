@@ -7,8 +7,13 @@ from typing import Any
 from quant_os.data.prediction_markets.resolution_dataset import build_resolution_aware_dataset
 from quant_os.research.prediction_markets.baselines import evaluate_prediction_baselines
 from quant_os.research.prediction_markets.features import build_prediction_features
+from quant_os.research.prediction_markets.metrics import (
+    beats_on_brier,
+    evaluate_candidate_forecasts,
+)
 
 REPORT_ROOT = Path("reports/sequence21/prediction_candidates")
+SEQUENCE22_REPORT_ROOT = Path("reports/sequence22/prediction_candidates")
 PREDICTION_CANDIDATE_SAFETY = {
     "execution_authority": "NONE",
     "wallet_signing_enabled": False,
@@ -105,6 +110,67 @@ def write_prediction_candidate_report(
     return payload
 
 
+def evaluate_prediction_candidate_signals(dataset: dict[str, Any]) -> dict[str, Any]:
+    features = build_prediction_features(dataset)
+    metrics = evaluate_candidate_forecasts(features)
+    current = metrics["baselines"]["current_market_probability"]
+    quality_adjusted = metrics["candidates"]["quality_adjusted_candidate"]
+    quality_beats_current = beats_on_brier(quality_adjusted, current)
+    status = "CANDIDATE_SIGNAL_WEAK" if quality_beats_current else "BASELINES_NOT_BEATEN"
+    return {
+        "sequence": "22",
+        "source": "polymarket",
+        "source_mode": dataset["source_mode"],
+        "candidate_evaluation_status": status,
+        "dataset_summary": {
+            "dataset_id": dataset["dataset_id"],
+            "dataset_hash": dataset["dataset_hash"],
+            "market_count": dataset["market_count"],
+            "included_market_count": dataset["included_market_count"],
+            "snapshot_count": dataset["snapshot_count"],
+            "resolution_summary": dataset["resolution_summary"],
+        },
+        "feature_count": len(features),
+        "metrics": metrics,
+        "candidate_results": {
+            "quality_adjusted_candidate": {
+                "brier_score": quality_adjusted["brier_score"],
+                "accuracy": quality_adjusted["accuracy"],
+                "log_loss": quality_adjusted["log_loss"],
+                "baseline_brier_score": current["brier_score"],
+                "beats_current_market_probability": quality_beats_current,
+                "opaque_model": False,
+            }
+        },
+        "observed_facts": [
+            "Candidate evaluation is deterministic and uses saved fixture history only.",
+            "Only resolved included markets are scored; unresolved markets remain unscored rows.",
+        ],
+        "inferred_patterns": [
+            "The transparent quality-adjusted candidate does not beat the current market probability baseline.",
+        ],
+        "unknowns": [
+            "The market baseline is not beaten by the candidate signal in this expanded fixture.",
+            "Resolved history remains too small for replay design confidence.",
+        ],
+        **PREDICTION_CANDIDATE_SAFETY,
+        "live_allowed": False,
+        "live_promotion_status": "LIVE_BLOCKED",
+        "evidence_only": True,
+    }
+
+
+def write_prediction_candidate_evaluation_report(
+    *,
+    fixture_path: str | Path,
+    output_root: str | Path = ".",
+) -> dict[str, Any]:
+    dataset = build_resolution_aware_dataset(fixture_path)
+    payload = evaluate_prediction_candidate_signals(dataset)
+    payload["report_paths"] = _write_candidate_evaluation_report(payload, output_root=output_root)
+    return payload
+
+
 def _candidate_readiness(
     *,
     dataset: dict[str, Any],
@@ -152,6 +218,23 @@ def _write_candidate_report(payload: dict[str, Any], *, output_root: str | Path)
         json_path=json_path,
         md_path=md_path,
         title="Sequence 21 Prediction Candidates",
+    )
+
+
+def _write_candidate_evaluation_report(
+    payload: dict[str, Any],
+    *,
+    output_root: str | Path,
+) -> dict[str, str]:
+    root = Path(output_root) / SEQUENCE22_REPORT_ROOT
+    root.mkdir(parents=True, exist_ok=True)
+    json_path = root / "latest_prediction_candidate_eval.json"
+    md_path = root / "latest_prediction_candidate_eval.md"
+    return _write_report(
+        payload,
+        json_path=json_path,
+        md_path=md_path,
+        title="Sequence 22 Prediction Candidate Evaluation",
     )
 
 
