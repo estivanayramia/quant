@@ -17,6 +17,7 @@ def test_venue_calibration_uses_fixture_without_network(local_project: Path) -> 
     assert payload["live_allowed"] is False
     assert payload["live_promotion_status"] == "LIVE_BLOCKED"
     assert len(payload["source_sha256"]) == 64
+    assert payload["sequence"] == "18"
     assert payload["venue"] == "binance"
     assert payload["symbols"] == ["BTC/USDT", "ETH/USDT"]
     assert payload["observed"]["max_quote_age_ms"] > payload["policy"]["max_quote_age_ms"]
@@ -27,14 +28,14 @@ def test_venue_calibration_uses_fixture_without_network(local_project: Path) -> 
     assert (
         local_project
         / "reports"
-        / "sequence3"
+        / "sequence18"
         / "venue_calibration"
         / "latest_venue_calibration.json"
     ).exists()
     assert (
         local_project
         / "reports"
-        / "sequence3"
+        / "sequence18"
         / "venue_calibration"
         / "latest_venue_calibration.md"
     ).exists()
@@ -65,7 +66,7 @@ def test_venue_calibration_explicit_network_request_remains_unimplemented_and_bl
     )
 
     assert payload["status"] == "BLOCKED"
-    assert "NETWORK_FETCH_NOT_IMPLEMENTED_IN_SEQUENCE3A" in payload["blockers"]
+    assert "NETWORK_FETCH_PROHIBITED_OFFLINE_FIRST" in payload["blockers"]
     assert payload["network_fetch_allowed"] is False
     assert payload["live_promotion_status"] == "LIVE_BLOCKED"
 

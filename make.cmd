@@ -718,6 +718,19 @@ if "%TARGET%"=="calibrated-edge-smoke" (
   python -m quant_os.cli research calibrated-edge-report
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="venue-capture" (
+  python -m quant_os.cli data venue-capture --venue kraken
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence18-smoke" (
+  call "%~f0" venue-capture
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" venue-calibration-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" calibrated-edge-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="sequence3a-smoke" (
   call "%~f0" venue-calibration-smoke
   if errorlevel 1 exit /b !ERRORLEVEL!

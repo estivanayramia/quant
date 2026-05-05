@@ -40,14 +40,14 @@ def test_calibrated_edge_report_blocks_weak_fixture_edge(local_project: Path) ->
     assert (
         local_project
         / "reports"
-        / "sequence3"
+        / "sequence18"
         / "calibrated_edge"
         / "latest_calibrated_edge.json"
     ).exists()
     assert (
         local_project
         / "reports"
-        / "sequence3"
+        / "sequence18"
         / "calibrated_edge"
         / "latest_calibrated_edge.md"
     ).exists()

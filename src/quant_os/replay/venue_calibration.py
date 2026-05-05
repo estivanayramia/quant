@@ -15,7 +15,7 @@ from quant_os.data.normalization import normalize_symbol
 REPO_ROOT = Path(__file__).resolve().parents[3]
 CONFIG_PATH = Path("configs/venue_calibration.yaml")
 DEFAULT_VENUE_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "venue" / "binance_public_snapshot.json"
-REPORT_ROOT = Path("reports/sequence3/venue_calibration")
+REPORT_ROOT = Path("reports/sequence18/venue_calibration")
 
 
 def run_venue_calibration(
@@ -44,7 +44,10 @@ def run_venue_calibration(
     if requested_network and not explicit_network_fetch:
         blockers.append("NETWORK_FETCH_REQUIRES_EXPLICIT_FLAG")
     if network_explicitly_requested:
-        blockers.append("NETWORK_FETCH_NOT_IMPLEMENTED_IN_SEQUENCE3A")
+        blockers.append("NETWORK_FETCH_PROHIBITED_OFFLINE_FIRST")
+
+    is_fixture = "tests/fixtures" in str(path).replace("\\", "/")
+    source_mode = "fixture" if is_fixture else "cached_real"
 
     raw = _load_fixture(path)
     observed = _observed_metrics(raw)
@@ -55,8 +58,8 @@ def run_venue_calibration(
     payload = {
         "status": status,
         "generated_at": datetime.now(UTC).isoformat(),
-        "sequence": "3A",
-        "source_mode": "fixture",
+        "sequence": "18",
+        "source_mode": source_mode,
         "source": str(raw.get("source", "unknown")),
         "source_path": str(path),
         "source_sha256": _sha256(path),

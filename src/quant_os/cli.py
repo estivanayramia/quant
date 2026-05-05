@@ -42,6 +42,7 @@ from quant_os.data.leakage_checks import run_leakage_checks
 from quant_os.data.loaders import load_yaml
 from quant_os.data.provider_check import check_historical_providers
 from quant_os.data.quality import validate_ohlcv
+from quant_os.data.venue_capture import capture_public_venue_snapshot
 from quant_os.data.warehouse import ensure_local_dirs
 from quant_os.domain.strategy import StrategyRecord
 from quant_os.features.feature_report import write_feature_report
@@ -253,6 +254,15 @@ def data_spine_validate(periods: int = typer.Option(120, min=20)) -> None:
     )
 
 
+@data_app.command("venue-capture")
+def data_venue_capture(
+    venue: str = typer.Option("binance", "--venue"),
+    timeframe: str = typer.Option("1m", "--timeframe"),
+) -> None:
+    payload = capture_public_venue_snapshot(exchange_id=venue, timeframe=timeframe)
+    print(payload)
+
+
 @research_app.command("crypto-build")
 def research_crypto_build(periods: int = typer.Option(240, min=50)) -> None:
     dataset = build_crypto_research_dataset(periods=periods)
@@ -368,8 +378,16 @@ def calibration_venue_report(
     allow_network_fetch: bool = typer.Option(False, "--allow-network-fetch"),
     explicit_network_fetch: bool = typer.Option(False, "--explicit-network-fetch"),
 ) -> None:
+    path_to_use = fixture_path
+    if path_to_use is None:
+        capture_dir = Path("data/venue_capture")
+        if capture_dir.exists():
+            captures = list(capture_dir.glob("*.json"))
+            if captures:
+                path_to_use = max(captures, key=lambda p: p.stat().st_mtime)
+
     payload = run_venue_calibration(
-        fixture_path=fixture_path or DEFAULT_VENUE_FIXTURE,
+        fixture_path=path_to_use or DEFAULT_VENUE_FIXTURE,
         allow_network_fetch=allow_network_fetch,
         explicit_network_fetch=explicit_network_fetch,
     )
@@ -381,7 +399,7 @@ def calibration_venue_report(
             "network_fetch_allowed": payload["network_fetch_allowed"],
             "blockers": payload["blockers"],
             "warnings": payload["warnings"],
-            "report": "reports/sequence3/venue_calibration/latest_venue_calibration.json",
+            "report": "reports/sequence18/venue_calibration/latest_venue_calibration.json",
             "live_trading_enabled": False,
         }
     )
@@ -1622,7 +1640,7 @@ def research_calibrated_edge_report(periods: int = typer.Option(240, min=120)) -
             "credibility_status": payload["credibility_status"],
             "calibrated_cost_bps": payload["calibrated_cost_bps"],
             "blockers": payload["blockers"],
-            "report": "reports/sequence3/calibrated_edge/latest_calibrated_edge.json",
+            "report": "reports/sequence18/calibrated_edge/latest_calibrated_edge.json",
             "live_trading_enabled": False,
         }
     )
