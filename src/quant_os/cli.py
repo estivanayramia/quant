@@ -84,11 +84,13 @@ from quant_os.proving.run_history import load_proving_history, write_proving_sta
 from quant_os.readiness.sequence2 import write_sequence2_readiness_report
 from quant_os.replay.engine import ReplayEngine, ReplayOrderIntent
 from quant_os.replay.realism_report import write_replay_realism_report
+from quant_os.replay.venue_calibration import DEFAULT_VENUE_FIXTURE, run_venue_calibration
 from quant_os.research.backtest import run_backtest
 from quant_os.research.calibration.diagnostics import calibration_diagnostics
 from quant_os.research.calibration.penalties import apply_edge_penalties
 from quant_os.research.calibration.probabilities import estimate_signal_probability
 from quant_os.research.calibration.uncertainty import estimate_uncertainty
+from quant_os.research.crypto.calibrated_edge_report import write_calibrated_edge_report
 from quant_os.research.crypto.features import build_crypto_features
 from quant_os.research.crypto.ingest import build_crypto_research_dataset
 from quant_os.research.crypto.reports import write_crypto_research_report
@@ -355,6 +357,31 @@ def calibration_run() -> None:
             "edge_bps": edge.edge_bps,
             "reason_codes": edge.reason_codes,
             "diagnostics": diagnostics,
+            "live_trading_enabled": False,
+        }
+    )
+
+
+@calibration_app.command("venue-report")
+def calibration_venue_report(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+    allow_network_fetch: bool = typer.Option(False, "--allow-network-fetch"),
+    explicit_network_fetch: bool = typer.Option(False, "--explicit-network-fetch"),
+) -> None:
+    payload = run_venue_calibration(
+        fixture_path=fixture_path or DEFAULT_VENUE_FIXTURE,
+        allow_network_fetch=allow_network_fetch,
+        explicit_network_fetch=explicit_network_fetch,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "venue": payload["venue"],
+            "symbols": payload["symbols"],
+            "network_fetch_allowed": payload["network_fetch_allowed"],
+            "blockers": payload["blockers"],
+            "warnings": payload["warnings"],
+            "report": "reports/sequence3/venue_calibration/latest_venue_calibration.json",
             "live_trading_enabled": False,
         }
     )
@@ -1577,6 +1604,26 @@ def strategy_research_report() -> None:
             "report": "reports/strategy/latest_research_report.md",
             "strategies_tested": len(payload["strategy_list"]),
             "live_promotion_status": payload["live_promotion_status"],
+        }
+    )
+
+
+@research_app.command("calibrated-edge-report")
+def research_calibrated_edge_report(periods: int = typer.Option(240, min=120)) -> None:
+    dataset = build_crypto_research_dataset(periods=periods)
+    calibration = run_venue_calibration()
+    payload = write_calibrated_edge_report(
+        dataset.frame,
+        calibration_summary=calibration,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "credibility_status": payload["credibility_status"],
+            "calibrated_cost_bps": payload["calibrated_cost_bps"],
+            "blockers": payload["blockers"],
+            "report": "reports/sequence3/calibrated_edge/latest_calibrated_edge.json",
+            "live_trading_enabled": False,
         }
     )
 
