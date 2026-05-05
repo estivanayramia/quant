@@ -16,7 +16,7 @@ from quant_os.research.crypto.ingest import build_crypto_research_dataset
 from quant_os.research.validation.robustness import regime_summary
 from quant_os.research.validation.splits import rolling_walk_forward_splits
 
-REPORT_ROOT = Path("reports/sequence3/calibrated_edge")
+REPORT_ROOT = Path("reports/sequence18/calibrated_edge")
 
 
 def write_calibrated_edge_report(
@@ -52,7 +52,7 @@ def write_calibrated_edge_report(
     status = "BLOCKED" if blockers else "WARN" if warnings else "PASS"
     payload = {
         "generated_at": datetime.now(UTC).isoformat(),
-        "sequence": "3A",
+        "sequence": "18",
         "status": status,
         "credibility_status": "CREDIBLE_AFTER_CALIBRATION"
         if not blockers
@@ -211,7 +211,7 @@ def _write_report(payload: dict[str, Any], *, output_root: str | Path) -> dict[s
         encoding="utf-8",
     )
     lines = [
-        "# Sequence 3A Calibrated Edge Evidence",
+        "# Sequence 18 Calibrated Edge Evidence",
         "",
         "Research evidence only. No live trading.",
         "",
