@@ -30,8 +30,21 @@ def build_market_lifecycle_timelines(dataset: dict[str, Any]) -> list[dict[str, 
             {
                 "market_id": market["market_id"],
                 "condition_id": market["condition_id"],
+                "resolution_status": market["resolution"]["status"],
+                "candidate_research_status": market.get("candidate_research_status"),
+                "exclusion_reason": market.get("exclusion_reason"),
+                "snapshot_count": len(snapshots),
                 "statuses": statuses,
+                "lifecycle_summary": _lifecycle_summary(statuses),
                 "internet_required": False,
             }
         )
     return timelines
+
+
+def _lifecycle_summary(statuses: list[dict[str, Any]]) -> dict[str, int]:
+    summary: dict[str, int] = {}
+    for status in statuses:
+        lifecycle_status = str(status["lifecycle_status"])
+        summary[lifecycle_status] = summary.get(lifecycle_status, 0) + 1
+    return summary

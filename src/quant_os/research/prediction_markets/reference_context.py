@@ -50,6 +50,14 @@ def attach_offline_reference_context(dataset: dict[str, Any]) -> list[dict[str, 
                 "resolution_criteria": context.get("resolution_criteria"),
                 "reference_label": context.get("reference_label"),
                 "reference_status": "ATTACHED_OFFLINE" if context else "MISSING_REFERENCE_CONTEXT",
+                "resolution_status": resolution.get("status"),
+                "candidate_research_status": market.get("candidate_research_status"),
+                "exclusion_reason": market.get("exclusion_reason"),
+                "usable_for_candidate_evaluation": bool(
+                    market.get("included_in_candidate_research")
+                    and resolution.get("status") == "RESOLVED"
+                ),
+                "why_not_usable": _why_not_usable(market, resolution),
                 "observed_market_data": bool(market.get("snapshots")),
                 "attached_resolution_truth": resolution.get("status") == "RESOLVED",
                 "internet_required": False,
@@ -65,3 +73,11 @@ def attach_offline_reference_context(dataset: dict[str, Any]) -> list[dict[str, 
             }
         )
     return references
+
+
+def _why_not_usable(market: dict[str, Any], resolution: dict[str, Any]) -> str | None:
+    if market.get("exclusion_reason"):
+        return str(market["exclusion_reason"])
+    if resolution.get("status") != "RESOLVED":
+        return str(resolution.get("status") or "UNRESOLVED")
+    return None

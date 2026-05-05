@@ -1,4 +1,4 @@
-.PHONY: install format lint test test-cov seed-demo validate-data backtest tournament shadow rebuild report smoke autonomous autonomous-daemon autonomous-status watchdog drift alerts-test freqtrade-config freqtrade-validate freqtrade-export-strategy freqtrade-status freqtrade-command-preview freqtrade-manifest freqtrade-dry-run-check freqtrade-docker-check freqtrade-dry-run-start freqtrade-dry-run-stop freqtrade-dry-run-logs freqtrade-dry-run-status freqtrade-dry-run-report freqtrade-ingest-logs freqtrade-reconcile freqtrade-operational-manifest freqtrade-artifacts-scan freqtrade-trades-ingest freqtrade-trades-normalize freqtrade-trade-reconcile freqtrade-trade-report dryrun-history dryrun-compare dryrun-divergence-check dryrun-monitor-report dryrun-promote-check dryrun-status dryrun-trade-reconcile dryrun-trade-report features-build strategy-research strategy-ablation strategy-walk-forward strategy-regime-tests strategy-overfit-check strategy-leaderboard strategy-research-report dataset-seed-expanded dataset-manifest dataset-quality dataset-splits dataset-leakage-check dataset-evidence-score research-evidence-report historical-import-csv historical-normalize historical-manifest historical-quality historical-splits historical-evidence-score historical-research-report historical-provider-check historical-status proving-run-once proving-status proving-history proving-incidents proving-readiness proving-report canary-policy canary-checklist canary-preflight canary-incident-drill canary-capital-ladder canary-readiness canary-report canary-permission-import canary-arm-token canary-preflight-rehearsal canary-stoploss-proof canary-rehearsal canary-final-gate canary-rehearsal-report canary-exchange-capabilities canary-live-prepare canary-live-preflight canary-live-fire canary-live-status canary-live-reconcile canary-live-stop canary-live-report prediction-market-capture-smoke prediction-market-quality-smoke prediction-market-wallet-smoke sequence20-smoke prediction-history-smoke prediction-candidate-smoke sequence21-smoke phase3-smoke phase4-smoke phase5-smoke phase6-smoke phase7-smoke phase8-smoke phase9-smoke phase10-smoke phase11-smoke phase12-smoke phase13-smoke phase14-smoke clean
+.PHONY: install format lint test test-cov seed-demo validate-data backtest tournament shadow rebuild report smoke autonomous autonomous-daemon autonomous-status watchdog drift alerts-test freqtrade-config freqtrade-validate freqtrade-export-strategy freqtrade-status freqtrade-command-preview freqtrade-manifest freqtrade-dry-run-check freqtrade-docker-check freqtrade-dry-run-start freqtrade-dry-run-stop freqtrade-dry-run-logs freqtrade-dry-run-status freqtrade-dry-run-report freqtrade-ingest-logs freqtrade-reconcile freqtrade-operational-manifest freqtrade-artifacts-scan freqtrade-trades-ingest freqtrade-trades-normalize freqtrade-trade-reconcile freqtrade-trade-report dryrun-history dryrun-compare dryrun-divergence-check dryrun-monitor-report dryrun-promote-check dryrun-status dryrun-trade-reconcile dryrun-trade-report features-build strategy-research strategy-ablation strategy-walk-forward strategy-regime-tests strategy-overfit-check strategy-leaderboard strategy-research-report dataset-seed-expanded dataset-manifest dataset-quality dataset-splits dataset-leakage-check dataset-evidence-score research-evidence-report historical-import-csv historical-normalize historical-manifest historical-quality historical-splits historical-evidence-score historical-research-report historical-provider-check historical-status proving-run-once proving-status proving-history proving-incidents proving-readiness proving-report canary-policy canary-checklist canary-preflight canary-incident-drill canary-capital-ladder canary-readiness canary-report canary-permission-import canary-arm-token canary-preflight-rehearsal canary-stoploss-proof canary-rehearsal canary-final-gate canary-rehearsal-report canary-exchange-capabilities canary-live-prepare canary-live-preflight canary-live-fire canary-live-status canary-live-reconcile canary-live-stop canary-live-report prediction-market-capture-smoke prediction-market-quality-smoke prediction-market-wallet-smoke sequence20-smoke prediction-history-smoke prediction-candidate-smoke sequence21-smoke prediction-history-expand-smoke prediction-candidate-eval-smoke replay-feasibility-smoke sequence22-smoke phase3-smoke phase4-smoke phase5-smoke phase6-smoke phase7-smoke phase8-smoke phase9-smoke phase10-smoke phase11-smoke phase12-smoke phase13-smoke phase14-smoke clean
 
 install:
 	python -m pip install -e ".[dev]"
@@ -324,6 +324,21 @@ sequence21-smoke:
 	$(MAKE) prediction-history-smoke
 	$(MAKE) prediction-candidate-smoke
 	python -m pytest tests/test_sequence21_prediction_candidate_research.py
+
+prediction-history-expand-smoke:
+	python -m quant_os.cli research prediction-history-expand
+
+prediction-candidate-eval-smoke:
+	python -m quant_os.cli research prediction-candidate-eval
+
+replay-feasibility-smoke:
+	python -m quant_os.cli research replay-feasibility
+
+sequence22-smoke:
+	$(MAKE) prediction-history-expand-smoke
+	$(MAKE) prediction-candidate-eval-smoke
+	$(MAKE) replay-feasibility-smoke
+	python -m pytest tests/test_sequence22_replay_feasibility.py
 
 phase3-smoke:
 	python -m quant_os.cli freqtrade generate-config
