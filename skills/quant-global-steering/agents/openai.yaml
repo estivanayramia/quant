@@ -1,0 +1,6 @@
+interface:
+  display_name: "Quant Global Steering"
+  short_description: "Repo-wide persistence and safety steering"
+  default_prompt: "Use $quant-global-steering to keep this quant repo task scoped, verified, and live-safe."
+policy:
+  allow_implicit_invocation: true

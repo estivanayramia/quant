@@ -1,0 +1,6 @@
+interface:
+  display_name: "Quant Validation Tester"
+  short_description: "Scenario and replay validation checks"
+  default_prompt: "Use $quant-validation-tester to validate scenario, replay, and report behavior without editing."
+policy:
+  allow_implicit_invocation: true

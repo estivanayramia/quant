@@ -1,0 +1,6 @@
+interface:
+  display_name: "Quant QA Gate"
+  short_description: "Final evidence and false-output gate"
+  default_prompt: "Use $quant-qa-gate to verify this quant repo work is ready to hand off."
+policy:
+  allow_implicit_invocation: true

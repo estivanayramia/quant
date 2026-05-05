@@ -1,0 +1,6 @@
+interface:
+  display_name: "Quant Researcher"
+  short_description: "Read-only repo evidence gathering"
+  default_prompt: "Use $quant-researcher to inspect the quant repo and summarize evidence without editing."
+policy:
+  allow_implicit_invocation: true

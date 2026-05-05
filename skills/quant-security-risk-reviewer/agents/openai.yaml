@@ -1,0 +1,6 @@
+interface:
+  display_name: "Quant Security Risk Reviewer"
+  short_description: "Secrets, live, canary, and adapter risk"
+  default_prompt: "Use $quant-security-risk-reviewer to review this quant repo change for live and security risk."
+policy:
+  allow_implicit_invocation: true
