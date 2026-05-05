@@ -112,12 +112,16 @@ from quant_os.research.prediction_markets.candidate_predictions import (
     write_prediction_feature_report,
 )
 from quant_os.research.prediction_markets.dataset_growth import write_dataset_growth_report
+from quant_os.research.prediction_markets.evaluation import write_lane_evaluation_report
 from quant_os.research.prediction_markets.historical_dataset import (
     write_expanded_historical_dataset_report,
+    write_signal_discovery_dataset_report,
 )
 from quant_os.research.prediction_markets.historical_dataset import (
     write_historical_dataset_report as write_prediction_historical_dataset_report,
 )
+from quant_os.research.prediction_markets.lane_selection import write_lane_selection_report
+from quant_os.research.prediction_markets.market_strata import write_market_strata_report
 from quant_os.research.prediction_markets.quality_report import (
     write_market_inventory_report,
     write_market_quality_report,
@@ -125,7 +129,9 @@ from quant_os.research.prediction_markets.quality_report import (
 )
 from quant_os.research.prediction_markets.replay_feasibility_report import (
     write_replay_feasibility_report,
+    write_replay_precondition_report,
 )
+from quant_os.research.prediction_markets.signal_families import write_signal_family_report
 from quant_os.research.prediction_markets.wallet_reports import write_wallet_research_report
 from quant_os.research.regime_tests import run_regime_tests
 from quant_os.research.research_evidence_report import write_research_evidence_report
@@ -191,6 +197,13 @@ DEFAULT_POLYMARKET_EXPANDED_HISTORY_FIXTURE = (
     / "prediction_markets"
     / "history"
     / "polymarket_resolution_history_expanded_sample.json"
+)
+DEFAULT_POLYMARKET_SIGNAL_DISCOVERY_FIXTURE = (
+    Path("tests")
+    / "fixtures"
+    / "prediction_markets"
+    / "history"
+    / "polymarket_signal_discovery_sample.json"
 )
 
 
@@ -508,10 +521,85 @@ def research_prediction_candidate_eval(
     )
 
 
+@research_app.command("prediction-lane-selection")
+def research_prediction_lane_selection(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    path = fixture_path or DEFAULT_POLYMARKET_SIGNAL_DISCOVERY_FIXTURE
+    dataset = write_signal_discovery_dataset_report(fixture_path=path)
+    strata = write_market_strata_report(fixture_path=path)
+    lanes = write_lane_selection_report(fixture_path=path)
+    print(
+        {
+            "status": "RESEARCH_ONLY",
+            "dataset_id": dataset["dataset_id"],
+            "market_count": dataset["market_count"],
+            "stratified_market_count": strata["summary"]["market_count"],
+            "best_lane": lanes["best_lane"]["lane_id"] if lanes["best_lane"] else None,
+            "lane_count": lanes["lane_count"],
+            "dataset_report": "reports/sequence23/dataset/latest_dataset_summary.json",
+            "strata_report": "reports/sequence23/dataset/latest_market_strata.json",
+            "lane_report": "reports/sequence23/lane_selection/latest_lane_selection.json",
+            "live_trading_enabled": False,
+            "execution_authority": lanes["execution_authority"],
+        }
+    )
+
+
+@research_app.command("prediction-signal-report")
+def research_prediction_signal_report() -> None:
+    payload = write_signal_family_report()
+    print(
+        {
+            "status": "RESEARCH_ONLY",
+            "signal_family_count": payload["signal_family_count"],
+            "report": "reports/sequence23/prediction_candidates/latest_signal_families.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("prediction-lane-eval")
+def research_prediction_lane_eval(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    payload = write_lane_evaluation_report(
+        fixture_path=fixture_path or DEFAULT_POLYMARKET_SIGNAL_DISCOVERY_FIXTURE,
+    )
+    print(
+        {
+            "status": payload["lane_evaluation_status"],
+            "best_lane": payload["best_lane_evaluation"]["lane_id"],
+            "signal_families_tested": payload["signal_families_tested"],
+            "lane_report": "reports/sequence23/lane_evaluation/latest_lane_evaluation.json",
+            "candidate_report": "reports/sequence23/prediction_candidates/latest_prediction_candidates.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @research_app.command("replay-feasibility")
 def research_replay_feasibility(
     fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+    lane_aware: bool = typer.Option(False, "--lane-aware"),
 ) -> None:
+    if lane_aware:
+        payload = write_replay_precondition_report(
+            fixture_path=fixture_path or DEFAULT_POLYMARKET_SIGNAL_DISCOVERY_FIXTURE,
+        )
+        print(
+            {
+                "status": payload["replay_precondition_status"],
+                "ready_for_narrow_replay_design": payload["ready_for_narrow_replay_design"],
+                "blockers": payload["blockers"],
+                "report": "reports/sequence23/replay_preconditions/latest_replay_preconditions.json",
+                "live_trading_enabled": False,
+                "execution_authority": payload["execution_authority"],
+            }
+        )
+        return
     payload = write_replay_feasibility_report(
         fixture_path=fixture_path or DEFAULT_POLYMARKET_EXPANDED_HISTORY_FIXTURE,
     )

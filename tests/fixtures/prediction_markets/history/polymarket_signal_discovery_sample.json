@@ -1,0 +1,500 @@
+{
+  "source": "polymarket_signal_discovery_fixture",
+  "source_mode": "fixture",
+  "sequence": "23",
+  "captured_at": "2026-05-05T13:00:00+00:00",
+  "markets": [
+    {
+      "market_id": "pm-signal-weather-no-1",
+      "condition_id": "0xsignalweatherno1",
+      "slug": "rain-on-may-day-2026-signal",
+      "question": "Will Example City record rain on May 1, 2026?",
+      "category": "Weather",
+      "quality_gate": "RESEARCHABLE",
+      "candidate_inclusion_reason": "clean_binary_resolved_market",
+      "binary": true,
+      "opened_at": "2026-03-01T00:00:00+00:00",
+      "end_time": "2026-05-01T23:59:59+00:00",
+      "resolution_time": "2026-05-02T12:00:00+00:00",
+      "reference_context": {
+        "event_time": "2026-05-01T23:59:59+00:00",
+        "resolution_criteria": "Resolve Yes if the official station records measurable rain.",
+        "reference_label": "official_weather_station_precipitation",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "RESOLVED",
+        "winning_outcome": "NO",
+        "resolved_at": "2026-05-02T12:00:00+00:00",
+        "truth_source": "fixture_resolution_manual",
+        "confidence": "CONFIRMED"
+      },
+      "snapshots": [
+        {"timestamp": "2026-03-10T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.51, "no_price": 0.49, "volume": 12000.0, "liquidity": 5500.0, "wallet_concentration": 0.29},
+        {"timestamp": "2026-04-20T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.44, "no_price": 0.56, "volume": 42000.0, "liquidity": 7600.0, "wallet_concentration": 0.32},
+        {"timestamp": "2026-05-01T18:00:00+00:00", "lifecycle_status": "NEARING_CLOSE", "yes_price": 0.24, "no_price": 0.76, "volume": 68000.0, "liquidity": 31000.0, "wallet_concentration": 0.35}
+      ]
+    },
+    {
+      "market_id": "pm-signal-weather-yes-1",
+      "condition_id": "0xsignalweatheryes1",
+      "slug": "heat-record-may-2026-signal",
+      "question": "Will Example City break a May temperature record in 2026?",
+      "category": "Weather",
+      "quality_gate": "RESEARCHABLE",
+      "candidate_inclusion_reason": "clean_binary_resolved_market",
+      "binary": true,
+      "opened_at": "2026-03-15T00:00:00+00:00",
+      "end_time": "2026-05-31T23:59:59+00:00",
+      "resolution_time": "2026-06-01T12:00:00+00:00",
+      "reference_context": {
+        "event_time": "2026-05-31T23:59:59+00:00",
+        "resolution_criteria": "Resolve Yes if the official station posts a new May high.",
+        "reference_label": "official_weather_station_temperature",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "RESOLVED",
+        "winning_outcome": "YES",
+        "resolved_at": "2026-06-01T12:00:00+00:00",
+        "truth_source": "fixture_resolution_manual",
+        "confidence": "CONFIRMED"
+      },
+      "snapshots": [
+        {"timestamp": "2026-04-01T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.47, "no_price": 0.53, "volume": 20000.0, "liquidity": 8200.0, "wallet_concentration": 0.31},
+        {"timestamp": "2026-05-20T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.58, "no_price": 0.42, "volume": 76000.0, "liquidity": 17000.0, "wallet_concentration": 0.36},
+        {"timestamp": "2026-05-31T12:00:00+00:00", "lifecycle_status": "NEARING_CLOSE", "yes_price": 0.62, "no_price": 0.38, "volume": 115000.0, "liquidity": 34000.0, "wallet_concentration": 0.39}
+      ]
+    },
+    {
+      "market_id": "pm-signal-science-no-1",
+      "condition_id": "0xsignalscienceno1",
+      "slug": "space-agency-launch-before-april-2026-signal",
+      "question": "Will Example Space Agency launch Mission R before April 15, 2026?",
+      "category": "Science",
+      "quality_gate": "RESEARCHABLE",
+      "candidate_inclusion_reason": "clean_binary_resolved_market",
+      "binary": true,
+      "opened_at": "2026-01-25T00:00:00+00:00",
+      "end_time": "2026-04-15T23:59:59+00:00",
+      "resolution_time": "2026-04-16T12:00:00+00:00",
+      "reference_context": {
+        "event_time": "2026-04-15T23:59:59+00:00",
+        "resolution_criteria": "Resolve Yes if Mission R launches before the deadline.",
+        "reference_label": "official_mission_launch_log",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "RESOLVED",
+        "winning_outcome": "NO",
+        "resolved_at": "2026-04-16T12:00:00+00:00",
+        "truth_source": "fixture_resolution_manual",
+        "confidence": "CONFIRMED"
+      },
+      "snapshots": [
+        {"timestamp": "2026-02-15T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.49, "no_price": 0.51, "volume": 38000.0, "liquidity": 8300.0, "wallet_concentration": 0.31},
+        {"timestamp": "2026-04-01T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.41, "no_price": 0.59, "volume": 93000.0, "liquidity": 16000.0, "wallet_concentration": 0.36},
+        {"timestamp": "2026-04-15T18:00:00+00:00", "lifecycle_status": "NEARING_CLOSE", "yes_price": 0.36, "no_price": 0.64, "volume": 151000.0, "liquidity": 22000.0, "wallet_concentration": 0.42}
+      ]
+    },
+    {
+      "market_id": "pm-signal-sports-yes-1",
+      "condition_id": "0xsignalsportsyes1",
+      "slug": "team-a-makes-playoffs-2026-signal",
+      "question": "Will Team A qualify for the 2026 playoffs?",
+      "category": "Sports",
+      "quality_gate": "RESEARCHABLE",
+      "candidate_inclusion_reason": "clean_binary_resolved_market",
+      "binary": true,
+      "opened_at": "2026-02-01T00:00:00+00:00",
+      "end_time": "2026-06-10T23:59:59+00:00",
+      "resolution_time": "2026-06-11T12:00:00+00:00",
+      "reference_context": {
+        "event_time": "2026-06-10T23:59:59+00:00",
+        "resolution_criteria": "Resolve Yes if Team A is listed in the official playoff bracket.",
+        "reference_label": "official_playoff_bracket",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "RESOLVED",
+        "winning_outcome": "YES",
+        "resolved_at": "2026-06-11T12:00:00+00:00",
+        "truth_source": "fixture_resolution_manual",
+        "confidence": "CONFIRMED"
+      },
+      "snapshots": [
+        {"timestamp": "2026-02-20T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.44, "no_price": 0.56, "volume": 85000.0, "liquidity": 14000.0, "wallet_concentration": 0.33},
+        {"timestamp": "2026-05-15T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.55, "no_price": 0.45, "volume": 180000.0, "liquidity": 27000.0, "wallet_concentration": 0.39},
+        {"timestamp": "2026-06-10T18:00:00+00:00", "lifecycle_status": "NEARING_CLOSE", "yes_price": 0.57, "no_price": 0.43, "volume": 240000.0, "liquidity": 31000.0, "wallet_concentration": 0.44}
+      ]
+    },
+    {
+      "market_id": "pm-signal-sports-no-1",
+      "condition_id": "0xsignalsportsno1",
+      "slug": "team-b-wins-title-2026-signal",
+      "question": "Will Team B win the 2026 title?",
+      "category": "Sports",
+      "quality_gate": "RESEARCHABLE",
+      "candidate_inclusion_reason": "clean_binary_resolved_market",
+      "binary": true,
+      "opened_at": "2026-02-10T00:00:00+00:00",
+      "end_time": "2026-06-30T23:59:59+00:00",
+      "resolution_time": "2026-07-01T12:00:00+00:00",
+      "reference_context": {
+        "event_time": "2026-06-30T23:59:59+00:00",
+        "resolution_criteria": "Resolve Yes if Team B is listed as title winner.",
+        "reference_label": "official_title_result",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "RESOLVED",
+        "winning_outcome": "NO",
+        "resolved_at": "2026-07-01T12:00:00+00:00",
+        "truth_source": "fixture_resolution_manual",
+        "confidence": "CONFIRMED"
+      },
+      "snapshots": [
+        {"timestamp": "2026-03-01T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.52, "no_price": 0.48, "volume": 64000.0, "liquidity": 12000.0, "wallet_concentration": 0.34},
+        {"timestamp": "2026-05-01T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.47, "no_price": 0.53, "volume": 130000.0, "liquidity": 24000.0, "wallet_concentration": 0.38},
+        {"timestamp": "2026-06-01T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.43, "no_price": 0.57, "volume": 185000.0, "liquidity": 28000.0, "wallet_concentration": 0.43}
+      ]
+    },
+    {
+      "market_id": "pm-signal-business-yes-1",
+      "condition_id": "0xsignalbusinessyes1",
+      "slug": "major-tech-earnings-beat-q1-2026-signal",
+      "question": "Will Major Tech report Q1 2026 adjusted EPS above consensus?",
+      "category": "Business",
+      "quality_gate": "RESEARCHABLE",
+      "candidate_inclusion_reason": "clean_binary_resolved_market",
+      "binary": true,
+      "opened_at": "2026-01-20T00:00:00+00:00",
+      "end_time": "2026-04-30T23:59:59+00:00",
+      "resolution_time": "2026-05-01T14:00:00+00:00",
+      "reference_context": {
+        "event_time": "2026-04-30T20:00:00+00:00",
+        "resolution_criteria": "Resolve Yes if reported adjusted EPS is above the fixture consensus value.",
+        "reference_label": "earnings_release_consensus_comparison",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "RESOLVED",
+        "winning_outcome": "YES",
+        "resolved_at": "2026-05-01T14:00:00+00:00",
+        "truth_source": "fixture_resolution_manual",
+        "confidence": "CONFIRMED"
+      },
+      "snapshots": [
+        {"timestamp": "2026-02-01T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.48, "no_price": 0.52, "volume": 54000.0, "liquidity": 11000.0, "wallet_concentration": 0.35},
+        {"timestamp": "2026-04-10T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.51, "no_price": 0.49, "volume": 122000.0, "liquidity": 18000.0, "wallet_concentration": 0.39},
+        {"timestamp": "2026-04-29T18:00:00+00:00", "lifecycle_status": "NEARING_CLOSE", "yes_price": 0.53, "no_price": 0.47, "volume": 171000.0, "liquidity": 23000.0, "wallet_concentration": 0.43}
+      ]
+    },
+    {
+      "market_id": "pm-signal-business-no-1",
+      "condition_id": "0xsignalbusinessno1",
+      "slug": "retailer-same-store-sales-beat-2026-signal",
+      "question": "Will Example Retailer same-store sales beat consensus in Q2 2026?",
+      "category": "Business",
+      "quality_gate": "RESEARCHABLE",
+      "candidate_inclusion_reason": "clean_binary_resolved_market",
+      "binary": true,
+      "opened_at": "2026-03-01T00:00:00+00:00",
+      "end_time": "2026-07-15T23:59:59+00:00",
+      "resolution_time": "2026-07-16T14:00:00+00:00",
+      "reference_context": {
+        "event_time": "2026-07-15T20:00:00+00:00",
+        "resolution_criteria": "Resolve Yes if same-store sales beat fixture consensus.",
+        "reference_label": "earnings_release_consensus_comparison",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "RESOLVED",
+        "winning_outcome": "NO",
+        "resolved_at": "2026-07-16T14:00:00+00:00",
+        "truth_source": "fixture_resolution_manual",
+        "confidence": "CONFIRMED"
+      },
+      "snapshots": [
+        {"timestamp": "2026-03-20T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.49, "no_price": 0.51, "volume": 47000.0, "liquidity": 9000.0, "wallet_concentration": 0.37},
+        {"timestamp": "2026-05-15T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.52, "no_price": 0.48, "volume": 88000.0, "liquidity": 16000.0, "wallet_concentration": 0.41},
+        {"timestamp": "2026-06-20T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.55, "no_price": 0.45, "volume": 125000.0, "liquidity": 23000.0, "wallet_concentration": 0.47}
+      ]
+    },
+    {
+      "market_id": "pm-signal-crypto-no-1",
+      "condition_id": "0xsignalcryptono1",
+      "slug": "bitcoin-above-90000-march-2026-signal",
+      "question": "Will Bitcoin be above 90000 USD on March 31, 2026?",
+      "category": "Crypto",
+      "quality_gate": "RESEARCHABLE",
+      "candidate_inclusion_reason": "clean_binary_resolved_market",
+      "binary": true,
+      "opened_at": "2026-01-01T00:00:00+00:00",
+      "end_time": "2026-03-31T23:59:59+00:00",
+      "resolution_time": "2026-04-01T12:00:00+00:00",
+      "reference_context": {
+        "event_time": "2026-03-31T23:59:59+00:00",
+        "resolution_criteria": "Resolve Yes if the reference BTC/USD close is above 90000.",
+        "reference_label": "reference_btc_usd_close",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "RESOLVED",
+        "winning_outcome": "NO",
+        "resolved_at": "2026-04-01T12:00:00+00:00",
+        "truth_source": "fixture_resolution_manual",
+        "confidence": "CONFIRMED"
+      },
+      "snapshots": [
+        {"timestamp": "2026-01-20T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.54, "no_price": 0.46, "volume": 210000.0, "liquidity": 28000.0, "wallet_concentration": 0.42},
+        {"timestamp": "2026-03-10T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.58, "no_price": 0.42, "volume": 440000.0, "liquidity": 52000.0, "wallet_concentration": 0.47},
+        {"timestamp": "2026-03-31T18:00:00+00:00", "lifecycle_status": "NEARING_CLOSE", "yes_price": 0.61, "no_price": 0.39, "volume": 610000.0, "liquidity": 62000.0, "wallet_concentration": 0.51}
+      ]
+    },
+    {
+      "market_id": "pm-signal-economics-yes-1",
+      "condition_id": "0xsignaleconomicsyes1",
+      "slug": "fed-cut-by-june-2026-signal",
+      "question": "Will the Federal Reserve cut rates by June 30, 2026?",
+      "category": "Economics",
+      "quality_gate": "RESEARCHABLE",
+      "candidate_inclusion_reason": "clean_binary_resolved_market",
+      "binary": true,
+      "opened_at": "2026-01-10T00:00:00+00:00",
+      "end_time": "2026-06-30T23:59:59+00:00",
+      "resolution_time": "2026-07-01T12:00:00+00:00",
+      "reference_context": {
+        "event_time": "2026-06-30T18:00:00+00:00",
+        "resolution_criteria": "Resolve Yes if the target range is lower after the June 2026 FOMC meeting.",
+        "reference_label": "scheduled_fomc_policy_rate",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "RESOLVED",
+        "winning_outcome": "YES",
+        "resolved_at": "2026-07-01T12:00:00+00:00",
+        "truth_source": "fixture_resolution_manual",
+        "confidence": "CONFIRMED"
+      },
+      "snapshots": [
+        {"timestamp": "2026-02-01T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.39, "no_price": 0.61, "volume": 42000.0, "liquidity": 8500.0, "wallet_concentration": 0.34},
+        {"timestamp": "2026-05-01T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.59, "no_price": 0.41, "volume": 150000.0, "liquidity": 24000.0, "wallet_concentration": 0.41},
+        {"timestamp": "2026-06-29T12:00:00+00:00", "lifecycle_status": "NEARING_CLOSE", "yes_price": 0.68, "no_price": 0.32, "volume": 235000.0, "liquidity": 41000.0, "wallet_concentration": 0.48}
+      ]
+    },
+    {
+      "market_id": "pm-signal-politics-no-1",
+      "condition_id": "0xsignalpoliticsno1",
+      "slug": "candidate-z-announces-run-2026-signal",
+      "question": "Will Candidate Z announce a national campaign before May 31, 2026?",
+      "category": "Politics",
+      "quality_gate": "RESEARCHABLE",
+      "candidate_inclusion_reason": "clean_binary_resolved_market",
+      "binary": true,
+      "opened_at": "2026-01-05T00:00:00+00:00",
+      "end_time": "2026-05-31T23:59:59+00:00",
+      "resolution_time": "2026-06-01T12:00:00+00:00",
+      "reference_context": {
+        "event_time": "2026-05-31T23:59:59+00:00",
+        "resolution_criteria": "Resolve Yes if a qualifying public campaign announcement occurs.",
+        "reference_label": "official_campaign_announcement",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "RESOLVED",
+        "winning_outcome": "NO",
+        "resolved_at": "2026-06-01T12:00:00+00:00",
+        "truth_source": "fixture_resolution_manual",
+        "confidence": "CONFIRMED"
+      },
+      "snapshots": [
+        {"timestamp": "2026-02-01T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.57, "no_price": 0.43, "volume": 66000.0, "liquidity": 9500.0, "wallet_concentration": 0.37},
+        {"timestamp": "2026-05-10T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.52, "no_price": 0.48, "volume": 142000.0, "liquidity": 19000.0, "wallet_concentration": 0.44},
+        {"timestamp": "2026-05-15T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.48, "no_price": 0.52, "volume": 164000.0, "liquidity": 22000.0, "wallet_concentration": 0.49}
+      ]
+    },
+    {
+      "market_id": "pm-signal-entertainment-yes-1",
+      "condition_id": "0xsignalentertainmentyes1",
+      "slug": "film-a-wins-best-picture-2026-signal",
+      "question": "Will Film A win the 2026 Best Picture award?",
+      "category": "Entertainment",
+      "quality_gate": "RESEARCHABLE",
+      "candidate_inclusion_reason": "clean_binary_resolved_market",
+      "binary": true,
+      "opened_at": "2026-01-15T00:00:00+00:00",
+      "end_time": "2026-03-15T23:59:59+00:00",
+      "resolution_time": "2026-03-16T08:00:00+00:00",
+      "reference_context": {
+        "event_time": "2026-03-15T23:59:59+00:00",
+        "resolution_criteria": "Resolve Yes if Film A is announced as Best Picture winner.",
+        "reference_label": "official_award_result",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "RESOLVED",
+        "winning_outcome": "YES",
+        "resolved_at": "2026-03-16T08:00:00+00:00",
+        "truth_source": "fixture_resolution_manual",
+        "confidence": "CONFIRMED"
+      },
+      "snapshots": [
+        {"timestamp": "2026-01-30T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.31, "no_price": 0.69, "volume": 74000.0, "liquidity": 12000.0, "wallet_concentration": 0.46},
+        {"timestamp": "2026-03-01T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.42, "no_price": 0.58, "volume": 154000.0, "liquidity": 21000.0, "wallet_concentration": 0.55},
+        {"timestamp": "2026-03-15T18:00:00+00:00", "lifecycle_status": "NEARING_CLOSE", "yes_price": 0.46, "no_price": 0.54, "volume": 220000.0, "liquidity": 26000.0, "wallet_concentration": 0.58}
+      ]
+    },
+    {
+      "market_id": "pm-signal-weather-short-no-2",
+      "condition_id": "0xsignalweathershortno2",
+      "slug": "named-storm-landfall-before-july-2026-signal",
+      "question": "Will Named Storm Q make landfall before July 1, 2026?",
+      "category": "Weather",
+      "quality_gate": "RESEARCHABLE",
+      "candidate_inclusion_reason": "clean_binary_resolved_market",
+      "binary": true,
+      "opened_at": "2026-04-01T00:00:00+00:00",
+      "end_time": "2026-07-01T00:00:00+00:00",
+      "resolution_time": "2026-07-01T12:00:00+00:00",
+      "reference_context": {
+        "event_time": "2026-07-01T00:00:00+00:00",
+        "resolution_criteria": "Resolve Yes if the official storm report records landfall.",
+        "reference_label": "official_storm_report",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "RESOLVED",
+        "winning_outcome": "NO",
+        "resolved_at": "2026-07-01T12:00:00+00:00",
+        "truth_source": "fixture_resolution_manual",
+        "confidence": "CONFIRMED"
+      },
+      "snapshots": [
+        {"timestamp": "2026-05-01T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.49, "no_price": 0.51, "volume": 24000.0, "liquidity": 7000.0, "wallet_concentration": 0.33},
+        {"timestamp": "2026-06-20T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.45, "no_price": 0.55, "volume": 88000.0, "liquidity": 17000.0, "wallet_concentration": 0.38},
+        {"timestamp": "2026-06-30T12:00:00+00:00", "lifecycle_status": "NEARING_CLOSE", "yes_price": 0.42, "no_price": 0.58, "volume": 130000.0, "liquidity": 25000.0, "wallet_concentration": 0.41}
+      ]
+    },
+    {
+      "market_id": "pm-signal-sports-short-yes-2",
+      "condition_id": "0xsignalsportsshortyes2",
+      "slug": "team-c-wins-series-2026-signal",
+      "question": "Will Team C win its 2026 playoff series?",
+      "category": "Sports",
+      "quality_gate": "RESEARCHABLE",
+      "candidate_inclusion_reason": "clean_binary_resolved_market",
+      "binary": true,
+      "opened_at": "2026-05-01T00:00:00+00:00",
+      "end_time": "2026-05-20T23:59:59+00:00",
+      "resolution_time": "2026-05-21T12:00:00+00:00",
+      "reference_context": {
+        "event_time": "2026-05-20T23:59:59+00:00",
+        "resolution_criteria": "Resolve Yes if Team C is listed as series winner.",
+        "reference_label": "official_series_result",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "RESOLVED",
+        "winning_outcome": "YES",
+        "resolved_at": "2026-05-21T12:00:00+00:00",
+        "truth_source": "fixture_resolution_manual",
+        "confidence": "CONFIRMED"
+      },
+      "snapshots": [
+        {"timestamp": "2026-05-05T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.46, "no_price": 0.54, "volume": 52000.0, "liquidity": 12000.0, "wallet_concentration": 0.32},
+        {"timestamp": "2026-05-18T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.56, "no_price": 0.44, "volume": 114000.0, "liquidity": 22000.0, "wallet_concentration": 0.37},
+        {"timestamp": "2026-05-20T18:00:00+00:00", "lifecycle_status": "NEARING_CLOSE", "yes_price": 0.58, "no_price": 0.42, "volume": 162000.0, "liquidity": 29000.0, "wallet_concentration": 0.4}
+      ]
+    },
+    {
+      "market_id": "pm-signal-business-unresolved-1",
+      "condition_id": "0xsignalbusinessunresolved1",
+      "slug": "company-x-ipo-before-end-2026-signal",
+      "question": "Will Company X IPO before December 31, 2026?",
+      "category": "Business",
+      "quality_gate": "RESEARCHABLE",
+      "candidate_inclusion_reason": "clean_binary_unresolved_market_retained_unscored",
+      "binary": true,
+      "opened_at": "2026-02-01T00:00:00+00:00",
+      "end_time": "2026-12-31T23:59:59+00:00",
+      "resolution_time": null,
+      "reference_context": {
+        "event_time": "2026-12-31T23:59:59+00:00",
+        "resolution_criteria": "Resolve Yes if a public IPO listing occurs before the deadline.",
+        "reference_label": "issuer_public_listing_event",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "UNRESOLVED",
+        "winning_outcome": null,
+        "resolved_at": null,
+        "truth_source": null,
+        "confidence": "UNKNOWN"
+      },
+      "snapshots": [
+        {"timestamp": "2026-04-01T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.31, "no_price": 0.69, "volume": 29000.0, "liquidity": 7200.0, "wallet_concentration": 0.44},
+        {"timestamp": "2026-05-05T12:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.35, "no_price": 0.65, "volume": 35000.0, "liquidity": 8000.0, "wallet_concentration": 0.46}
+      ]
+    },
+    {
+      "market_id": "pm-signal-thin-excluded-1",
+      "condition_id": "0xsignalthinexcluded1",
+      "slug": "obscure-local-event-2026-signal",
+      "question": "Will an obscure local event happen before July 2026?",
+      "category": "Other",
+      "quality_gate": "LOW_PRIORITY",
+      "candidate_inclusion_reason": "excluded_low_liquidity_fixture",
+      "binary": true,
+      "opened_at": "2026-02-10T00:00:00+00:00",
+      "end_time": "2026-07-01T00:00:00+00:00",
+      "resolution_time": "2026-07-02T00:00:00+00:00",
+      "reference_context": {
+        "event_time": "2026-07-01T00:00:00+00:00",
+        "resolution_criteria": "Excluded because liquidity and volume are too thin for research use.",
+        "reference_label": "manual_local_event_status",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "RESOLVED",
+        "winning_outcome": "YES",
+        "resolved_at": "2026-07-02T00:00:00+00:00",
+        "truth_source": "fixture_resolution_manual",
+        "confidence": "LOW"
+      },
+      "snapshots": [
+        {"timestamp": "2026-03-01T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.62, "no_price": 0.38, "volume": 900.0, "liquidity": 240.0, "wallet_concentration": 0.82},
+        {"timestamp": "2026-06-30T12:00:00+00:00", "lifecycle_status": "NEARING_CLOSE", "yes_price": 0.67, "no_price": 0.33, "volume": 1100.0, "liquidity": 310.0, "wallet_concentration": 0.88}
+      ]
+    },
+    {
+      "market_id": "pm-signal-ambiguous-excluded-1",
+      "condition_id": "0xsignalambiguousexcluded1",
+      "slug": "who-wins-party-primary-2026-signal",
+      "question": "Who will win the Example Party primary?",
+      "category": "Politics",
+      "quality_gate": "AMBIGUOUS_MARKET_STRUCTURE",
+      "candidate_inclusion_reason": "excluded_non_binary_market",
+      "binary": false,
+      "opened_at": "2026-01-01T00:00:00+00:00",
+      "end_time": "2026-08-01T00:00:00+00:00",
+      "resolution_time": null,
+      "reference_context": {
+        "event_time": "2026-08-01T00:00:00+00:00",
+        "resolution_criteria": "Multi-outcome primary market; excluded from binary candidate research.",
+        "reference_label": "primary_winner",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "AMBIGUOUS",
+        "winning_outcome": null,
+        "resolved_at": null,
+        "truth_source": null,
+        "confidence": "AMBIGUOUS"
+      },
+      "snapshots": [
+        {"timestamp": "2026-05-01T00:00:00+00:00", "lifecycle_status": "ACTIVE", "yes_price": 0.33, "no_price": 0.67, "volume": 100000.0, "liquidity": 20000.0, "wallet_concentration": 0.52}
+      ]
+    }
+  ]
+}
