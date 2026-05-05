@@ -112,7 +112,10 @@ from quant_os.research.prediction_markets.candidate_predictions import (
     write_prediction_feature_report,
 )
 from quant_os.research.prediction_markets.dataset_growth import write_dataset_growth_report
-from quant_os.research.prediction_markets.evaluation import write_lane_evaluation_report
+from quant_os.research.prediction_markets.evaluation import (
+    write_lane_activity_evaluation_report,
+    write_lane_evaluation_report,
+)
 from quant_os.research.prediction_markets.historical_dataset import (
     write_expanded_historical_dataset_report,
     write_signal_discovery_dataset_report,
@@ -120,7 +123,14 @@ from quant_os.research.prediction_markets.historical_dataset import (
 from quant_os.research.prediction_markets.historical_dataset import (
     write_historical_dataset_report as write_prediction_historical_dataset_report,
 )
+from quant_os.research.prediction_markets.lane_activity_dataset import (
+    write_lane_activity_dataset_report,
+)
+from quant_os.research.prediction_markets.lane_dynamics import write_dynamic_signal_report
 from quant_os.research.prediction_markets.lane_selection import write_lane_selection_report
+from quant_os.research.prediction_markets.lane_timeline import (
+    write_lane_timeline_summary_report,
+)
 from quant_os.research.prediction_markets.market_strata import write_market_strata_report
 from quant_os.research.prediction_markets.quality_report import (
     write_market_inventory_report,
@@ -128,10 +138,12 @@ from quant_os.research.prediction_markets.quality_report import (
     write_research_priority_report,
 )
 from quant_os.research.prediction_markets.replay_feasibility_report import (
+    write_lane_replay_readiness_report,
     write_replay_feasibility_report,
     write_replay_precondition_report,
 )
 from quant_os.research.prediction_markets.signal_families import write_signal_family_report
+from quant_os.research.prediction_markets.wallet_flow_features import write_wallet_flow_report
 from quant_os.research.prediction_markets.wallet_reports import write_wallet_research_report
 from quant_os.research.regime_tests import run_regime_tests
 from quant_os.research.research_evidence_report import write_research_evidence_report
@@ -204,6 +216,13 @@ DEFAULT_POLYMARKET_SIGNAL_DISCOVERY_FIXTURE = (
     / "prediction_markets"
     / "history"
     / "polymarket_signal_discovery_sample.json"
+)
+DEFAULT_POLYMARKET_LANE_ACTIVITY_FIXTURE = (
+    Path("tests")
+    / "fixtures"
+    / "prediction_markets"
+    / "activity"
+    / "polymarket_short_dated_lane_activity_sample.json"
 )
 
 
@@ -611,6 +630,91 @@ def research_replay_feasibility(
             "report": "reports/sequence22/replay_feasibility/latest_replay_feasibility.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("lane-activity-build")
+def research_lane_activity_build(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    path = fixture_path or DEFAULT_POLYMARKET_LANE_ACTIVITY_FIXTURE
+    dataset = write_lane_activity_dataset_report(fixture_path=path)
+    timeline = write_lane_timeline_summary_report(fixture_path=path)
+    print(
+        {
+            "status": dataset["research_dataset_status"],
+            "lane_id": dataset["lane_id"],
+            "market_count": dataset["market_count"],
+            "included_market_count": dataset["included_market_count"],
+            "resolved_market_count": dataset["resolved_market_count"],
+            "activity_observation_count": dataset["activity_observation_count"],
+            "activity_depth_status": dataset["activity_depth_status"],
+            "dataset_report": "reports/sequence24/dataset/latest_lane_activity_dataset.json",
+            "timeline_report": "reports/sequence24/dataset/latest_lane_timeline_summary.json",
+            "live_trading_enabled": False,
+            "execution_authority": timeline["execution_authority"],
+        }
+    )
+
+
+@research_app.command("dynamic-signal-report")
+def research_dynamic_signal_report(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    payload = write_dynamic_signal_report(
+        fixture_path=fixture_path or DEFAULT_POLYMARKET_LANE_ACTIVITY_FIXTURE,
+    )
+    print(
+        {
+            "status": "RESEARCH_ONLY",
+            "lane_id": payload["lane_id"],
+            "feature_count": payload["feature_count"],
+            "signal_family_count": payload["signal_family_count"],
+            "report": "reports/sequence24/signal_reports/latest_signal_reports.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("wallet-flow-report")
+def research_wallet_flow_report(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    payload = write_wallet_flow_report(
+        fixture_path=fixture_path or DEFAULT_POLYMARKET_LANE_ACTIVITY_FIXTURE,
+    )
+    print(
+        {
+            "status": "RESEARCH_ONLY",
+            "lane_id": payload["lane_id"],
+            "market_count": payload["market_count"],
+            "report": "reports/sequence24/signal_reports/latest_wallet_flow_features.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+            "copy_trading_enabled": payload["copy_trading_enabled"],
+        }
+    )
+
+
+@research_app.command("lane-replay-readiness")
+def research_lane_replay_readiness(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    path = fixture_path or DEFAULT_POLYMARKET_LANE_ACTIVITY_FIXTURE
+    lane_evaluation = write_lane_activity_evaluation_report(fixture_path=path)
+    readiness = write_lane_replay_readiness_report(fixture_path=path)
+    print(
+        {
+            "status": readiness["replay_readiness_status"],
+            "lane_evaluation_status": lane_evaluation["lane_evaluation_status"],
+            "ready_for_narrow_replay_design": readiness["ready_for_narrow_replay_design"],
+            "blockers": readiness["blockers"],
+            "lane_report": "reports/sequence24/lane_evaluation/latest_lane_evaluation.json",
+            "readiness_report": "reports/sequence24/replay_readiness/latest_replay_readiness.json",
+            "live_trading_enabled": False,
+            "execution_authority": readiness["execution_authority"],
         }
     )
 
