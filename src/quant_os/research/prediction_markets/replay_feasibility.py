@@ -12,6 +12,8 @@ REPLAY_FEASIBILITY_SAFETY = {
 
 MIN_INCLUDED_MARKETS_FOR_NARROW_REPLAY = 8
 MIN_RESOLVED_OBSERVATIONS_FOR_NARROW_REPLAY = 8
+MIN_INCLUDED_MARKETS_FOR_SIGNAL_DISCOVERY_REPLAY = 12
+MIN_RESOLVED_OBSERVATIONS_FOR_SIGNAL_DISCOVERY_REPLAY = 12
 
 
 def evaluate_replay_feasibility(
@@ -57,6 +59,47 @@ def evaluate_replay_feasibility(
     }
 
 
+def evaluate_replay_preconditions(
+    *,
+    dataset: dict[str, Any],
+    lane_evaluation: dict[str, Any],
+) -> dict[str, Any]:
+    blockers = _precondition_blockers(dataset=dataset, lane_evaluation=lane_evaluation)
+    status = _precondition_status(blockers, lane_evaluation=lane_evaluation)
+    return {
+        "sequence": "23",
+        "source": "polymarket",
+        "source_mode": dataset["source_mode"],
+        "replay_precondition_status": status,
+        "ready_for_narrow_replay_design": status == "READY_FOR_NARROW_REPLAY_DESIGN",
+        "blockers": blockers,
+        "dataset_summary": {
+            "dataset_id": dataset["dataset_id"],
+            "dataset_hash": dataset["dataset_hash"],
+            "market_count": dataset["market_count"],
+            "included_market_count": dataset["included_market_count"],
+            "snapshot_count": dataset["snapshot_count"],
+            "resolution_summary": dataset["resolution_summary"],
+        },
+        "best_candidate_lane": lane_evaluation.get("best_lane_evaluation"),
+        "lane_evaluation_status": lane_evaluation["lane_evaluation_status"],
+        "observed_facts": [
+            "Replay preconditions are research-only and use deterministic lane evaluation outputs.",
+            "No prediction-market execution, order routing, sizing, signing, or wallet mirroring is enabled.",
+        ],
+        "inferred_patterns": [
+            "A lane can be worth continued research while still being blocked from replay design.",
+        ],
+        "unknowns": [
+            "Replay realism and autonomous execution remain out of scope until a credible signal family exists.",
+        ],
+        **REPLAY_FEASIBILITY_SAFETY,
+        "live_allowed": False,
+        "live_promotion_status": "LIVE_BLOCKED",
+        "evidence_only": True,
+    }
+
+
 def _replay_blockers(
     *,
     dataset: dict[str, Any],
@@ -74,6 +117,39 @@ def _replay_blockers(
     return blockers
 
 
+def _precondition_blockers(
+    *,
+    dataset: dict[str, Any],
+    lane_evaluation: dict[str, Any],
+) -> list[str]:
+    blockers = []
+    resolved_count = lane_evaluation["dataset_summary"]["resolution_summary"]["resolved_count"]
+    if dataset["included_market_count"] < MIN_INCLUDED_MARKETS_FOR_SIGNAL_DISCOVERY_REPLAY:
+        blockers.append("DATASET_TOO_THIN")
+    if resolved_count < MIN_RESOLVED_OBSERVATIONS_FOR_SIGNAL_DISCOVERY_REPLAY:
+        blockers.append("INSUFFICIENT_RESOLVED_HISTORY")
+    if lane_evaluation.get("best_lane_evaluation") is None:
+        blockers.append("LANE_TOO_THIN")
+        blockers.append("NO_CREDIBLE_SIGNAL_FAMILY")
+    if any(lane["lane_status"] == "LANE_TOO_THIN" for lane in lane_evaluation["lane_evaluations"]):
+        blockers.append("LANE_TOO_THIN")
+    if lane_evaluation["lane_evaluation_status"] == "NO_CREDIBLE_SIGNAL_FAMILY":
+        blockers.append("NO_CREDIBLE_SIGNAL_FAMILY")
+        blockers.append("BASELINES_NOT_BEATEN")
+        blockers.append("SIGNAL_WEAK")
+    return _dedupe(blockers)
+
+
+def _dedupe(items: list[str]) -> list[str]:
+    seen = set()
+    deduped = []
+    for item in items:
+        if item not in seen:
+            deduped.append(item)
+            seen.add(item)
+    return deduped
+
+
 def _status_from_blockers(blockers: list[str]) -> str:
     if "DATASET_TOO_THIN" in blockers:
         return "DATASET_TOO_THIN"
@@ -83,4 +159,22 @@ def _status_from_blockers(blockers: list[str]) -> str:
         return "REPLAY_NOT_JUSTIFIED"
     if "SIGNAL_WEAK" in blockers:
         return "SIGNAL_WEAK"
+    return "READY_FOR_NARROW_REPLAY_DESIGN"
+
+
+def _precondition_status(blockers: list[str], *, lane_evaluation: dict[str, Any]) -> str:
+    if "DATASET_TOO_THIN" in blockers:
+        return "DATASET_TOO_THIN"
+    if "INSUFFICIENT_RESOLVED_HISTORY" in blockers:
+        return "INSUFFICIENT_RESOLVED_HISTORY"
+    if lane_evaluation.get("best_lane_evaluation") and "NO_CREDIBLE_SIGNAL_FAMILY" in blockers:
+        return "LANE_IDENTIFIED_BUT_REPLAY_NOT_READY"
+    if "NO_CREDIBLE_SIGNAL_FAMILY" in blockers:
+        return "NO_CREDIBLE_SIGNAL_FAMILY"
+    if "BASELINES_NOT_BEATEN" in blockers:
+        return "BASELINES_NOT_BEATEN"
+    if "SIGNAL_WEAK" in blockers:
+        return "SIGNAL_WEAK"
+    if "LANE_TOO_THIN" in blockers:
+        return "LANE_TOO_THIN"
     return "READY_FOR_NARROW_REPLAY_DESIGN"

@@ -782,6 +782,30 @@ if "%TARGET%"=="sequence22-smoke" (
   python -m pytest tests/test_sequence22_replay_feasibility.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="prediction-lane-selection-smoke" (
+  python -m quant_os.cli research prediction-lane-selection
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="prediction-signal-smoke" (
+  python -m quant_os.cli research prediction-signal-report
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="prediction-lane-eval-smoke" (
+  python -m quant_os.cli research prediction-lane-eval
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence23-smoke" (
+  call "%~f0" prediction-lane-selection-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" prediction-signal-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" prediction-lane-eval-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research replay-feasibility --lane-aware
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence23_signal_discovery.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
