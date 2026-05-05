@@ -1,0 +1,15 @@
+source: polymarket
+mode: research_only
+allow_network_fetch: false
+internet_required: false
+fixture_path: tests/fixtures/prediction_markets/polymarket_markets_sample.json
+wallet_activity_fixture_path: tests/fixtures/prediction_markets/polymarket_wallet_activity_sample.json
+quality_policy:
+  max_staleness_days: 14
+  min_liquidity_usd: 1000
+  min_volume_usd: 5000
+safety:
+  live_trading_enabled: false
+  execution_enabled: false
+  wallet_signing_enabled: false
+  copy_trading_enabled: false

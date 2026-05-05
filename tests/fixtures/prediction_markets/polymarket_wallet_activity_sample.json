@@ -1,0 +1,43 @@
+{
+  "source": "polymarket_wallet_activity_fixture",
+  "source_mode": "fixture",
+  "captured_at": "2026-05-05T12:00:00+00:00",
+  "activities": [
+    {
+      "wallet": "0xaaa111",
+      "market_id": "pm-clean-1",
+      "outcome": "Yes",
+      "side": "BUY",
+      "price": 0.41,
+      "notional_usd": 1200.0,
+      "timestamp": "2026-05-05T10:00:00+00:00"
+    },
+    {
+      "wallet": "0xbbb222",
+      "market_id": "pm-clean-1",
+      "outcome": "Yes",
+      "side": "BUY",
+      "price": 0.42,
+      "notional_usd": 900.0,
+      "timestamp": "2026-05-05T10:03:00+00:00"
+    },
+    {
+      "wallet": "0xccc333",
+      "market_id": "pm-clean-1",
+      "outcome": "Yes",
+      "side": "BUY",
+      "price": 0.42,
+      "notional_usd": 700.0,
+      "timestamp": "2026-05-05T10:06:00+00:00"
+    },
+    {
+      "wallet": "0xaaa111",
+      "market_id": "pm-stale-thin-1",
+      "outcome": "No",
+      "side": "BUY",
+      "price": 0.91,
+      "notional_usd": 200.0,
+      "timestamp": "2026-05-05T11:00:00+00:00"
+    }
+  ]
+}
