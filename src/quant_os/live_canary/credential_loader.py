@@ -43,6 +43,28 @@ def load_live_credentials(
     return _payload(blockers, warnings, resolved, raw, root)
 
 
+def load_live_credential_secrets(
+    credential_path: str | Path | None,
+    *,
+    repo_root: str | Path | None = None,
+) -> dict[str, Any]:
+    metadata = load_live_credentials(credential_path, repo_root=repo_root)
+    if metadata["status"] != "PASS" or credential_path is None:
+        return {**metadata, "secrets": {}, "secrets_returned": False}
+    path = Path(credential_path).expanduser().resolve(strict=False)
+    raw = _read_credentials(path)
+    return {
+        **metadata,
+        "secrets": {
+            "exchange_name": raw.get("exchange_name"),
+            "api_key": raw.get("api_key"),
+            "api_secret": raw.get("api_secret"),
+            "passphrase": raw.get("passphrase"),
+        },
+        "secrets_returned": True,
+    }
+
+
 def _read_credentials(path: Path) -> dict[str, Any]:
     if path.suffix.lower() == ".json":
         payload = json.loads(path.read_text(encoding="utf-8"))

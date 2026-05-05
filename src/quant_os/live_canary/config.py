@@ -33,6 +33,28 @@ def load_live_execution_config(config_path: str | Path = CONFIG_PATH) -> dict[st
                 "double_confirmation_required": True,
                 "emergency_stop_enabled": True,
             },
+            "adapter": {
+                "type": "fake",
+                "real_adapter_enabled": False,
+                "real_adapter_name": "kraken_spot_ccxt",
+                "optional_dependency_required": True,
+                "capability_probe_enabled": True,
+                "live_transport_enabled": False,
+            },
+            "real_adapter": {
+                "local_settings_file_required": True,
+                "local_settings_inside_repo_allowed": False,
+                "local_settings_path": "",
+                "account_mode": "spot_only",
+                "read_balance_allowed": True,
+                "trade_allowed": True,
+                "withdrawals_allowed": False,
+                "futures_allowed": False,
+                "margin_allowed": False,
+                "leverage_allowed": False,
+                "shorts_allowed": False,
+                "options_allowed": False,
+            },
         }
     return load_yaml(path)
 

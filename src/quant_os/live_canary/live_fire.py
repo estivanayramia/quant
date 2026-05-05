@@ -10,6 +10,7 @@ from quant_os.governance.live_attempt_registry import (
     create_live_attempt_record,
 )
 from quant_os.live_canary.adapter import build_live_canary_adapter
+from quant_os.live_canary.capabilities import inspect_exchange_capabilities
 from quant_os.live_canary.config import load_live_execution_config
 from quant_os.live_canary.exchange_port import ExchangeOrderRequest, LiveCanaryExchangePort
 from quant_os.live_canary.live_kill_switch import KILL_SWITCH_PATH, read_live_kill_switch
@@ -36,9 +37,10 @@ def fire_live_canary(
     kill_switch_path: str | Path = KILL_SWITCH_PATH,
     write: bool = True,
 ) -> dict[str, Any]:
-    adapter = adapter or build_live_canary_adapter()
+    adapter = adapter or build_live_canary_adapter(credential_path=credential_path)
     config = load_live_execution_config()
     capabilities = adapter.capabilities()
+    capability_report = inspect_exchange_capabilities(write=True)
     created_at = datetime.now(UTC)
     client_order_id = deterministic_client_order_id("tiny_live_canary", symbol, side, created_at, 1)
     blockers: list[str] = []
@@ -106,6 +108,10 @@ def fire_live_canary(
         "status": status,
         "generated_at": created_at.isoformat(),
         "mode": "fake" if fake_mode else "real_capable_blocked",
+        "adapter_mode": capability_report["adapter_mode"],
+        "dependency_status": capability_report["dependency_status"],
+        "settings_status": capability_report["settings_status"],
+        "capability_status": capability_report["status"],
         "symbol": symbol.upper(),
         "side": side.lower(),
         "notional_usd": notional_usd,

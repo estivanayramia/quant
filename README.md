@@ -229,6 +229,26 @@ rehearsal-only arming token, rehearses preflight, designs stoploss proof
 requirements, and writes a final gate report. It still cannot connect to an
 exchange or place orders.
 
+Phase 13 adds the default-off tiny-live crypto canary lane. Phase 14 adds a
+single-exchange adapter path behind that lane while keeping CI fake-only and
+fresh checkouts blocked:
+
+```bash
+make canary-exchange-capabilities
+make canary-live-prepare
+make canary-live-preflight
+make canary-live-status
+make canary-live-reconcile
+make canary-live-stop
+make canary-live-report
+make phase14-smoke
+```
+
+The real adapter path is disabled unless explicitly configured with local
+settings outside the repo, optional dependency support, spot-only mode, and all
+permission, approval, arming, stoploss, reconciliation, incident, symbol, and
+notional gates.
+
 ## Repository Structure
 
 - `src/quant_os/core`: framework-independent primitives, events, commands, errors, IDs, time.
@@ -265,8 +285,8 @@ The research control plane can generate candidate orders and reports. The execut
 - Phase 11: Tiny-live crypto canary policy gates and human approval scaffolding, with live still blocked.
 - Phase 12: Canary rehearsal proof, permission manifest import, arming-token rehearsal, and stoploss proof design.
 - Phase 13: Tiny-live crypto canary execution lane, default-off and heavily gated.
-- Phase 14: AI provider mesh for research/reporting only.
-- Phase 15: Tiny live crypto canary only after extensive future gates.
+- Phase 14: Single-exchange canary adapter, still default-off and tightly gated.
+- Phase 15: Future canary operational hardening only after extensive future gates.
 - Phase 16: NautilusTrader evaluation if the simpler stack becomes a bottleneck.
 
 ## Live Trading Disclaimer

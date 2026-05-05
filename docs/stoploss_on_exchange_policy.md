@@ -14,3 +14,8 @@ blocked.
 
 Phase 13 treats stoploss-on-exchange support as a hard gate. Unknown or false
 adapter capability blocks fire attempts, including tiny canary attempts.
+
+Phase 14 extends that hard gate to the single real-adapter path. The real
+adapter is blocked unless its local settings explicitly document
+`stoploss_on_exchange_supported: true`. Unknown support, missing settings, or
+unsupported stoploss capability keeps live fire blocked.

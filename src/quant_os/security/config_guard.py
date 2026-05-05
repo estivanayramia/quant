@@ -82,6 +82,7 @@ def _find_unsafe_withdrawal_settings(value: Any, prefix: str = "") -> list[str]:
                 "withdraw" in key_text
                 and not key_text.startswith("require_no_")
                 and not (key_text == "withdrawal_permissions_allowed" and item is False)
+                and not (key_text == "withdrawals_allowed" and item is False)
             ):
                 found.append(path)
             found.extend(_find_unsafe_withdrawal_settings(item, path))

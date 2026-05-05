@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from quant_os.live_canary.capabilities import inspect_exchange_capabilities
 from quant_os.live_canary.live_preflight import prepare_live_canary, run_live_preflight
 from quant_os.live_canary.live_reconcile import reconcile_live_canary
 from quant_os.live_canary.live_status import live_canary_status
@@ -16,6 +17,9 @@ REPORT_MD = LIVE_CANARY_ROOT / "latest_report.md"
 
 def write_live_canary_report_bundle(write: bool = True) -> dict[str, Any]:
     prepare = _load_or_build(LIVE_CANARY_ROOT / "latest_prepare.json", prepare_live_canary)
+    capabilities = _load_or_build(
+        LIVE_CANARY_ROOT / "latest_capabilities.json", inspect_exchange_capabilities
+    )
     preflight = _load_or_build(LIVE_CANARY_ROOT / "latest_preflight.json", run_live_preflight)
     reconcile = _load_or_build(LIVE_CANARY_ROOT / "latest_reconciliation.json", reconcile_live_canary)
     status = _load_or_build(LIVE_CANARY_ROOT / "latest_status.json", live_canary_status)
@@ -31,6 +35,10 @@ def write_live_canary_report_bundle(write: bool = True) -> dict[str, Any]:
         "status": "LIVE_BLOCKED" if blockers else "REPORT_READY",
         "generated_at": datetime.now(UTC).isoformat(),
         "mode": "blocked",
+        "adapter_mode": capabilities.get("adapter_mode"),
+        "dependency_status": capabilities.get("dependency_status"),
+        "settings_status": capabilities.get("settings_status"),
+        "capability_status": capabilities.get("status"),
         "prepare_status": prepare.get("status"),
         "preflight_status": preflight.get("preflight_status", preflight.get("status")),
         "reconciliation_status": reconcile.get("status"),

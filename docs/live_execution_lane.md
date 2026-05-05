@@ -34,6 +34,7 @@ before any fire attempt is considered.
 
 ## Commands
 
+- `make.cmd canary-exchange-capabilities`
 - `make.cmd canary-live-prepare`
 - `make.cmd canary-live-preflight`
 - `make.cmd canary-live-status`
@@ -49,3 +50,19 @@ requires `--confirm-live-fire`, symbol, notional, and all gates.
 CI never uses real credentials, never connects to an exchange, never calls
 Docker, and never runs a real live fire attempt. Unit tests use the fake adapter
 only.
+
+## Phase 14 Single-Exchange Adapter
+
+Phase 14 adds exactly one real-adapter path behind the same canary port:
+`kraken_spot_ccxt`. It is still disabled by default. A fresh checkout reports
+fake-only capability, no real transport, and no real order possibility.
+
+The real adapter is unavailable unless a local settings file outside the repo
+explicitly selects spot-only mode, real adapter enablement, live transport
+enablement, and documented stoploss-on-exchange support. Optional dependency
+or settings problems block the adapter instead of silently falling back to a
+real order path.
+
+`canary-live-fire` keeps every Phase 13 gate: explicit confirmation, symbol
+allowlist, notional cap, one open position, permission manifest, approval,
+arming token, final gate, stoploss proof, reconciliation, and kill switch.

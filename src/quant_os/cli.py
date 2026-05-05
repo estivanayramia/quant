@@ -59,6 +59,7 @@ from quant_os.integrations.freqtrade.trade_normalizer import (
 from quant_os.integrations.freqtrade.trade_reconciliation import reconcile_freqtrade_trades
 from quant_os.integrations.freqtrade.trade_reporting import write_freqtrade_trade_report
 from quant_os.integrations.telegram.alert_adapter import TelegramAlertAdapter
+from quant_os.live_canary.capabilities import inspect_exchange_capabilities
 from quant_os.live_canary.live_fire import fire_live_canary
 from quant_os.live_canary.live_preflight import prepare_live_canary, run_live_preflight
 from quant_os.live_canary.live_reconcile import reconcile_live_canary
@@ -1053,6 +1054,22 @@ def canary_live_prepare(
             "blockers": payload["blockers"],
             "live_promotion_status": payload["live_promotion_status"],
             "report": "reports/live_canary/latest_prepare.md",
+        }
+    )
+
+
+@canary_app.command("exchange-capabilities")
+def canary_exchange_capabilities() -> None:
+    payload = inspect_exchange_capabilities()
+    print(
+        {
+            "status": payload["status"],
+            "adapter_mode": payload["adapter_mode"],
+            "dependency_status": payload["dependency_status"],
+            "settings_status": payload["settings_status"],
+            "real_order_possible": payload["real_order_possible"],
+            "live_promotion_status": payload["live_promotion_status"],
+            "report": "reports/live_canary/latest_capabilities.md",
         }
     )
 

@@ -24,6 +24,8 @@ Phase 12 adds canary rehearsal proof only: local permission manifest import, arm
 
 Phase 13 adds a tiny-live crypto canary lane, but it is disabled by default, not autonomous, one-position-max, and blocked unless every local approval, credential, stoploss, reconciliation, and incident gate passes.
 
+Phase 14 adds one real exchange adapter path behind the tiny canary lane. It remains off by default, fake-only in CI, single-exchange, spot-only, tiny-notional, one-position-max, and blocked unless explicit local settings outside the repo plus every prior gate pass.
+
 Future tiny-live gates require weeks of shadow and paper stability, reconciliation tests, slippage tests, kill-switch tests, explicit API-key rules, no withdrawal permissions, recommended IP allowlists, tiny max order notional, and max open positions of 1.
 
 Tiny live crypto may only be considered after the gates and through a later Freqtrade path. Equities live trading may only be considered after broker restrictions, order rules, and session behavior are verified.
