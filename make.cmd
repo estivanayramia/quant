@@ -742,6 +742,24 @@ if "%TARGET%"=="sequence20-smoke" (
   python -m pytest tests/test_sequence20_prediction_market_research.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="prediction-history-smoke" (
+  python -m quant_os.cli research prediction-history-build
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="prediction-candidate-smoke" (
+  python -m quant_os.cli research prediction-feature-report
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research prediction-candidate-report
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence21-smoke" (
+  call "%~f0" prediction-history-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" prediction-candidate-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence21_prediction_candidate_research.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!

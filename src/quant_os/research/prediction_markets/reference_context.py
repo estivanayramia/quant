@@ -33,3 +33,35 @@ def build_reference_context_hooks(records: list[PredictionMarketRecord]) -> list
             }
         )
     return hooks
+
+
+def attach_offline_reference_context(dataset: dict[str, Any]) -> list[dict[str, Any]]:
+    references = []
+    for market in dataset["markets"]:
+        context = market.get("reference_context") or {}
+        resolution = market.get("resolution") or {}
+        references.append(
+            {
+                "source": "polymarket",
+                "source_mode": dataset["source_mode"],
+                "market_id": market["market_id"],
+                "condition_id": market["condition_id"],
+                "event_time": context.get("event_time"),
+                "resolution_criteria": context.get("resolution_criteria"),
+                "reference_label": context.get("reference_label"),
+                "reference_status": "ATTACHED_OFFLINE" if context else "MISSING_REFERENCE_CONTEXT",
+                "observed_market_data": bool(market.get("snapshots")),
+                "attached_resolution_truth": resolution.get("status") == "RESOLVED",
+                "internet_required": False,
+                "join_keys": {
+                    "source": "polymarket",
+                    "market_id": market["market_id"],
+                    "condition_id": market["condition_id"],
+                },
+                "unknowns": [
+                    "Reference context comes from offline fixtures and is not refreshed in CI.",
+                    "Unresolved or ambiguous markets must not be used as resolved training labels.",
+                ],
+            }
+        )
+    return references

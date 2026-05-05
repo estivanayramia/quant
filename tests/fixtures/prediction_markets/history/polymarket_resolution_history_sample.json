@@ -1,0 +1,196 @@
+{
+  "source": "polymarket_resolution_history_fixture",
+  "source_mode": "fixture",
+  "captured_at": "2026-05-05T12:00:00+00:00",
+  "markets": [
+    {
+      "market_id": "pm-history-yes-1",
+      "condition_id": "0xhistoryyes",
+      "slug": "fed-cut-by-june-2026-history",
+      "question": "Will the Federal Reserve cut rates by June 30, 2026?",
+      "category": "Economics",
+      "quality_gate": "RESEARCHABLE",
+      "binary": true,
+      "opened_at": "2026-01-10T00:00:00+00:00",
+      "end_time": "2026-06-30T23:59:59+00:00",
+      "resolution_time": "2026-07-01T12:00:00+00:00",
+      "reference_context": {
+        "event_time": "2026-06-30T18:00:00+00:00",
+        "resolution_criteria": "Resolve Yes if the target range is lower after the June 2026 FOMC meeting.",
+        "reference_label": "scheduled_fomc_policy_rate",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "RESOLVED",
+        "winning_outcome": "YES",
+        "resolved_at": "2026-07-01T12:00:00+00:00",
+        "truth_source": "fixture_resolution_manual",
+        "confidence": "CONFIRMED"
+      },
+      "snapshots": [
+        {
+          "timestamp": "2026-02-01T00:00:00+00:00",
+          "lifecycle_status": "ACTIVE",
+          "yes_price": 0.38,
+          "no_price": 0.62,
+          "volume": 42000.0,
+          "liquidity": 8500.0,
+          "wallet_concentration": 0.34
+        },
+        {
+          "timestamp": "2026-05-01T00:00:00+00:00",
+          "lifecycle_status": "ACTIVE",
+          "yes_price": 0.57,
+          "no_price": 0.43,
+          "volume": 150000.0,
+          "liquidity": 24000.0,
+          "wallet_concentration": 0.41
+        },
+        {
+          "timestamp": "2026-06-29T12:00:00+00:00",
+          "lifecycle_status": "NEARING_CLOSE",
+          "yes_price": 0.64,
+          "no_price": 0.36,
+          "volume": 235000.0,
+          "liquidity": 41000.0,
+          "wallet_concentration": 0.48
+        }
+      ]
+    },
+    {
+      "market_id": "pm-history-no-1",
+      "condition_id": "0xhistoryno",
+      "slug": "rain-on-may-day-2026-history",
+      "question": "Will Example City record rain on May 1, 2026?",
+      "category": "Weather",
+      "quality_gate": "RESEARCHABLE",
+      "binary": true,
+      "opened_at": "2026-03-01T00:00:00+00:00",
+      "end_time": "2026-05-01T23:59:59+00:00",
+      "resolution_time": "2026-05-02T12:00:00+00:00",
+      "reference_context": {
+        "event_time": "2026-05-01T23:59:59+00:00",
+        "resolution_criteria": "Resolve Yes if the official station records measurable rain.",
+        "reference_label": "official_weather_station_precipitation",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "RESOLVED",
+        "winning_outcome": "NO",
+        "resolved_at": "2026-05-02T12:00:00+00:00",
+        "truth_source": "fixture_resolution_manual",
+        "confidence": "CONFIRMED"
+      },
+      "snapshots": [
+        {
+          "timestamp": "2026-03-10T00:00:00+00:00",
+          "lifecycle_status": "ACTIVE",
+          "yes_price": 0.51,
+          "no_price": 0.49,
+          "volume": 12000.0,
+          "liquidity": 5500.0,
+          "wallet_concentration": 0.29
+        },
+        {
+          "timestamp": "2026-04-20T00:00:00+00:00",
+          "lifecycle_status": "ACTIVE",
+          "yes_price": 0.44,
+          "no_price": 0.56,
+          "volume": 42000.0,
+          "liquidity": 7600.0,
+          "wallet_concentration": 0.32
+        },
+        {
+          "timestamp": "2026-05-01T18:00:00+00:00",
+          "lifecycle_status": "NEARING_CLOSE",
+          "yes_price": 0.28,
+          "no_price": 0.72,
+          "volume": 68000.0,
+          "liquidity": 9300.0,
+          "wallet_concentration": 0.37
+        }
+      ]
+    },
+    {
+      "market_id": "pm-history-unresolved-1",
+      "condition_id": "0xhistoryunresolved",
+      "slug": "will-company-x-ipo-2026-history",
+      "question": "Will Company X IPO before December 31, 2026?",
+      "category": "Business",
+      "quality_gate": "RESEARCHABLE",
+      "binary": true,
+      "opened_at": "2026-02-01T00:00:00+00:00",
+      "end_time": "2026-12-31T23:59:59+00:00",
+      "resolution_time": null,
+      "reference_context": {
+        "event_time": "2026-12-31T23:59:59+00:00",
+        "resolution_criteria": "Resolve Yes if a public IPO listing occurs before the deadline.",
+        "reference_label": "issuer_public_listing_event",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "UNRESOLVED",
+        "winning_outcome": null,
+        "resolved_at": null,
+        "truth_source": null,
+        "confidence": "UNKNOWN"
+      },
+      "snapshots": [
+        {
+          "timestamp": "2026-04-01T00:00:00+00:00",
+          "lifecycle_status": "ACTIVE",
+          "yes_price": 0.31,
+          "no_price": 0.69,
+          "volume": 29000.0,
+          "liquidity": 7200.0,
+          "wallet_concentration": 0.44
+        },
+        {
+          "timestamp": "2026-05-05T12:00:00+00:00",
+          "lifecycle_status": "ACTIVE",
+          "yes_price": 0.35,
+          "no_price": 0.65,
+          "volume": 35000.0,
+          "liquidity": 8000.0,
+          "wallet_concentration": 0.46
+        }
+      ]
+    },
+    {
+      "market_id": "pm-history-ambiguous-1",
+      "condition_id": "0xhistoryambiguous",
+      "slug": "who-wins-party-primary-2026-history",
+      "question": "Who will win the Example Party primary?",
+      "category": "Politics",
+      "quality_gate": "AMBIGUOUS_MARKET_STRUCTURE",
+      "binary": false,
+      "opened_at": "2026-01-01T00:00:00+00:00",
+      "end_time": "2026-08-01T00:00:00+00:00",
+      "resolution_time": null,
+      "reference_context": {
+        "event_time": "2026-08-01T00:00:00+00:00",
+        "resolution_criteria": "Multi-outcome primary market; excluded from binary candidate research.",
+        "reference_label": "primary_winner",
+        "source_mode": "fixture"
+      },
+      "resolution": {
+        "status": "AMBIGUOUS",
+        "winning_outcome": null,
+        "resolved_at": null,
+        "truth_source": null,
+        "confidence": "AMBIGUOUS"
+      },
+      "snapshots": [
+        {
+          "timestamp": "2026-05-01T00:00:00+00:00",
+          "lifecycle_status": "ACTIVE",
+          "yes_price": 0.33,
+          "no_price": 0.67,
+          "volume": 100000.0,
+          "liquidity": 20000.0,
+          "wallet_concentration": 0.52
+        }
+      ]
+    }
+  ]
+}
