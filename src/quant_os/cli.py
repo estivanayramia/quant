@@ -41,6 +41,10 @@ from quant_os.data.historical_quality import run_historical_quality
 from quant_os.data.leakage_checks import run_leakage_checks
 from quant_os.data.loaders import load_yaml
 from quant_os.data.provider_check import check_historical_providers
+from quant_os.data.providers.polymarket_capture import (
+    DEFAULT_POLYMARKET_FIXTURE,
+    capture_polymarket_markets,
+)
 from quant_os.data.quality import validate_ohlcv
 from quant_os.data.venue_capture import capture_public_venue_snapshot
 from quant_os.data.warehouse import ensure_local_dirs
@@ -102,6 +106,12 @@ from quant_os.research.historical_evidence import (
 from quant_os.research.historical_research_report import write_historical_research_report
 from quant_os.research.leaderboard import build_strategy_leaderboard
 from quant_os.research.overfit_checks import run_overfit_checks
+from quant_os.research.prediction_markets.quality_report import (
+    write_market_inventory_report,
+    write_market_quality_report,
+    write_research_priority_report,
+)
+from quant_os.research.prediction_markets.wallet_reports import write_wallet_research_report
 from quant_os.research.regime_tests import run_regime_tests
 from quant_os.research.research_evidence_report import write_research_evidence_report
 from quant_os.research.research_report import run_strategy_research, write_strategy_research_report
@@ -149,6 +159,10 @@ app.add_typer(historical_app, name="historical")
 app.add_typer(proving_app, name="proving")
 app.add_typer(canary_app, name="canary")
 app.add_typer(readiness_app, name="readiness")
+
+DEFAULT_POLYMARKET_WALLET_FIXTURE = (
+    Path("tests") / "fixtures" / "prediction_markets" / "polymarket_wallet_activity_sample.json"
+)
 
 
 def _event_store() -> JsonlEventStore:
@@ -263,6 +277,23 @@ def data_venue_capture(
     print(payload)
 
 
+@data_app.command("capture-prediction-markets")
+def data_capture_prediction_markets(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+    allow_network_fetch: bool = typer.Option(False, "--allow-network-fetch"),
+    explicit_network_fetch: bool = typer.Option(False, "--explicit-network-fetch"),
+) -> None:
+    path = fixture_path if fixture_path is not None else None if allow_network_fetch else DEFAULT_POLYMARKET_FIXTURE
+    payload = capture_polymarket_markets(
+        fixture_path=path,
+        allow_network_fetch=allow_network_fetch,
+        explicit_network_fetch=explicit_network_fetch,
+    )
+    print(payload)
+    if payload["status"] == "BLOCKED":
+        raise typer.Exit(1)
+
+
 @research_app.command("crypto-build")
 def research_crypto_build(periods: int = typer.Option(240, min=50)) -> None:
     dataset = build_crypto_research_dataset(periods=periods)
@@ -275,6 +306,66 @@ def research_crypto_build(periods: int = typer.Option(240, min=50)) -> None:
             "symbols": payload["symbols"],
             "signals": payload["signal_count"],
             "report": "reports/crypto/latest_research.json",
+            "live_trading_enabled": False,
+        }
+    )
+
+
+@research_app.command("prediction-market-quality")
+def research_prediction_market_quality(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    payload = write_market_quality_report(fixture_path=fixture_path or DEFAULT_POLYMARKET_FIXTURE)
+    print(
+        {
+            "status": "PASS",
+            "market_count": payload["market_count"],
+            "researchable_count": payload["summary"]["researchable_count"],
+            "source_mode": payload["source_mode"],
+            "report": "reports/sequence20/market_quality/latest_market_quality.json",
+            "live_trading_enabled": False,
+        }
+    )
+
+
+@research_app.command("prediction-market-wallet-report")
+def research_prediction_market_wallet_report(
+    activity_fixture_path: Annotated[Path | None, typer.Option("--activity-fixture-path")] = None,
+    market_fixture_path: Annotated[Path | None, typer.Option("--market-fixture-path")] = None,
+) -> None:
+    payload = write_wallet_research_report(
+        activity_fixture_path=activity_fixture_path or DEFAULT_POLYMARKET_WALLET_FIXTURE,
+        market_fixture_path=market_fixture_path or DEFAULT_POLYMARKET_FIXTURE,
+    )
+    print(
+        {
+            "status": "PASS",
+            "wallet_count": payload["observed_facts"]["wallet_count"],
+            "activity_count": payload["observed_facts"]["activity_count"],
+            "source_mode": payload["source_mode"],
+            "execution_authority": payload["execution_authority"],
+            "copy_trading_enabled": payload["copy_trading_enabled"],
+            "report": "reports/sequence20/wallet_research/latest_wallet_research.json",
+            "live_trading_enabled": False,
+        }
+    )
+
+
+@research_app.command("prediction-market-priority")
+def research_prediction_market_priority(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    path = fixture_path or DEFAULT_POLYMARKET_FIXTURE
+    inventory = write_market_inventory_report(fixture_path=path)
+    priority = write_research_priority_report(fixture_path=path)
+    print(
+        {
+            "status": priority["status"],
+            "inventory_market_count": inventory["market_count"],
+            "candidate_lane_count": len(priority["top_candidate_research_lanes"]),
+            "source_mode": priority["source_mode"],
+            "inventory_report": "reports/sequence20/market_inventory/latest_market_inventory.json",
+            "priority_report": "reports/sequence20/research_priority/latest_research_priority.json",
             "live_trading_enabled": False,
         }
     )

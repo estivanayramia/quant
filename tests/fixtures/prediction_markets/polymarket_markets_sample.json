@@ -1,0 +1,134 @@
+{
+  "source": "polymarket_gamma_fixture",
+  "source_mode": "fixture",
+  "captured_at": "2026-05-05T12:00:00+00:00",
+  "markets": [
+    {
+      "id": "pm-clean-1",
+      "conditionId": "0xcleancondition",
+      "slug": "fed-cut-by-june-2026",
+      "question": "Will the Federal Reserve cut rates by June 30, 2026?",
+      "description": "Market resolves according to the target range published after scheduled FOMC meetings.",
+      "outcomes": [
+        "Yes",
+        "No"
+      ],
+      "outcomePrices": [
+        "0.42",
+        "0.58"
+      ],
+      "endDate": "2026-06-30T23:59:59+00:00",
+      "resolutionTime": "2026-07-01T12:00:00+00:00",
+      "active": true,
+      "closed": false,
+      "resolved": false,
+      "volume": "250000.0",
+      "liquidity": "45000.0",
+      "openInterest": "120000.0",
+      "category": "Economics",
+      "tags": [
+        "fed",
+        "rates",
+        "macro"
+      ],
+      "eventId": "event-fed-2026",
+      "updatedAt": "2026-05-05T11:30:00+00:00",
+      "url": "https://polymarket.example/market/fed-cut-by-june-2026"
+    },
+    {
+      "id": "pm-stale-thin-1",
+      "conditionId": "0xstalecondition",
+      "slug": "city-election-turnout-2026",
+      "question": "Will City X turnout exceed 40% in the 2026 municipal election?",
+      "outcomes": [
+        "Yes",
+        "No"
+      ],
+      "outcomePrices": [
+        "0.10",
+        "0.90"
+      ],
+      "endDate": "2026-11-05T00:00:00+00:00",
+      "active": true,
+      "closed": false,
+      "resolved": false,
+      "volume": "700.0",
+      "liquidity": "120.0",
+      "openInterest": "300.0",
+      "category": "Politics",
+      "tags": [
+        "local",
+        "elections"
+      ],
+      "updatedAt": "2026-03-01T00:00:00+00:00"
+    },
+    {
+      "id": "pm-ambiguous-1",
+      "conditionId": "0xambiguouscondition",
+      "slug": "who-wins-party-primary-2026",
+      "question": "Who will win the Example Party primary?",
+      "outcomes": [
+        "Candidate A",
+        "Candidate B",
+        "Other"
+      ],
+      "outcomePrices": [
+        "0.33",
+        "0.34",
+        "0.33"
+      ],
+      "endDate": "2026-08-01T00:00:00+00:00",
+      "active": true,
+      "closed": false,
+      "resolved": false,
+      "volume": "100000.0",
+      "liquidity": "20000.0",
+      "category": "Politics",
+      "tags": [
+        "primary"
+      ],
+      "updatedAt": "2026-05-05T10:00:00+00:00"
+    },
+    {
+      "id": "pm-missing-critical-1",
+      "conditionId": "",
+      "slug": "missing-critical-fields",
+      "question": "",
+      "outcomes": [],
+      "outcomePrices": [],
+      "active": true,
+      "closed": false,
+      "resolved": false,
+      "volume": "0.0",
+      "liquidity": "0.0",
+      "updatedAt": "2026-05-05T10:00:00+00:00"
+    },
+    {
+      "id": "pm-resolved-1",
+      "conditionId": "0xresolvedcondition",
+      "slug": "resolved-weather-market-2026",
+      "question": "Will Example City record rain on May 1, 2026?",
+      "outcomes": [
+        "Yes",
+        "No"
+      ],
+      "outcomePrices": [
+        "1.0",
+        "0.0"
+      ],
+      "endDate": "2026-05-01T23:59:59+00:00",
+      "resolutionTime": "2026-05-02T12:00:00+00:00",
+      "active": false,
+      "closed": true,
+      "resolved": true,
+      "winner": "Yes",
+      "volume": "50000.0",
+      "liquidity": "0.0",
+      "category": "Weather",
+      "tags": [
+        "weather"
+      ],
+      "updatedAt": "2026-05-02T12:30:00+00:00"
+    }
+  ]
+}

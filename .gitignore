@@ -17,6 +17,7 @@ build/
 data/demo/
 data/demo_expanded/
 data/historical/
+data/prediction_markets/
 data/sequence1/
 data/events/
 data/read_models/

@@ -718,6 +718,30 @@ if "%TARGET%"=="calibrated-edge-smoke" (
   python -m quant_os.cli research calibrated-edge-report
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="prediction-market-capture-smoke" (
+  python -m quant_os.cli data capture-prediction-markets
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="prediction-market-quality-smoke" (
+  python -m quant_os.cli research prediction-market-quality
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="prediction-market-wallet-smoke" (
+  python -m quant_os.cli research prediction-market-wallet-report
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence20-smoke" (
+  call "%~f0" prediction-market-capture-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" prediction-market-quality-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" prediction-market-wallet-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research prediction-market-priority
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence20_prediction_market_research.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
