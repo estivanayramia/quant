@@ -834,6 +834,36 @@ if "%TARGET%"=="sequence24-smoke" (
   python -m pytest tests/test_sequence24_lane_activity_readiness.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="polymarket-activity-capture-smoke" (
+  python -m quant_os.cli data capture-polymarket-activity
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="lane-activity-dataset-smoke" (
+  python -m quant_os.cli research lane-activity-dataset
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="lane-activity-quality-smoke" (
+  python -m quant_os.cli research lane-activity-quality
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="activity-signal-eval-smoke" (
+  python -m quant_os.cli research activity-signal-evaluation
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence25-smoke" (
+  call "%~f0" polymarket-activity-capture-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" lane-activity-dataset-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" lane-activity-quality-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" activity-signal-eval-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research real-activity-replay-readiness
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence25_polymarket_activity_ingestion.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
