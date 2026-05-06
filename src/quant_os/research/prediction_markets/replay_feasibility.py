@@ -18,6 +18,8 @@ MIN_LANE_ACTIVITY_MARKETS_FOR_REPLAY = 12
 MIN_LANE_ACTIVITY_RESOLVED_FOR_REPLAY = 12
 MIN_REAL_ACTIVITY_RESOLVED_FOR_REPLAY = 20
 MIN_REAL_ACTIVITY_EVENTS_PER_INCLUDED_MARKET = 5
+MIN_OOS_RESOLVED_FOR_REPLAY = 20
+MIN_OOS_OBSERVATIONS_FOR_REPLAY = 10
 
 
 def evaluate_replay_feasibility(
@@ -231,6 +233,69 @@ def evaluate_real_activity_replay_readiness(
     }
 
 
+def evaluate_oos_replay_readiness(
+    *,
+    lane_activity_dataset: dict[str, Any],
+    oos_validation: dict[str, Any],
+    robustness: dict[str, Any],
+) -> dict[str, Any]:
+    blockers = _oos_replay_blockers(
+        lane_activity_dataset=lane_activity_dataset,
+        oos_validation=oos_validation,
+        robustness=robustness,
+    )
+    status = _oos_replay_status(
+        blockers,
+        lane_activity_dataset=lane_activity_dataset,
+        oos_validation=oos_validation,
+    )
+    return {
+        "sequence": "26",
+        "source": lane_activity_dataset["source"],
+        "source_mode": lane_activity_dataset["source_mode"],
+        "lane_id": lane_activity_dataset["lane_id"],
+        "replay_readiness_status": status,
+        "ready_for_narrow_replay_design": status == "READY_FOR_NARROW_REPLAY_DESIGN",
+        "blockers": blockers,
+        "best_candidate_lane": {
+            "lane_id": lane_activity_dataset["lane_id"],
+            "lane_name": "Short-Dated Clean Binary",
+            "source_mode": lane_activity_dataset["source_mode"],
+            "resolved_observation_count": oos_validation["resolved_observation_count"],
+            "oos_observation_count": oos_validation["oos_observation_count"],
+            "oos_validation_status": oos_validation["oos_validation_status"],
+            "robustness_status": robustness["robustness_status"],
+        },
+        "dataset_summary": {
+            "dataset_id": lane_activity_dataset["dataset_id"],
+            "dataset_hash": lane_activity_dataset["dataset_hash"],
+            "source_mode": lane_activity_dataset["source_mode"],
+            "market_count": lane_activity_dataset["market_count"],
+            "included_market_count": lane_activity_dataset["included_market_count"],
+            "resolved_market_count": lane_activity_dataset["resolved_market_count"],
+            "activity_observation_count": lane_activity_dataset["activity_observation_count"],
+        },
+        "label_quality_status": oos_validation["label_quality_status"],
+        "label_quality_summary": oos_validation["label_quality_summary"],
+        "oos_validation_status": oos_validation["oos_validation_status"],
+        "robustness_status": robustness["robustness_status"],
+        "observed_facts": [
+            "Sequence 26 replay readiness uses expanded resolved history and chronological OOS validation.",
+            "No prediction-market execution, order routing, sizing, signing, or wallet mirroring is enabled.",
+        ],
+        "inferred_patterns": [
+            "Resolved-history expansion can improve the research substrate while replay design remains blocked by weak OOS evidence.",
+        ],
+        "unknowns": [
+            "Replay mechanics, fees, fills, queue position, and execution constraints remain intentionally unmodeled.",
+        ],
+        **REPLAY_FEASIBILITY_SAFETY,
+        "live_allowed": False,
+        "live_promotion_status": "LIVE_BLOCKED",
+        "evidence_only": True,
+    }
+
+
 def _replay_blockers(
     *,
     dataset: dict[str, Any],
@@ -327,6 +392,35 @@ def _real_activity_replay_blockers(
     return _dedupe(blockers)
 
 
+def _oos_replay_blockers(
+    *,
+    lane_activity_dataset: dict[str, Any],
+    oos_validation: dict[str, Any],
+    robustness: dict[str, Any],
+) -> list[str]:
+    blockers = []
+    if lane_activity_dataset["source_mode"] != "real_cached":
+        blockers.append("INSUFFICIENT_REAL_ACTIVITY")
+    if oos_validation["resolved_observation_count"] < MIN_OOS_RESOLVED_FOR_REPLAY:
+        blockers.append("INSUFFICIENT_RESOLVED_HISTORY")
+    if oos_validation["oos_observation_count"] < MIN_OOS_OBSERVATIONS_FOR_REPLAY:
+        blockers.append("LANE_OOS_TOO_THIN")
+    if oos_validation["label_quality_status"] != "LABELS_USABLE_FOR_OOS_RESEARCH":
+        blockers.append("INSUFFICIENT_LABEL_QUALITY")
+    if not oos_validation["leakage_check"]["passed"]:
+        blockers.append("OOS_LEAKAGE_RISK")
+    if not oos_validation["candidate_signal_survives_oos"]:
+        blockers.append("NO_CREDIBLE_SIGNAL_FAMILY")
+    if oos_validation["oos_validation_status"] == "BASELINES_NOT_BEATEN":
+        blockers.append("BASELINES_NOT_BEATEN")
+        blockers.append("SIGNAL_WEAK")
+    if oos_validation["oos_validation_status"] == "DIRECTIONAL_IMPROVEMENT_ONLY":
+        blockers.append("SIGNAL_WEAK")
+    if robustness["robustness_status"] != "OOS_SIGNAL_ROBUST_ENOUGH_FOR_REPLAY_DESIGN":
+        blockers.append("SIGNAL_WEAK")
+    return _dedupe(blockers)
+
+
 def _dedupe(items: list[str]) -> list[str]:
     seen = set()
     deduped = []
@@ -407,6 +501,34 @@ def _real_activity_replay_status(
         return "INSUFFICIENT_RESOLVED_HISTORY"
     if "BASELINES_NOT_BEATEN" in blockers:
         return "BASELINES_NOT_BEATEN"
+    if "SIGNAL_WEAK" in blockers:
+        return "SIGNAL_WEAK"
+    return "LANE_IMPROVED_BUT_REPLAY_NOT_READY"
+
+
+def _oos_replay_status(
+    blockers: list[str],
+    *,
+    lane_activity_dataset: dict[str, Any],
+    oos_validation: dict[str, Any],
+) -> str:
+    if not blockers:
+        return "READY_FOR_NARROW_REPLAY_DESIGN"
+    if "INSUFFICIENT_REAL_ACTIVITY" in blockers:
+        return "INSUFFICIENT_REAL_ACTIVITY"
+    if "INSUFFICIENT_RESOLVED_HISTORY" in blockers:
+        return "INSUFFICIENT_RESOLVED_HISTORY"
+    if "LANE_OOS_TOO_THIN" in blockers:
+        return "LANE_OOS_TOO_THIN"
+    if (
+        lane_activity_dataset["source_mode"] == "real_cached"
+        and oos_validation["resolved_observation_count"] >= MIN_OOS_RESOLVED_FOR_REPLAY
+    ):
+        return "LANE_IMPROVED_BUT_REPLAY_NOT_READY"
+    if "BASELINES_NOT_BEATEN" in blockers:
+        return "BASELINES_NOT_BEATEN"
+    if "NO_CREDIBLE_SIGNAL_FAMILY" in blockers:
+        return "NO_CREDIBLE_SIGNAL_FAMILY"
     if "SIGNAL_WEAK" in blockers:
         return "SIGNAL_WEAK"
     return "LANE_IMPROVED_BUT_REPLAY_NOT_READY"

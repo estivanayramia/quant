@@ -9,6 +9,7 @@ from quant_os.data.prediction_markets.activity_history import build_lane_activit
 
 REPORT_ROOT = Path("reports/sequence24/dataset")
 SEQUENCE25_REPORT_ROOT = Path("reports/sequence25/dataset")
+SEQUENCE26_REPORT_ROOT = Path("reports/sequence26/dataset")
 
 
 def write_lane_activity_dataset_report(
@@ -62,6 +63,33 @@ def write_sequence25_activity_dataset_report(
         ],
     }
     payload["report_paths"] = _write_sequence25_report(payload, output_root=output_root)
+    return payload
+
+
+def write_sequence26_lane_dataset_summary_report(
+    *,
+    fixture_path: str | Path,
+    output_root: str | Path = ".",
+) -> dict[str, Any]:
+    dataset = build_activity_dataset_from_capture(fixture_path)
+    payload = {
+        **dataset,
+        "research_dataset_status": "EXPANDED_RESOLVED_ACTIVITY_RESEARCH_ONLY",
+        "ready_for_narrow_replay_design": False,
+        "observed_facts": [
+            *dataset["observed_facts"],
+            "Sequence 26 expands resolved lane history for stricter OOS validation.",
+        ],
+        "inferred_patterns": [
+            *dataset["inferred_patterns"],
+            "A larger resolved sample can reject thin-sample artifacts more honestly.",
+        ],
+        "unknowns": [
+            *dataset["unknowns"],
+            "This dataset summary does not prove OOS signal credibility by itself.",
+        ],
+    }
+    payload["report_paths"] = _write_sequence26_report(payload, output_root=output_root)
     return payload
 
 
@@ -124,6 +152,43 @@ def _write_sequence25_report(
         f"Resolved markets: {payload['resolved_market_count']}",
         f"Activity observations: {payload['activity_observation_count']}",
         f"Malformed events: {payload['malformed_event_count']}",
+        f"Live promotion: {payload['live_promotion_status']}",
+        "",
+        "## Observed facts",
+    ]
+    lines.extend(f"- {item}" for item in payload["observed_facts"])
+    lines.extend(["", "## Inferred patterns"])
+    lines.extend(f"- {item}" for item in payload["inferred_patterns"])
+    lines.extend(["", "## Unknowns"])
+    lines.extend(f"- {item}" for item in payload["unknowns"])
+    md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return {"json": str(json_path), "markdown": str(md_path)}
+
+
+def _write_sequence26_report(
+    payload: dict[str, Any],
+    *,
+    output_root: str | Path,
+) -> dict[str, str]:
+    root = Path(output_root) / SEQUENCE26_REPORT_ROOT
+    root.mkdir(parents=True, exist_ok=True)
+    json_path = root / "latest_lane_dataset_summary.json"
+    md_path = root / "latest_lane_dataset_summary.md"
+    json_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, default=str),
+        encoding="utf-8",
+    )
+    lines = [
+        "# Sequence 26 Lane Dataset Summary",
+        "",
+        "Research-only expanded lane dataset report. No execution authority.",
+        "",
+        f"Lane: {payload['lane_id']}",
+        f"Dataset status: {payload['research_dataset_status']}",
+        f"Source mode: {payload['source_mode']}",
+        f"Markets: {payload['market_count']}",
+        f"Resolved markets: {payload['resolved_market_count']}",
+        f"Activity observations: {payload['activity_observation_count']}",
         f"Live promotion: {payload['live_promotion_status']}",
         "",
         "## Observed facts",

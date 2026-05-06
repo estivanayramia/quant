@@ -864,6 +864,40 @@ if "%TARGET%"=="sequence25-smoke" (
   python -m pytest tests/test_sequence25_polymarket_activity_ingestion.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="resolved-history-growth-smoke" (
+  python -m quant_os.cli research resolved-history-growth
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="label-quality-smoke" (
+  python -m quant_os.cli research label-quality
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="lane-oos-validation-smoke" (
+  python -m quant_os.cli research lane-oos-validation
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="lane-robustness-smoke" (
+  python -m quant_os.cli research lane-robustness
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="oos-replay-readiness-smoke" (
+  python -m quant_os.cli research oos-replay-readiness
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence26-smoke" (
+  call "%~f0" resolved-history-growth-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" label-quality-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" lane-oos-validation-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" lane-robustness-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" oos-replay-readiness-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence26_resolved_history_oos_validation.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
