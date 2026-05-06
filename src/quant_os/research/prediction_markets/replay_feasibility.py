@@ -16,6 +16,8 @@ MIN_INCLUDED_MARKETS_FOR_SIGNAL_DISCOVERY_REPLAY = 12
 MIN_RESOLVED_OBSERVATIONS_FOR_SIGNAL_DISCOVERY_REPLAY = 12
 MIN_LANE_ACTIVITY_MARKETS_FOR_REPLAY = 12
 MIN_LANE_ACTIVITY_RESOLVED_FOR_REPLAY = 12
+MIN_REAL_ACTIVITY_RESOLVED_FOR_REPLAY = 20
+MIN_REAL_ACTIVITY_EVENTS_PER_INCLUDED_MARKET = 5
 
 
 def evaluate_replay_feasibility(
@@ -161,6 +163,74 @@ def evaluate_lane_replay_readiness(
     }
 
 
+def evaluate_real_activity_replay_readiness(
+    *,
+    lane_activity_dataset: dict[str, Any],
+    lane_evaluation: dict[str, Any],
+) -> dict[str, Any]:
+    blockers = _real_activity_replay_blockers(
+        lane_activity_dataset=lane_activity_dataset,
+        lane_evaluation=lane_evaluation,
+    )
+    status = _real_activity_replay_status(
+        blockers,
+        lane_activity_dataset=lane_activity_dataset,
+    )
+    quality_status = _activity_quality_status(lane_activity_dataset)
+    return {
+        "sequence": "25",
+        "source": lane_activity_dataset["source"],
+        "source_mode": lane_activity_dataset["source_mode"],
+        "lane_id": lane_activity_dataset["lane_id"],
+        "replay_readiness_status": status,
+        "ready_for_narrow_replay_design": status == "READY_FOR_NARROW_REPLAY_DESIGN",
+        "blockers": blockers,
+        "activity_quality_status": quality_status,
+        "best_candidate_lane": {
+            "lane_id": lane_activity_dataset["lane_id"],
+            "lane_name": "Short-Dated Clean Binary",
+            "source_mode": lane_activity_dataset["source_mode"],
+            "activity_depth_status": lane_activity_dataset["activity_depth_status"],
+            "included_market_count": lane_activity_dataset["included_market_count"],
+            "resolved_observation_count": lane_evaluation["resolved_observation_count"],
+            "best_candidate_signal": lane_evaluation["best_candidate_signal"],
+        },
+        "dataset_summary": {
+            "dataset_id": lane_activity_dataset["dataset_id"],
+            "dataset_hash": lane_activity_dataset["dataset_hash"],
+            "source_mode": lane_activity_dataset["source_mode"],
+            "market_count": lane_activity_dataset["market_count"],
+            "included_market_count": lane_activity_dataset["included_market_count"],
+            "resolved_market_count": lane_activity_dataset["resolved_market_count"],
+            "activity_observation_count": lane_activity_dataset["activity_observation_count"],
+            "raw_event_count": lane_activity_dataset.get(
+                "raw_event_count",
+                lane_activity_dataset["activity_observation_count"],
+            ),
+            "usable_event_count": lane_activity_dataset.get(
+                "usable_event_count",
+                lane_activity_dataset["activity_observation_count"],
+            ),
+            "malformed_event_count": lane_activity_dataset.get("malformed_event_count", 0),
+        },
+        "lane_evaluation_status": lane_evaluation["lane_evaluation_status"],
+        "observed_facts": [
+            "Sequence 25 replay readiness uses saved real-cached activity where available.",
+            "No prediction-market execution, order routing, sizing, signing, or wallet mirroring is enabled.",
+        ],
+        "inferred_patterns": [
+            "Real-cached activity improves evidence quality, but replay design remains blocked without sufficient resolved baseline-beating signal evidence.",
+        ],
+        "unknowns": [
+            "Fees, fills, queue position, and venue mechanics remain intentionally unmodeled.",
+        ],
+        **REPLAY_FEASIBILITY_SAFETY,
+        "live_allowed": False,
+        "live_promotion_status": "LIVE_BLOCKED",
+        "evidence_only": True,
+    }
+
+
 def _replay_blockers(
     *,
     dataset: dict[str, Any],
@@ -226,6 +296,37 @@ def _lane_replay_readiness_blockers(
     return _dedupe(blockers)
 
 
+def _real_activity_replay_blockers(
+    *,
+    lane_activity_dataset: dict[str, Any],
+    lane_evaluation: dict[str, Any],
+) -> list[str]:
+    blockers = []
+    if lane_activity_dataset["source_mode"] != "real_cached":
+        blockers.append("INSUFFICIENT_REAL_ACTIVITY")
+    included = [
+        market
+        for market in lane_activity_dataset["markets"]
+        if market["included_in_lane_activity_research"]
+    ]
+    usable_counts = [market["activity_density"]["usable_event_count"] for market in included]
+    if min(usable_counts or [0]) < MIN_REAL_ACTIVITY_EVENTS_PER_INCLUDED_MARKET:
+        blockers.append("ACTIVITY_DATA_TOO_THIN")
+    if lane_evaluation["resolved_observation_count"] < MIN_REAL_ACTIVITY_RESOLVED_FOR_REPLAY:
+        blockers.append("INSUFFICIENT_RESOLVED_HISTORY")
+    credible = any(
+        result["credible_signal_family"] for result in lane_evaluation["candidate_results"].values()
+    )
+    if not credible:
+        blockers.append("NO_CREDIBLE_SIGNAL_FAMILY")
+    if lane_evaluation["lane_evaluation_status"] == "BASELINES_NOT_BEATEN":
+        blockers.append("BASELINES_NOT_BEATEN")
+        blockers.append("SIGNAL_WEAK")
+    if lane_evaluation["lane_evaluation_status"] == "SIGNAL_WEAK":
+        blockers.append("SIGNAL_WEAK")
+    return _dedupe(blockers)
+
+
 def _dedupe(items: list[str]) -> list[str]:
     seen = set()
     deduped = []
@@ -287,3 +388,33 @@ def _lane_replay_readiness_status(
     if "LANE_TOO_THIN" in blockers:
         return "LANE_TOO_THIN"
     return "LANE_IMPROVED_BUT_REPLAY_NOT_READY"
+
+
+def _real_activity_replay_status(
+    blockers: list[str],
+    *,
+    lane_activity_dataset: dict[str, Any],
+) -> str:
+    if not blockers:
+        return "READY_FOR_NARROW_REPLAY_DESIGN"
+    if "INSUFFICIENT_REAL_ACTIVITY" in blockers:
+        return "INSUFFICIENT_REAL_ACTIVITY"
+    if "ACTIVITY_DATA_TOO_THIN" in blockers:
+        return "ACTIVITY_DATA_TOO_THIN"
+    if lane_activity_dataset["source_mode"] == "real_cached":
+        return "LANE_IMPROVED_BUT_REPLAY_NOT_READY"
+    if "INSUFFICIENT_RESOLVED_HISTORY" in blockers:
+        return "INSUFFICIENT_RESOLVED_HISTORY"
+    if "BASELINES_NOT_BEATEN" in blockers:
+        return "BASELINES_NOT_BEATEN"
+    if "SIGNAL_WEAK" in blockers:
+        return "SIGNAL_WEAK"
+    return "LANE_IMPROVED_BUT_REPLAY_NOT_READY"
+
+
+def _activity_quality_status(dataset: dict[str, Any]) -> str:
+    included = [market for market in dataset["markets"] if market["included_in_lane_activity_research"]]
+    usable_counts = [market["activity_density"]["usable_event_count"] for market in included]
+    if dataset["source_mode"] == "real_cached" and min(usable_counts or [0]) >= 5:
+        return "REAL_CACHED_ACTIVITY_USABLE_BUT_REPLAY_LIMITED"
+    return "ACTIVITY_DATA_TOO_THIN"

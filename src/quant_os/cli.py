@@ -40,6 +40,7 @@ from quant_os.data.historical_normalize import normalize_latest_historical
 from quant_os.data.historical_quality import run_historical_quality
 from quant_os.data.leakage_checks import run_leakage_checks
 from quant_os.data.loaders import load_yaml
+from quant_os.data.prediction_markets.activity_capture import capture_polymarket_activity
 from quant_os.data.provider_check import check_historical_providers
 from quant_os.data.providers.polymarket_capture import (
     DEFAULT_POLYMARKET_FIXTURE,
@@ -106,6 +107,9 @@ from quant_os.research.historical_evidence import (
 from quant_os.research.historical_research_report import write_historical_research_report
 from quant_os.research.leaderboard import build_strategy_leaderboard
 from quant_os.research.overfit_checks import run_overfit_checks
+from quant_os.research.prediction_markets.activity_dataset_growth import (
+    write_activity_dataset_growth_report,
+)
 from quant_os.research.prediction_markets.candidate_predictions import (
     write_prediction_candidate_evaluation_report,
     write_prediction_candidate_report,
@@ -115,6 +119,7 @@ from quant_os.research.prediction_markets.dataset_growth import write_dataset_gr
 from quant_os.research.prediction_markets.evaluation import (
     write_lane_activity_evaluation_report,
     write_lane_evaluation_report,
+    write_real_activity_signal_evaluation_report,
 )
 from quant_os.research.prediction_markets.historical_dataset import (
     write_expanded_historical_dataset_report,
@@ -125,6 +130,10 @@ from quant_os.research.prediction_markets.historical_dataset import (
 )
 from quant_os.research.prediction_markets.lane_activity_dataset import (
     write_lane_activity_dataset_report,
+    write_sequence25_activity_dataset_report,
+)
+from quant_os.research.prediction_markets.lane_activity_quality import (
+    write_lane_activity_quality_report,
 )
 from quant_os.research.prediction_markets.lane_dynamics import write_dynamic_signal_report
 from quant_os.research.prediction_markets.lane_selection import write_lane_selection_report
@@ -139,6 +148,7 @@ from quant_os.research.prediction_markets.quality_report import (
 )
 from quant_os.research.prediction_markets.replay_feasibility_report import (
     write_lane_replay_readiness_report,
+    write_real_activity_replay_readiness_report,
     write_replay_feasibility_report,
     write_replay_precondition_report,
 )
@@ -223,6 +233,13 @@ DEFAULT_POLYMARKET_LANE_ACTIVITY_FIXTURE = (
     / "prediction_markets"
     / "activity"
     / "polymarket_short_dated_lane_activity_sample.json"
+)
+DEFAULT_POLYMARKET_REAL_CACHED_ACTIVITY_FIXTURE = (
+    Path("tests")
+    / "fixtures"
+    / "prediction_markets"
+    / "activity"
+    / "polymarket_real_cached_activity_sample.json"
 )
 
 
@@ -351,6 +368,37 @@ def data_capture_prediction_markets(
         explicit_network_fetch=explicit_network_fetch,
     )
     print(payload)
+    if payload["status"] == "BLOCKED":
+        raise typer.Exit(1)
+
+
+@data_app.command("capture-polymarket-activity")
+def data_capture_polymarket_activity(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+    manual_network: bool = typer.Option(False, "--manual-network"),
+    explicit_network_ack: bool = typer.Option(False, "--explicit-network-ack"),
+) -> None:
+    path = (
+        None
+        if manual_network and fixture_path is None
+        else fixture_path or DEFAULT_POLYMARKET_REAL_CACHED_ACTIVITY_FIXTURE
+    )
+    payload = capture_polymarket_activity(
+        fixture_path=path,
+        manual_network=manual_network,
+        explicit_network_ack=explicit_network_ack,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "source_mode": payload.get("source_mode"),
+            "raw_event_count": payload.get("raw_event_count"),
+            "usable_event_count": payload.get("usable_event_count"),
+            "report": "reports/sequence25/activity_capture/latest_activity_capture.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
     if payload["status"] == "BLOCKED":
         raise typer.Exit(1)
 
@@ -715,6 +763,96 @@ def research_lane_replay_readiness(
             "readiness_report": "reports/sequence24/replay_readiness/latest_replay_readiness.json",
             "live_trading_enabled": False,
             "execution_authority": readiness["execution_authority"],
+        }
+    )
+
+
+@research_app.command("lane-activity-dataset")
+def research_lane_activity_dataset(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+    previous_fixture_path: Annotated[Path | None, typer.Option("--previous-fixture-path")] = None,
+) -> None:
+    path = fixture_path or DEFAULT_POLYMARKET_REAL_CACHED_ACTIVITY_FIXTURE
+    previous_path = previous_fixture_path or DEFAULT_POLYMARKET_LANE_ACTIVITY_FIXTURE
+    dataset = write_sequence25_activity_dataset_report(fixture_path=path)
+    growth = write_activity_dataset_growth_report(
+        previous_fixture_path=previous_path,
+        expanded_fixture_path=path,
+    )
+    print(
+        {
+            "status": dataset["research_dataset_status"],
+            "source_mode": dataset["source_mode"],
+            "lane_id": dataset["lane_id"],
+            "market_count": dataset["market_count"],
+            "resolved_market_count": dataset["resolved_market_count"],
+            "activity_observation_count": dataset["activity_observation_count"],
+            "market_delta": growth["market_delta"],
+            "resolved_delta": growth["resolved_delta"],
+            "dataset_report": "reports/sequence25/dataset/latest_activity_dataset.json",
+            "growth_report": "reports/sequence25/dataset/latest_activity_growth.json",
+            "live_trading_enabled": False,
+            "execution_authority": dataset["execution_authority"],
+        }
+    )
+
+
+@research_app.command("lane-activity-quality")
+def research_lane_activity_quality(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    payload = write_lane_activity_quality_report(
+        fixture_path=fixture_path or DEFAULT_POLYMARKET_REAL_CACHED_ACTIVITY_FIXTURE,
+    )
+    print(
+        {
+            "status": payload["activity_quality_status"],
+            "source_mode": payload["source_mode"],
+            "lane_id": payload["lane_id"],
+            "warnings": payload["warnings"],
+            "report": "reports/sequence25/dataset/latest_activity_quality.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("activity-signal-evaluation")
+def research_activity_signal_evaluation(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    payload = write_real_activity_signal_evaluation_report(
+        fixture_path=fixture_path or DEFAULT_POLYMARKET_REAL_CACHED_ACTIVITY_FIXTURE,
+    )
+    print(
+        {
+            "status": payload["lane_evaluation_status"],
+            "source_mode": payload["source_mode"],
+            "lane_id": payload["lane_id"],
+            "resolved_observation_count": payload["resolved_observation_count"],
+            "report": "reports/sequence25/signal_evaluation/latest_signal_evaluation.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("real-activity-replay-readiness")
+def research_real_activity_replay_readiness(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    payload = write_real_activity_replay_readiness_report(
+        fixture_path=fixture_path or DEFAULT_POLYMARKET_REAL_CACHED_ACTIVITY_FIXTURE,
+    )
+    print(
+        {
+            "status": payload["replay_readiness_status"],
+            "source_mode": payload["source_mode"],
+            "ready_for_narrow_replay_design": payload["ready_for_narrow_replay_design"],
+            "blockers": payload["blockers"],
+            "report": "reports/sequence25/replay_readiness/latest_replay_readiness.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
         }
     )
 

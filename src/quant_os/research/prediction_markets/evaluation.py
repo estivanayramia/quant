@@ -4,9 +4,13 @@ import json
 from pathlib import Path
 from typing import Any
 
+from quant_os.data.prediction_markets.activity_capture import build_activity_dataset_from_capture
 from quant_os.data.prediction_markets.activity_history import build_lane_activity_history
 from quant_os.data.prediction_markets.resolution_dataset import build_resolution_aware_dataset
 from quant_os.research.prediction_markets.features import build_prediction_features
+from quant_os.research.prediction_markets.lane_activity_quality import (
+    evaluate_lane_activity_quality,
+)
 from quant_os.research.prediction_markets.lane_dynamics import (
     DYNAMIC_SIGNAL_FAMILIES,
     apply_dynamic_signal_families,
@@ -23,6 +27,7 @@ from quant_os.research.prediction_markets.time_series_features import build_time
 LANE_EVALUATION_ROOT = Path("reports/sequence23/lane_evaluation")
 PREDICTION_CANDIDATE_ROOT = Path("reports/sequence23/prediction_candidates")
 LANE_ACTIVITY_EVALUATION_ROOT = Path("reports/sequence24/lane_evaluation")
+REAL_ACTIVITY_SIGNAL_EVALUATION_ROOT = Path("reports/sequence25/signal_evaluation")
 LANE_EVALUATION_SAFETY = {
     "execution_authority": "NONE",
     "wallet_signing_enabled": False,
@@ -168,6 +173,42 @@ def write_lane_activity_evaluation_report(
     dataset = build_lane_activity_history(fixture_path)
     payload = evaluate_lane_activity_signals(dataset)
     payload["report_paths"] = _write_lane_activity_report(payload, output_root=output_root)
+    return payload
+
+
+def evaluate_real_activity_signals(dataset: dict[str, Any]) -> dict[str, Any]:
+    payload = evaluate_lane_activity_signals(dataset)
+    quality = evaluate_lane_activity_quality(dataset)
+    payload = {
+        **payload,
+        "sequence": "25",
+        "source_mode": dataset["source_mode"],
+        "lane_evaluation_status": payload["lane_evaluation_status"],
+        "activity_quality_status": quality["activity_quality_status"],
+        "activity_quality_summary": quality["summary"],
+        "confidence_warnings": _dedupe([*payload["confidence_warnings"], *quality["warnings"]]),
+        "observed_facts": [
+            "Sequence 25 evaluates dynamic signals on saved real-cached activity where available.",
+            "Every candidate remains compared against no-skill, market, and shrinkage baselines.",
+        ],
+        "inferred_patterns": [
+            "Richer public activity improves diagnostics, but the market baseline remains the required benchmark.",
+        ],
+        "unknowns": [
+            "Signal evaluation still lacks full trade tape, fee, fill, and queue-position realism.",
+        ],
+    }
+    return payload
+
+
+def write_real_activity_signal_evaluation_report(
+    *,
+    fixture_path: str | Path,
+    output_root: str | Path = ".",
+) -> dict[str, Any]:
+    dataset = build_activity_dataset_from_capture(fixture_path)
+    payload = evaluate_real_activity_signals(dataset)
+    payload["report_paths"] = _write_real_activity_signal_report(payload, output_root=output_root)
     return payload
 
 
@@ -443,6 +484,44 @@ def _write_lane_activity_report(
         f"Status: {payload['lane_evaluation_status']}",
         f"Resolved observations: {payload['resolved_observation_count']}",
         f"Best signal: {payload['best_candidate_signal']['signal_family_id']}",
+        f"Live promotion: {payload['live_promotion_status']}",
+        "",
+        "## Observed facts",
+    ]
+    lines.extend(f"- {item}" for item in payload["observed_facts"])
+    lines.extend(["", "## Inferred patterns"])
+    lines.extend(f"- {item}" for item in payload["inferred_patterns"])
+    lines.extend(["", "## Unknowns"])
+    lines.extend(f"- {item}" for item in payload["unknowns"])
+    lines.extend(["", "## Confidence warnings"])
+    lines.extend(f"- {item}" for item in (payload["confidence_warnings"] or ["None"]))
+    md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return {"json": str(json_path), "markdown": str(md_path)}
+
+
+def _write_real_activity_signal_report(
+    payload: dict[str, Any],
+    *,
+    output_root: str | Path,
+) -> dict[str, str]:
+    root = Path(output_root) / REAL_ACTIVITY_SIGNAL_EVALUATION_ROOT
+    root.mkdir(parents=True, exist_ok=True)
+    json_path = root / "latest_signal_evaluation.json"
+    md_path = root / "latest_signal_evaluation.md"
+    json_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, default=str),
+        encoding="utf-8",
+    )
+    lines = [
+        "# Sequence 25 Real Activity Signal Evaluation",
+        "",
+        "Research-only signal evaluation report. No execution authority.",
+        "",
+        f"Lane: {payload['lane_id']}",
+        f"Source mode: {payload['source_mode']}",
+        f"Status: {payload['lane_evaluation_status']}",
+        f"Resolved observations: {payload['resolved_observation_count']}",
+        f"Activity quality: {payload['activity_quality_status']}",
         f"Live promotion: {payload['live_promotion_status']}",
         "",
         "## Observed facts",

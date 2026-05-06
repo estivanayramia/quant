@@ -1,0 +1,14 @@
+prediction_market_activity:
+  provider: polymarket
+  lane_id: short_dated_clean_binary
+  default_source_mode: real_cached
+  fixture_path: tests/fixtures/prediction_markets/activity/polymarket_real_cached_activity_sample.json
+  manual_network_fetch_enabled: false
+  explicit_network_ack_required: true
+  authenticated_endpoints_enabled: false
+  wallet_signing_enabled: false
+  execution_authority: NONE
+  live_trading_enabled: false
+  copy_trading_enabled: false
+  real_orders_enabled: false
+  reports_root: reports/sequence25
