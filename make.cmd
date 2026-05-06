@@ -806,6 +806,34 @@ if "%TARGET%"=="sequence23-smoke" (
   python -m pytest tests/test_sequence23_signal_discovery.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="lane-activity-smoke" (
+  python -m quant_os.cli research lane-activity-build
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="dynamic-signal-smoke" (
+  python -m quant_os.cli research dynamic-signal-report
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="wallet-flow-smoke" (
+  python -m quant_os.cli research wallet-flow-report
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="lane-replay-readiness-smoke" (
+  python -m quant_os.cli research lane-replay-readiness
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence24-smoke" (
+  call "%~f0" lane-activity-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" dynamic-signal-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" wallet-flow-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" lane-replay-readiness-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence24_lane_activity_readiness.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
