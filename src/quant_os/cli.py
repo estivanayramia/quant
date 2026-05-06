@@ -107,6 +107,7 @@ from quant_os.research.historical_evidence import (
 from quant_os.research.historical_research_report import write_historical_research_report
 from quant_os.research.leaderboard import build_strategy_leaderboard
 from quant_os.research.overfit_checks import run_overfit_checks
+from quant_os.research.prediction_markets.ablation import write_ablation_report
 from quant_os.research.prediction_markets.activity_dataset_growth import (
     write_activity_dataset_growth_report,
 )
@@ -137,10 +138,17 @@ from quant_os.research.prediction_markets.lane_activity_dataset import (
 from quant_os.research.prediction_markets.lane_activity_quality import (
     write_lane_activity_quality_report,
 )
+from quant_os.research.prediction_markets.lane_decision import write_lane_decision_report
 from quant_os.research.prediction_markets.lane_dynamics import write_dynamic_signal_report
 from quant_os.research.prediction_markets.lane_selection import write_lane_selection_report
 from quant_os.research.prediction_markets.lane_timeline import (
     write_lane_timeline_summary_report,
+)
+from quant_os.research.prediction_markets.manipulation_flags import (
+    write_manipulation_flags_report,
+)
+from quant_os.research.prediction_markets.market_quality_filters import (
+    write_market_quality_filter_report,
 )
 from quant_os.research.prediction_markets.market_strata import write_market_strata_report
 from quant_os.research.prediction_markets.oos_validation import write_lane_oos_validation_report
@@ -149,18 +157,26 @@ from quant_os.research.prediction_markets.quality_report import (
     write_market_quality_report,
     write_research_priority_report,
 )
+from quant_os.research.prediction_markets.reference_alignment import (
+    write_reference_context_report,
+)
+from quant_os.research.prediction_markets.reference_quality import (
+    write_reference_quality_report,
+)
 from quant_os.research.prediction_markets.replay_feasibility_report import (
     write_lane_replay_readiness_report,
     write_oos_replay_readiness_report,
     write_real_activity_replay_readiness_report,
     write_replay_feasibility_report,
     write_replay_precondition_report,
+    write_venue_replay_readiness_report,
 )
 from quant_os.research.prediction_markets.resolved_history_growth import (
     write_resolved_history_growth_report,
 )
 from quant_os.research.prediction_markets.robustness import write_lane_robustness_report
 from quant_os.research.prediction_markets.signal_families import write_signal_family_report
+from quant_os.research.prediction_markets.venue_signals import write_venue_signal_report
 from quant_os.research.prediction_markets.wallet_flow_features import write_wallet_flow_report
 from quant_os.research.prediction_markets.wallet_reports import write_wallet_research_report
 from quant_os.research.regime_tests import run_regime_tests
@@ -998,6 +1014,166 @@ def research_oos_replay_readiness(
             "ready_for_narrow_replay_design": payload["ready_for_narrow_replay_design"],
             "blockers": payload["blockers"],
             "report": "reports/sequence26/replay_readiness/latest_replay_readiness.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("reference-context-report")
+def research_reference_context_report(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    payload = write_reference_context_report(
+        fixture_path=fixture_path or DEFAULT_POLYMARKET_OOS_ACTIVITY_FIXTURE,
+    )
+    print(
+        {
+            "status": payload["reference_context_status"],
+            "lane_id": payload["lane_id"],
+            "attached_reference_count": payload["summary"]["attached_reference_count"],
+            "missing_reference_count": payload["summary"]["missing_reference_count"],
+            "report": "reports/sequence27/reference_context/latest_reference_context.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("reference-quality-report")
+def research_reference_quality_report(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    payload = write_reference_quality_report(
+        fixture_path=fixture_path or DEFAULT_POLYMARKET_OOS_ACTIVITY_FIXTURE,
+    )
+    print(
+        {
+            "status": payload["reference_quality_status"],
+            "lane_id": payload["lane_id"],
+            "usable_reference_count": payload["summary"]["usable_reference_count"],
+            "warnings": payload["warnings"],
+            "report": "reports/sequence27/reference_quality/latest_reference_quality.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("market-quality-report")
+def research_market_quality_filter_report(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    payload = write_market_quality_filter_report(
+        fixture_path=fixture_path or DEFAULT_POLYMARKET_OOS_ACTIVITY_FIXTURE,
+    )
+    print(
+        {
+            "status": payload["market_quality_status"],
+            "lane_id": payload["lane_id"],
+            "quality_filtered_count": payload["summary"]["quality_filtered_count"],
+            "flagged_market_count": payload["summary"]["flagged_market_count"],
+            "report": "reports/sequence27/market_quality/latest_market_quality.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("manipulation-flags-report")
+def research_manipulation_flags_report(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    payload = write_manipulation_flags_report(
+        fixture_path=fixture_path or DEFAULT_POLYMARKET_OOS_ACTIVITY_FIXTURE,
+    )
+    print(
+        {
+            "status": payload["manipulation_flag_status"],
+            "lane_id": payload["lane_id"],
+            "flagged_market_count": payload["summary"]["flagged_market_count"],
+            "report": "reports/sequence27/manipulation_flags/latest_manipulation_flags.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("venue-signal-report")
+def research_venue_signal_report(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    payload = write_venue_signal_report(
+        fixture_path=fixture_path or DEFAULT_POLYMARKET_OOS_ACTIVITY_FIXTURE,
+    )
+    print(
+        {
+            "status": payload["venue_signal_status"],
+            "lane_id": payload["lane_id"],
+            "resolved_observation_count": payload["resolved_observation_count"],
+            "oos_observation_count": payload["oos_observation_count"],
+            "market_baseline_dominant": payload["market_baseline_dominant"],
+            "report": "reports/sequence27/signal_evaluation/latest_signal_evaluation.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("venue-ablation-report")
+def research_venue_ablation_report(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    payload = write_ablation_report(
+        fixture_path=fixture_path or DEFAULT_POLYMARKET_OOS_ACTIVITY_FIXTURE,
+    )
+    print(
+        {
+            "status": payload["ablation_status"],
+            "lane_id": payload["lane_id"],
+            "warnings": payload["warnings"],
+            "report": "reports/sequence27/ablation/latest_ablation.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("lane-decision")
+def research_lane_decision(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    payload = write_lane_decision_report(
+        fixture_path=fixture_path or DEFAULT_POLYMARKET_OOS_ACTIVITY_FIXTURE,
+    )
+    print(
+        {
+            "status": payload["lane_decision_status"],
+            "lane_id": payload["lane_id"],
+            "recommended_action": payload["recommended_action"],
+            "ready_for_minimal_replay_spec": payload["ready_for_minimal_replay_spec"],
+            "report": "reports/sequence27/lane_decision/latest_lane_decision.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("venue-replay-readiness")
+def research_venue_replay_readiness(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    payload = write_venue_replay_readiness_report(
+        fixture_path=fixture_path or DEFAULT_POLYMARKET_OOS_ACTIVITY_FIXTURE,
+    )
+    print(
+        {
+            "status": payload["replay_readiness_status"],
+            "lane_id": payload["lane_id"],
+            "ready_for_minimal_replay_spec": payload["ready_for_minimal_replay_spec"],
+            "ready_for_narrow_replay_design": payload["ready_for_narrow_replay_design"],
+            "blockers": payload["blockers"],
+            "report": "reports/sequence27/replay_readiness/latest_replay_readiness.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }

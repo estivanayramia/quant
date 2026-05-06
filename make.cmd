@@ -906,6 +906,46 @@ if "%TARGET%"=="sequence-benchmark-smoke" (
   python -m pytest tests/test_external_benchmark_sources.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="reference-context-smoke" (
+  python -m quant_os.cli research reference-context-report
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="reference-quality-smoke" (
+  python -m quant_os.cli research reference-quality-report
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="venue-market-quality-smoke" (
+  python -m quant_os.cli research market-quality-report
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research manipulation-flags-report
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="venue-signal-smoke" (
+  python -m quant_os.cli research venue-signal-report
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research venue-ablation-report
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="lane-decision-smoke" (
+  python -m quant_os.cli research lane-decision
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research venue-replay-readiness
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence27-smoke" (
+  call "%~f0" reference-context-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" reference-quality-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" venue-market-quality-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" venue-signal-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" lane-decision-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence27_venue_specific_signal_discovery.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!

@@ -296,6 +296,57 @@ def evaluate_oos_replay_readiness(
     }
 
 
+def evaluate_venue_replay_readiness(
+    *,
+    lane_activity_dataset: dict[str, Any],
+    venue_evaluation: dict[str, Any],
+    ablation: dict[str, Any],
+    lane_decision: dict[str, Any],
+) -> dict[str, Any]:
+    blockers = _venue_replay_blockers(
+        venue_evaluation=venue_evaluation,
+        ablation=ablation,
+        lane_decision=lane_decision,
+    )
+    status = _venue_replay_status(blockers=blockers, lane_decision=lane_decision)
+    return {
+        "sequence": "27",
+        "source": lane_activity_dataset["source"],
+        "source_mode": lane_activity_dataset["source_mode"],
+        "lane_id": lane_activity_dataset["lane_id"],
+        "replay_readiness_status": status,
+        "ready_for_minimal_replay_spec": status == "READY_FOR_MINIMAL_REPLAY_SPEC",
+        "ready_for_narrow_replay_design": False,
+        "blockers": blockers,
+        "best_candidate_lane": lane_decision["best_candidate_lane"],
+        "dataset_summary": {
+            "dataset_id": lane_activity_dataset["dataset_id"],
+            "dataset_hash": lane_activity_dataset["dataset_hash"],
+            "market_count": lane_activity_dataset["market_count"],
+            "included_market_count": lane_activity_dataset["included_market_count"],
+            "resolved_market_count": lane_activity_dataset["resolved_market_count"],
+            "activity_observation_count": lane_activity_dataset["activity_observation_count"],
+        },
+        "venue_signal_status": venue_evaluation["venue_signal_status"],
+        "ablation_status": ablation["ablation_status"],
+        "lane_decision_status": lane_decision["lane_decision_status"],
+        "observed_facts": [
+            "Sequence 27 replay readiness is a research-only precondition for a future minimal replay specification.",
+            "No prediction-market execution, order routing, sizing, signing, or wallet mirroring is enabled.",
+        ],
+        "inferred_patterns": [
+            "Venue-specific signals still fail the market baseline, so minimal replay specification is blocked.",
+        ],
+        "unknowns": [
+            "Replay mechanics, fees, fills, queue position, and live controls remain intentionally unmodeled.",
+        ],
+        **REPLAY_FEASIBILITY_SAFETY,
+        "live_allowed": False,
+        "live_promotion_status": "LIVE_BLOCKED",
+        "evidence_only": True,
+    }
+
+
 def _replay_blockers(
     *,
     dataset: dict[str, Any],
@@ -421,6 +472,22 @@ def _oos_replay_blockers(
     return _dedupe(blockers)
 
 
+def _venue_replay_blockers(
+    *,
+    venue_evaluation: dict[str, Any],
+    ablation: dict[str, Any],
+    lane_decision: dict[str, Any],
+) -> list[str]:
+    blockers = list(lane_decision["blockers"])
+    if venue_evaluation.get("reference_quality_status") == "REFERENCE_CONTEXT_INSUFFICIENT":
+        blockers.append("REFERENCE_CONTEXT_INSUFFICIENT")
+    if ablation["ablation_status"] == "NO_ABLATION_BEATS_MARKET_BASELINE_OOS":
+        blockers.append("BASELINES_NOT_BEATEN")
+    if not venue_evaluation["candidate_signal_survives_oos"]:
+        blockers.append("NO_CREDIBLE_SIGNAL_FAMILY")
+    return _dedupe(blockers)
+
+
 def _dedupe(items: list[str]) -> list[str]:
     seen = set()
     deduped = []
@@ -529,6 +596,26 @@ def _oos_replay_status(
         return "BASELINES_NOT_BEATEN"
     if "NO_CREDIBLE_SIGNAL_FAMILY" in blockers:
         return "NO_CREDIBLE_SIGNAL_FAMILY"
+    if "SIGNAL_WEAK" in blockers:
+        return "SIGNAL_WEAK"
+    return "LANE_IMPROVED_BUT_REPLAY_NOT_READY"
+
+
+def _venue_replay_status(
+    *,
+    blockers: list[str],
+    lane_decision: dict[str, Any],
+) -> str:
+    if not blockers and lane_decision["ready_for_minimal_replay_spec"]:
+        return "READY_FOR_MINIMAL_REPLAY_SPEC"
+    if "REFERENCE_CONTEXT_INSUFFICIENT" in blockers:
+        return "REFERENCE_CONTEXT_INSUFFICIENT"
+    if "MARKET_QUALITY_DISQUALIFIED" in blockers:
+        return "MARKET_QUALITY_DISQUALIFIED"
+    if lane_decision["lane_decision_status"] == "LANE_RETIRE_CANDIDATE":
+        return "LANE_RETIRE_CANDIDATE"
+    if "BASELINES_NOT_BEATEN" in blockers:
+        return "BASELINES_NOT_BEATEN"
     if "SIGNAL_WEAK" in blockers:
         return "SIGNAL_WEAK"
     return "LANE_IMPROVED_BUT_REPLAY_NOT_READY"
