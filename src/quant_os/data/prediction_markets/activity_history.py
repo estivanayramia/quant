@@ -34,12 +34,30 @@ def build_lane_activity_history(
     path = Path(fixture_path)
     payload = load_lane_activity_history(path)
     source_hash = sha256_file(path)
+    return build_lane_activity_history_from_payload(
+        payload,
+        source_path=path,
+        source_hash=source_hash,
+        lane_id=lane_id,
+    )
+
+
+def build_lane_activity_history_from_payload(
+    payload: dict[str, Any],
+    *,
+    source_path: str | Path,
+    source_hash: str,
+    lane_id: str = DEFAULT_LANE_ID,
+) -> dict[str, Any]:
+    path = Path(source_path)
     source_mode = str(payload.get("source_mode") or "fixture")
+    raw_payload_sha256 = str(payload.get("raw_payload_sha256") or source_hash)
     markets = [
         _normalize_market(
             raw,
             source_path=path,
             source_hash=source_hash,
+            raw_payload_sha256=raw_payload_sha256,
             source_mode=source_mode,
             target_lane_id=lane_id,
         )
@@ -51,6 +69,7 @@ def build_lane_activity_history(
     observation_count = sum(len(market["activity"]) for market in markets)
     included_observation_count = sum(len(market["activity"]) for market in included)
     resolution_summary = _resolution_summary(markets)
+    activity_source_mode_counts = _activity_source_mode_counts(markets, fallback=source_mode)
     depth_status = _activity_depth_status(
         included_market_count=len(included),
         included_observation_count=included_observation_count,
@@ -65,6 +84,7 @@ def build_lane_activity_history(
         "source_mode": source_mode,
         "source_path": str(path),
         "source_sha256": source_hash,
+        "raw_payload_sha256": raw_payload_sha256,
         "lane_id": lane_id,
         "market_count": len(markets),
         "included_market_count": len(included),
@@ -74,6 +94,10 @@ def build_lane_activity_history(
         "excluded_market_count": resolution_summary["excluded_count"],
         "activity_observation_count": observation_count,
         "included_activity_observation_count": included_observation_count,
+        "activity_source_mode_counts": activity_source_mode_counts,
+        "raw_event_count": int(payload.get("raw_event_count") or observation_count),
+        "usable_event_count": int(payload.get("usable_event_count") or observation_count),
+        "malformed_event_count": int(payload.get("malformed_event_count") or 0),
         "activity_depth_status": depth_status,
         "resolution_summary": resolution_summary,
         "markets": markets,
@@ -100,6 +124,7 @@ def _normalize_market(
     *,
     source_path: Path,
     source_hash: str,
+    raw_payload_sha256: str,
     source_mode: str,
     target_lane_id: str,
 ) -> dict[str, Any]:
@@ -139,9 +164,14 @@ def _normalize_market(
         "lane_activity_status": _lane_activity_status(included=included, resolution=resolution),
         "candidate_inclusion_reason": raw.get("candidate_inclusion_reason"),
         "exclusion_reason": exclusion_reason,
+        "activity_density": {
+            "usable_event_count": len(activity),
+            "source_mode": source_mode,
+        },
         "provenance": {
             "source_path": str(source_path),
             "source_sha256": source_hash,
+            "raw_payload_sha256": raw_payload_sha256,
             "source_mode": source_mode,
         },
     }
@@ -173,6 +203,10 @@ def _normalize_activity(raw: dict[str, Any]) -> dict[str, Any]:
         "yes_buy_volume": yes_buy_volume,
         "no_buy_volume": no_buy_volume,
         "one_sided_flow_ratio": round(float(one_sided_flow_ratio), 6),
+        "source_event_id": raw.get("source_event_id") or raw.get("event_id"),
+        "event_type": raw.get("event_type"),
+        "source_mode": raw.get("source_mode"),
+        "activity_quality_flags": raw.get("activity_quality_flags") or [],
     }
 
 
@@ -237,6 +271,19 @@ def _resolution_summary(markets: list[dict[str, Any]]) -> dict[str, int]:
         if not market["included_in_lane_activity_research"]:
             counts["excluded_count"] += 1
     return counts
+
+
+def _activity_source_mode_counts(
+    markets: list[dict[str, Any]],
+    *,
+    fallback: str,
+) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for market in markets:
+        for observation in market["activity"]:
+            mode = str(observation.get("source_mode") or fallback)
+            counts[mode] = counts.get(mode, 0) + 1
+    return dict(sorted(counts.items()))
 
 
 def _activity_depth_status(
