@@ -17,7 +17,6 @@ from urllib.parse import urljoin
 
 import duckdb
 
-
 ARCHIVE_INDEX_URL = "https://archive.pmxt.dev/Polymarket/v2/"
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CACHE_DIR = REPO_ROOT / "data" / "external" / "pmxt_orderbooks"

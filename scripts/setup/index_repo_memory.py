@@ -10,7 +10,6 @@ import os
 import subprocess
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CBM_EXE = REPO_ROOT / "tools" / "codebase-memory-mcp" / "extracted" / "codebase-memory-mcp.exe"
 CBM_CACHE_DIR = REPO_ROOT / ".cbm-cache"

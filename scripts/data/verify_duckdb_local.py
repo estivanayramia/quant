@@ -12,7 +12,6 @@ from pathlib import Path
 
 import duckdb
 
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SAMPLE_DIR = REPO_ROOT / "data" / "external" / "duckdb_verify"
 CSV_PATH = SAMPLE_DIR / "sample_prediction_market_prices.csv"

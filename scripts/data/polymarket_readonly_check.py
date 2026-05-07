@@ -13,7 +13,6 @@ import os
 from collections.abc import Iterable
 from typing import Any
 
-
 HOST = "https://clob.polymarket.com"
 FORBIDDEN_SECRET_ENVS = (
     "POLYMARKET_PRIVATE_KEY",

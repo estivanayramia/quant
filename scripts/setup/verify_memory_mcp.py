@@ -15,7 +15,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CODEX_EXE = Path.home() / ".codex" / ".sandbox-bin" / "codex.exe"
 CBM_EXE = REPO_ROOT / "tools" / "codebase-memory-mcp" / "extracted" / "codebase-memory-mcp.exe"
@@ -115,34 +114,33 @@ async def memorygraph_tools(write_test: bool) -> dict[str, Any]:
 
     async with stdio_client(
         StdioServerParameters(command=str(MEMORYGRAPH_EXE), args=[], env=memorygraph_env())
-    ) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            tools = await session.list_tools()
-            result: dict[str, Any] = {"tools": [tool.name for tool in tools.tools]}
+    ) as (read, write), ClientSession(read, write) as session:
+        await session.initialize()
+        tools = await session.list_tools()
+        result: dict[str, Any] = {"tools": [tool.name for tool in tools.tools]}
 
-            if write_test:
-                stored = await session.call_tool(
-                    "store_memory",
-                    {
-                        "type": "project",
-                        "title": "MemoryGraph verification",
-                        "content": (
-                            "Intentional write-test memory for quant MemoryGraph setup. "
-                            "MemoryGraph is local SQLite only and secondary to codebase-memory-mcp."
-                        ),
-                        "tags": ["quant", "memory-layer", "verification"],
-                        "importance": 0.4,
-                        "context": {"project_path": str(REPO_ROOT)},
-                    },
-                )
-                found = await session.call_tool(
-                    "search_memories",
-                    {"query": "MemoryGraph verification", "tags": ["verification"], "limit": 3},
-                )
-                result["write_test_store"] = stored.content[0].text if stored.content else str(stored)
-                result["write_test_search"] = found.content[0].text if found.content else str(found)
-            return result
+        if write_test:
+            stored = await session.call_tool(
+                "store_memory",
+                {
+                    "type": "project",
+                    "title": "MemoryGraph verification",
+                    "content": (
+                        "Intentional write-test memory for quant MemoryGraph setup. "
+                        "MemoryGraph is local SQLite only and secondary to codebase-memory-mcp."
+                    ),
+                    "tags": ["quant", "memory-layer", "verification"],
+                    "importance": 0.4,
+                    "context": {"project_path": str(REPO_ROOT)},
+                },
+            )
+            found = await session.call_tool(
+                "search_memories",
+                {"query": "MemoryGraph verification", "tags": ["verification"], "limit": 3},
+            )
+            result["write_test_store"] = stored.content[0].text if stored.content else str(stored)
+            result["write_test_search"] = found.content[0].text if found.content else str(found)
+        return result
 
 
 def verify_memorygraph(write_test: bool) -> dict[str, Any]:
