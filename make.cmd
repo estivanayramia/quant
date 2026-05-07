@@ -898,6 +898,14 @@ if "%TARGET%"=="sequence26-smoke" (
   python -m pytest tests/test_sequence26_resolved_history_oos_validation.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="sequence-benchmark-smoke" (
+  python -m quant_os.cli data source-registry-report
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research external-benchmark-report
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_external_benchmark_sources.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!

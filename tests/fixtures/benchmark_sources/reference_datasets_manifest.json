@@ -1,0 +1,20 @@
+{
+  "datasets": [
+    {
+      "source_id": "prediction_market_analysis",
+      "name": "Prediction Market Analysis public archive",
+      "format": "parquet",
+      "rows": 120,
+      "size_gb": 0.01,
+      "files": ["data/polymarket/trades.parquet", "data/polymarket/markets.parquet"]
+    },
+    {
+      "source_id": "polymarket_data",
+      "name": "Polymarket_data quant sample",
+      "format": "parquet",
+      "rows": 240,
+      "size_gb": 0.02,
+      "files": ["quant.parquet", "markets.parquet"]
+    }
+  ]
+}
