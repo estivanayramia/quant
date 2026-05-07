@@ -1,0 +1,18 @@
+{
+  "source": "pmxt",
+  "snapshot_date": "2025-01-31",
+  "files": [
+    {
+      "path": "cache/pmxt/orderbooks/sample.parquet",
+      "kind": "orderbook",
+      "rows": 12,
+      "columns": ["market_id", "token_id", "timestamp", "bid_price", "ask_price", "bid_size", "ask_size"]
+    },
+    {
+      "path": "cache/pmxt/markets/sample.parquet",
+      "kind": "market",
+      "rows": 1,
+      "columns": ["market_id", "question", "tokens"]
+    }
+  ]
+}

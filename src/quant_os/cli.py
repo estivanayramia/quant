@@ -370,13 +370,36 @@ def data_venue_capture(
     print(payload)
 
 
+@data_app.command("source-registry-report")
+def data_source_registry_report() -> None:
+    from quant_os.data.source_registry import build_source_registry_report
+
+    payload = build_source_registry_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "sources_count": payload["sources_count"],
+            "live_capable_sources": payload["live_capable_sources"],
+            "report": "reports/external_benchmarks/source_registry/latest_source_registry.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority_added": payload["execution_authority_added"],
+        }
+    )
+
+
 @data_app.command("capture-prediction-markets")
 def data_capture_prediction_markets(
     fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
     allow_network_fetch: bool = typer.Option(False, "--allow-network-fetch"),
     explicit_network_fetch: bool = typer.Option(False, "--explicit-network-fetch"),
 ) -> None:
-    path = fixture_path if fixture_path is not None else None if allow_network_fetch else DEFAULT_POLYMARKET_FIXTURE
+    path = (
+        fixture_path
+        if fixture_path is not None
+        else None
+        if allow_network_fetch
+        else DEFAULT_POLYMARKET_FIXTURE
+    )
     payload = capture_polymarket_markets(
         fixture_path=path,
         allow_network_fetch=allow_network_fetch,
@@ -2343,6 +2366,24 @@ def research_calibrated_edge_report(periods: int = typer.Option(240, min=120)) -
             "blockers": payload["blockers"],
             "report": "reports/sequence18/calibrated_edge/latest_calibrated_edge.json",
             "live_trading_enabled": False,
+        }
+    )
+
+
+@research_app.command("external-benchmark-report")
+def research_external_benchmark_report() -> None:
+    from quant_os.research.lane_benchmark_report import write_lane_benchmark_report
+
+    payload = write_lane_benchmark_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "recommendation": payload["recommendation"]["staged_order"],
+            "report": "reports/external_benchmarks/lane_benchmark/latest_external_benchmark_report.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "prediction_market_execution_authority_added": payload[
+                "prediction_market_execution_authority_added"
+            ],
         }
     )
 

@@ -1,0 +1,30 @@
+{
+  "markets": [
+    {
+      "condition_id": "0xabc",
+      "market_slug": "sample-market",
+      "question": "Will the sample resolve yes?",
+      "tokens": [
+        {"token_id": "yes-token", "outcome": "Yes"},
+        {"token_id": "no-token", "outcome": "No"}
+      ]
+    }
+  ],
+  "orderbooks": [
+    {
+      "market": "sample-market",
+      "token_id": "yes-token",
+      "bids": [{"price": "0.42", "size": "10"}],
+      "asks": [{"price": "0.44", "size": "12"}]
+    }
+  ],
+  "trades": [
+    {
+      "market": "sample-market",
+      "token_id": "yes-token",
+      "price": "0.43",
+      "size": "5",
+      "timestamp": "2025-01-01T00:00:00+00:00"
+    }
+  ]
+}
