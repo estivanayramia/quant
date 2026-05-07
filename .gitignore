@@ -17,10 +17,11 @@ build/
 data/demo/
 data/demo_expanded/
 data/historical/
-data/prediction_markets/
 data/sequence1/
 data/events/
 data/read_models/
+data/external/*
+!data/external/.gitkeep
 freqtrade/user_data/logs/*
 !freqtrade/user_data/logs/.gitkeep
 freqtrade/user_data/data/*
@@ -45,5 +46,13 @@ live-credentials.*
 logs/
 !freqtrade/user_data/logs/
 !freqtrade/user_data/logs/.gitkeep
+
+external/poly_data/
+external/prediction-market-backtesting/
+tools/.venv*/
+tools/codebase-memory-mcp/
+.codebase-memory/
+.cbm-cache/
+.memorygraph/
 
 .DS_Store
