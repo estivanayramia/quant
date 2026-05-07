@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -155,6 +156,11 @@ def test_lane_benchmark_report_uses_fixtures_and_stays_conservative(
 
 
 def test_cli_commands_do_not_require_network_or_keys(local_project: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    env = {
+        **os.environ,
+        "PYTHONPATH": str(repo_root / "src"),
+    }
     commands = [
         [sys.executable, "-m", "quant_os.cli", "data", "source-registry-report"],
         [sys.executable, "-m", "quant_os.cli", "research", "external-benchmark-report"],
@@ -164,6 +170,7 @@ def test_cli_commands_do_not_require_network_or_keys(local_project: Path) -> Non
         result = subprocess.run(
             command,
             cwd=local_project,
+            env=env,
             check=True,
             capture_output=True,
             text=True,
