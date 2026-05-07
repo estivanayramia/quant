@@ -272,6 +272,14 @@ DEFAULT_POLYMARKET_OOS_ACTIVITY_FIXTURE = (
     / "activity"
     / "polymarket_real_cached_activity_oos_sample.json"
 )
+DEFAULT_BENCHMARK_FIXTURE_ROOT = Path("tests") / "fixtures" / "benchmark_sources"
+DEFAULT_POLYMARKET_PUBLIC_SNAPSHOT_FIXTURE = (
+    DEFAULT_BENCHMARK_FIXTURE_ROOT / "polymarket_public_snapshot.json"
+)
+DEFAULT_PMXT_MANIFEST_FIXTURE = DEFAULT_BENCHMARK_FIXTURE_ROOT / "pmxt_manifest.json"
+DEFAULT_REFERENCE_DATASETS_MANIFEST_FIXTURE = (
+    DEFAULT_BENCHMARK_FIXTURE_ROOT / "reference_datasets_manifest.json"
+)
 
 
 def _event_store() -> JsonlEventStore:
@@ -1174,6 +1182,127 @@ def research_venue_replay_readiness(
             "ready_for_narrow_replay_design": payload["ready_for_narrow_replay_design"],
             "blockers": payload["blockers"],
             "report": "reports/sequence27/replay_readiness/latest_replay_readiness.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("lane-retirement")
+def research_lane_retirement(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    from quant_os.research.prediction_markets.lane_retirement import (
+        write_lane_retirement_report,
+    )
+
+    payload = write_lane_retirement_report(
+        fixture_path=fixture_path or DEFAULT_POLYMARKET_OOS_ACTIVITY_FIXTURE,
+    )
+    print(
+        {
+            "status": payload["lane_retirement_status"],
+            "lane_id": payload["lane_id"],
+            "recommended_action": payload["recommended_action"],
+            "replay_ready": payload["replay_ready"],
+            "report": "reports/sequence28/lane_retirement/latest_lane_retirement.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("next-lane-selection-v2")
+def research_next_lane_selection_v2() -> None:
+    from quant_os.research.next_lane_selection_v2 import write_next_lane_selection_report
+
+    payload = write_next_lane_selection_report()
+    print(
+        {
+            "status": payload["selection_status"],
+            "selected_lane_id": payload["selected_lane_id"],
+            "report": "reports/sequence28/next_lane/latest_next_lane_selection.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("replay-input-summary")
+def research_replay_input_summary(
+    polymarket_snapshot_path: Annotated[
+        Path | None,
+        typer.Option("--polymarket-snapshot-path"),
+    ] = None,
+    pmxt_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--pmxt-manifest-path"),
+    ] = None,
+    reference_datasets_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--reference-datasets-manifest-path"),
+    ] = None,
+) -> None:
+    from quant_os.replay.prediction_market_replay_inputs import write_replay_input_summary
+
+    payload = write_replay_input_summary(
+        polymarket_snapshot_path=(
+            polymarket_snapshot_path or DEFAULT_POLYMARKET_PUBLIC_SNAPSHOT_FIXTURE
+        ),
+        pmxt_manifest_path=pmxt_manifest_path or DEFAULT_PMXT_MANIFEST_FIXTURE,
+        reference_datasets_manifest_path=(
+            reference_datasets_manifest_path or DEFAULT_REFERENCE_DATASETS_MANIFEST_FIXTURE
+        ),
+    )
+    print(
+        {
+            "status": payload["status"],
+            "event_count": payload["event_count"],
+            "event_counts": payload["event_counts"],
+            "report": "reports/sequence28/replay_inputs/latest_replay_inputs_summary.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("replay-input-readiness")
+def research_replay_input_readiness(
+    polymarket_snapshot_path: Annotated[
+        Path | None,
+        typer.Option("--polymarket-snapshot-path"),
+    ] = None,
+    pmxt_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--pmxt-manifest-path"),
+    ] = None,
+    reference_datasets_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--reference-datasets-manifest-path"),
+    ] = None,
+) -> None:
+    from quant_os.research.prediction_markets.replay_input_readiness import (
+        write_replay_input_readiness_report,
+    )
+
+    payload = write_replay_input_readiness_report(
+        polymarket_snapshot_path=(
+            polymarket_snapshot_path or DEFAULT_POLYMARKET_PUBLIC_SNAPSHOT_FIXTURE
+        ),
+        pmxt_manifest_path=pmxt_manifest_path or DEFAULT_PMXT_MANIFEST_FIXTURE,
+        reference_datasets_manifest_path=(
+            reference_datasets_manifest_path or DEFAULT_REFERENCE_DATASETS_MANIFEST_FIXTURE
+        ),
+    )
+    print(
+        {
+            "status": payload["replay_input_readiness_status"],
+            "ready_for_narrow_replay_design": payload["ready_for_narrow_replay_design"],
+            "blockers": payload["blockers"],
+            "report": (
+                "reports/sequence28/replay_input_readiness/"
+                "latest_replay_input_readiness.json"
+            ),
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }
