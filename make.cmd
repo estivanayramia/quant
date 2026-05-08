@@ -2,6 +2,8 @@
 setlocal EnableDelayedExpansion
 set TARGET=%1
 if "%TARGET%"=="" set TARGET=help
+set "REPO_ROOT=%~dp0"
+set "PYTHONPATH=%REPO_ROOT%src;%PYTHONPATH%"
 
 if "%TARGET%"=="install" (
   python -m pip install -e ".[dev]"
@@ -956,6 +958,28 @@ if "%TARGET%"=="sequence28-smoke" (
   python -m quant_os.cli research replay-input-readiness
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m pytest tests/test_sequence28_lane_retirement_replay_inputs.py
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="replay-design-smoke" (
+  python -m quant_os.cli replay design-report
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="shadow-execution-smoke" (
+  python -m quant_os.cli replay shadow-execution-report
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="shadow-autonomy-smoke" (
+  python -m quant_os.cli readiness shadow-autonomy
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence31-smoke" (
+  call "%~f0" replay-design-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" shadow-execution-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" shadow-autonomy-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence31_shadow_replay_autonomy.py
   exit /b !ERRORLEVEL!
 )
 if "%TARGET%"=="venue-capture" (
