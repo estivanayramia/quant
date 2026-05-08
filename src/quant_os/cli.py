@@ -1309,6 +1309,85 @@ def research_replay_input_readiness(
     )
 
 
+@replay_app.command("design-report")
+def replay_design_report(
+    polymarket_snapshot_path: Annotated[
+        Path | None,
+        typer.Option("--polymarket-snapshot-path"),
+    ] = None,
+    pmxt_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--pmxt-manifest-path"),
+    ] = None,
+    reference_datasets_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--reference-datasets-manifest-path"),
+    ] = None,
+) -> None:
+    from quant_os.replay.prediction_market_replay_design import write_replay_design_report
+
+    payload = write_replay_design_report(
+        polymarket_snapshot_path=(
+            polymarket_snapshot_path or DEFAULT_POLYMARKET_PUBLIC_SNAPSHOT_FIXTURE
+        ),
+        pmxt_manifest_path=pmxt_manifest_path or DEFAULT_PMXT_MANIFEST_FIXTURE,
+        reference_datasets_manifest_path=(
+            reference_datasets_manifest_path or DEFAULT_REFERENCE_DATASETS_MANIFEST_FIXTURE
+        ),
+    )
+    print(
+        {
+            "status": payload["replay_design_status"],
+            "selected_lane_id": payload["selected_lane_id"],
+            "events": len(payload["event_timeline"]),
+            "report": "reports/sequence31/replay_design/latest_replay_design.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@replay_app.command("shadow-execution-report")
+def replay_shadow_execution_report(
+    polymarket_snapshot_path: Annotated[
+        Path | None,
+        typer.Option("--polymarket-snapshot-path"),
+    ] = None,
+    pmxt_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--pmxt-manifest-path"),
+    ] = None,
+    reference_datasets_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--reference-datasets-manifest-path"),
+    ] = None,
+) -> None:
+    from quant_os.research.prediction_markets.shadow_execution_report import (
+        write_shadow_execution_report,
+    )
+
+    payload = write_shadow_execution_report(
+        polymarket_snapshot_path=(
+            polymarket_snapshot_path or DEFAULT_POLYMARKET_PUBLIC_SNAPSHOT_FIXTURE
+        ),
+        pmxt_manifest_path=pmxt_manifest_path or DEFAULT_PMXT_MANIFEST_FIXTURE,
+        reference_datasets_manifest_path=(
+            reference_datasets_manifest_path or DEFAULT_REFERENCE_DATASETS_MANIFEST_FIXTURE
+        ),
+    )
+    print(
+        {
+            "status": payload["shadow_execution_status"],
+            "selected_lane_id": payload["selected_lane_id"],
+            "intent_count": payload["metrics"]["intent_count"],
+            "blocked_trade_count": payload["metrics"]["blocked_trade_count"],
+            "report": "reports/sequence31/shadow_execution/latest_shadow_execution.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @replay_app.command("run")
 def replay_run(periods: int = typer.Option(120, min=20)) -> None:
     dataset = build_crypto_research_dataset(periods=periods)
@@ -2155,6 +2234,45 @@ def readiness_report() -> None:
             "warnings": payload["warnings"],
             "report": "reports/sequence2/readiness/latest_readiness.json",
             "live_trading_enabled": False,
+        }
+    )
+
+
+@readiness_app.command("shadow-autonomy")
+def readiness_shadow_autonomy(
+    polymarket_snapshot_path: Annotated[
+        Path | None,
+        typer.Option("--polymarket-snapshot-path"),
+    ] = None,
+    pmxt_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--pmxt-manifest-path"),
+    ] = None,
+    reference_datasets_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--reference-datasets-manifest-path"),
+    ] = None,
+) -> None:
+    from quant_os.readiness.shadow_autonomy_report import write_shadow_autonomy_report
+
+    payload = write_shadow_autonomy_report(
+        polymarket_snapshot_path=(
+            polymarket_snapshot_path or DEFAULT_POLYMARKET_PUBLIC_SNAPSHOT_FIXTURE
+        ),
+        pmxt_manifest_path=pmxt_manifest_path or DEFAULT_PMXT_MANIFEST_FIXTURE,
+        reference_datasets_manifest_path=(
+            reference_datasets_manifest_path or DEFAULT_REFERENCE_DATASETS_MANIFEST_FIXTURE
+        ),
+    )
+    print(
+        {
+            "status": payload["shadow_autonomy_status"],
+            "ready_for_bounded_shadow_autonomy": payload[
+                "ready_for_bounded_shadow_autonomy"
+            ],
+            "report": "reports/sequence31/shadow_autonomy/latest_shadow_autonomy.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
         }
     )
 
