@@ -946,6 +946,18 @@ if "%TARGET%"=="sequence27-smoke" (
   python -m pytest tests/test_sequence27_venue_specific_signal_discovery.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="sequence28-smoke" (
+  python -m quant_os.cli research lane-retirement
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research next-lane-selection-v2
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research replay-input-summary
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research replay-input-readiness
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence28_lane_retirement_replay_inputs.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
