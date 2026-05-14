@@ -140,9 +140,15 @@ def _iter_raw_artifacts(import_root: str | Path) -> list[dict[str, Any]]:
                 raws.extend(raw)
             elif isinstance(raw, dict) and "artifacts" in raw:
                 raws.extend(raw["artifacts"])
+            elif isinstance(raw, dict) and _is_non_artifact_manifest(raw):
+                continue
             elif isinstance(raw, dict):
                 raws.append(raw)
     return raws
+
+
+def _is_non_artifact_manifest(raw: dict[str, Any]) -> bool:
+    return "artifact_type" not in raw and "schema_version" in raw
 
 
 def _precheck_reject_reason(raw: dict[str, Any]) -> str | None:

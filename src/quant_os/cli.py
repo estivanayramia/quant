@@ -295,6 +295,10 @@ def _repo_default_path(path: Path) -> Path:
     return Path(__file__).resolve().parents[2] / path
 
 
+def _optional_path_list(paths: list[Path] | None) -> list[Path] | None:
+    return list(paths) if paths else None
+
+
 def _event_store() -> JsonlEventStore:
     return JsonlEventStore("data/events/events.jsonl")
 
@@ -987,7 +991,7 @@ def research_pm_crypto_updown_expanded_replay_eval(
 @research_app.command("pm-crypto-updown-threshold-progress")
 def research_pm_crypto_updown_threshold_progress(
     fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
-    real_cached_root: Annotated[Path | None, typer.Option("--real-cached-root")] = None,
+    real_cached_root: Annotated[list[Path] | None, typer.Option("--real-cached-root")] = None,
 ) -> None:
     from quant_os.research.replay_candidates.pm_crypto_updown_threshold_progress import (
         write_pm_crypto_updown_threshold_progress_report,
@@ -995,7 +999,7 @@ def research_pm_crypto_updown_threshold_progress(
 
     payload = write_pm_crypto_updown_threshold_progress_report(
         fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
-        real_cached_artifact_roots=([real_cached_root] if real_cached_root else None),
+        real_cached_artifact_roots=_optional_path_list(real_cached_root),
     )
     print(
         {
@@ -1014,7 +1018,7 @@ def research_pm_crypto_updown_threshold_progress(
 @research_app.command("pm-crypto-updown-real-cached-replay-eval")
 def research_pm_crypto_updown_real_cached_replay_eval(
     fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
-    real_cached_root: Annotated[Path | None, typer.Option("--real-cached-root")] = None,
+    real_cached_root: Annotated[list[Path] | None, typer.Option("--real-cached-root")] = None,
 ) -> None:
     from quant_os.research.replay_candidates.pm_crypto_updown_real_cached_replay_eval import (
         write_pm_crypto_updown_real_cached_replay_eval_report,
@@ -1022,7 +1026,7 @@ def research_pm_crypto_updown_real_cached_replay_eval(
 
     payload = write_pm_crypto_updown_real_cached_replay_eval_report(
         fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
-        real_cached_artifact_roots=([real_cached_root] if real_cached_root else None),
+        real_cached_artifact_roots=_optional_path_list(real_cached_root),
     )
     print(
         {
@@ -3279,7 +3283,7 @@ def readiness_expanded_shadow_replay(
 @readiness_app.command("real-cached-replay-readiness")
 def readiness_real_cached_replay(
     fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
-    real_cached_root: Annotated[Path | None, typer.Option("--real-cached-root")] = None,
+    real_cached_root: Annotated[list[Path] | None, typer.Option("--real-cached-root")] = None,
 ) -> None:
     from quant_os.readiness.real_cached_replay_readiness_report import (
         write_real_cached_replay_readiness_report,
@@ -3290,7 +3294,7 @@ def readiness_real_cached_replay(
 
     evaluation = write_pm_crypto_updown_real_cached_replay_eval_report(
         fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
-        real_cached_artifact_roots=([real_cached_root] if real_cached_root else None),
+        real_cached_artifact_roots=_optional_path_list(real_cached_root),
     )
     payload = write_real_cached_replay_readiness_report(
         real_cached_replay_eval=evaluation,

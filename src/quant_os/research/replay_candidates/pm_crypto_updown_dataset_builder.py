@@ -295,6 +295,7 @@ def _real_cached_import_summary(source: dict[str, Any]) -> dict[str, Any]:
         "import_root": source["import_root"],
         "accepted_artifact_count": source["accepted_artifact_count"],
         "rejected_artifact_count": source["rejected_artifact_count"],
+        "rejected_by_reason": source["rejected_by_reason"],
         "dedupe_dropped_artifact_count": source["dedupe_dropped_artifact_count"],
         "imported_replay_ready_row_count": source["imported_replay_ready_row_count"],
         "real_cached_replay_ready_row_count": source["real_cached_replay_ready_row_count"],
