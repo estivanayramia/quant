@@ -823,6 +823,117 @@ def research_pm_crypto_updown_shadow_bridge(
     )
 
 
+@research_app.command("pm-crypto-updown-expansion-plan")
+def research_pm_crypto_updown_expansion_plan(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+) -> None:
+    from quant_os.research.replay_candidates.pm_crypto_updown_expansion_plan import (
+        write_pm_crypto_updown_expansion_plan,
+    )
+
+    payload = write_pm_crypto_updown_expansion_plan(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+    )
+    print(
+        {
+            "status": payload["plan_status"],
+            "current_replay_ready_row_count": payload["current_replay_ready_row_count"],
+            "rows_needed_from_current": payload["rows_needed_from_current"],
+            "report": "reports/sequence38/evidence_expansion/latest_expansion_plan.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-crypto-updown-manual-capture-plan")
+def research_pm_crypto_updown_manual_capture_plan() -> None:
+    from quant_os.data.prediction_markets.pm_updown_capture_plan import (
+        write_pm_updown_manual_capture_plan,
+    )
+
+    payload = write_pm_updown_manual_capture_plan()
+    print(
+        {
+            "status": "MANUAL_CAPTURE_PLAN_READY",
+            "manual_only": payload["manual_only"],
+            "network_enabled": payload["network_enabled"],
+            "report": "reports/sequence38/manual_capture/latest_manual_capture_plan.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-crypto-updown-expanded-dataset")
+def research_pm_crypto_updown_expanded_dataset(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+) -> None:
+    from quant_os.research.replay_candidates.pm_crypto_updown_dataset_builder import (
+        write_pm_crypto_updown_expanded_dataset_report,
+    )
+
+    payload = write_pm_crypto_updown_expanded_dataset_report(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+    )
+    print(
+        {
+            "status": "EXPANDED_DATASET_BUILT",
+            "row_count": payload["row_count"],
+            "primary_evidence_row_count": payload["primary_evidence_row_count"],
+            "report": "reports/sequence38/expanded_dataset/latest_pm_crypto_updown_expanded_dataset.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-crypto-updown-evidence-quality")
+def research_pm_crypto_updown_evidence_quality(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+) -> None:
+    from quant_os.research.replay_candidates.pm_crypto_updown_evidence_quality import (
+        write_pm_crypto_updown_evidence_quality_report,
+    )
+
+    payload = write_pm_crypto_updown_evidence_quality_report(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+    )
+    print(
+        {
+            "status": payload["evidence_expansion_status"],
+            "primary_evidence_row_count": payload["primary_evidence_row_count"],
+            "rows_needed_for_threshold": payload["rows_needed_for_threshold"],
+            "report": "reports/sequence38/evidence_quality/latest_pm_crypto_updown_evidence_quality.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-crypto-updown-expanded-replay-eval")
+def research_pm_crypto_updown_expanded_replay_eval(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+) -> None:
+    from quant_os.research.replay_candidates.pm_crypto_updown_expanded_replay_eval import (
+        write_pm_crypto_updown_expanded_replay_eval_report,
+    )
+
+    payload = write_pm_crypto_updown_expanded_replay_eval_report(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+    )
+    print(
+        {
+            "status": payload["evaluation_status"],
+            "primary_evidence_row_count": payload["primary_evidence_row_count"],
+            "synthetic_rows_counted_as_primary": payload["synthetic_rows_counted_as_primary"],
+            "report": "reports/sequence38/expanded_replay_eval/latest_expanded_replay_eval.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @research_app.command("prediction-market-quality")
 def research_prediction_market_quality(
     fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
@@ -3021,6 +3132,37 @@ def readiness_candidate_replay_readiness(
                 "ready_for_expanded_shadow_replay"
             ],
             "report": "reports/sequence37/replay_readiness/latest_candidate_replay_readiness.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("expanded-shadow-replay")
+def readiness_expanded_shadow_replay(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+) -> None:
+    from quant_os.readiness.expanded_shadow_replay_readiness_report import (
+        write_expanded_shadow_replay_readiness_report,
+    )
+    from quant_os.research.replay_candidates.pm_crypto_updown_expanded_replay_eval import (
+        write_pm_crypto_updown_expanded_replay_eval_report,
+    )
+
+    evaluation = write_pm_crypto_updown_expanded_replay_eval_report(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+    )
+    payload = write_expanded_shadow_replay_readiness_report(
+        expanded_replay_eval=evaluation,
+    )
+    print(
+        {
+            "status": payload["readiness_status"],
+            "overall_status": payload["overall_status"],
+            "ready_for_expanded_shadow_replay": payload[
+                "ready_for_expanded_shadow_replay"
+            ],
+            "report": "reports/sequence38/expanded_shadow_replay_readiness/latest_expanded_shadow_replay_readiness.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }

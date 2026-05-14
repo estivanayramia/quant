@@ -1,0 +1,16 @@
+timestamp_utc,symbol,price,source_id
+2026-05-13T12:02:30Z,BTC-USD,100000.0,fixture_expanded_spot
+2026-05-13T12:02:40Z,BTC-USD,99990.0,fixture_expanded_spot
+2026-05-13T12:02:44Z,BTC-USD,99970.0,fixture_expanded_spot
+2026-05-13T12:02:45Z,BTC-USD,99960.0,fixture_expanded_spot
+2026-05-13T12:02:46Z,BTC-USD,99500.0,fixture_expanded_spot_future_do_not_use
+2026-05-13T12:03:30Z,BTC-USD,99960.0,fixture_expanded_spot
+2026-05-13T12:03:40Z,BTC-USD,99980.0,fixture_expanded_spot
+2026-05-13T12:03:44Z,BTC-USD,99990.0,fixture_expanded_spot
+2026-05-13T12:03:45Z,BTC-USD,100010.0,fixture_expanded_spot
+2026-05-13T12:03:46Z,BTC-USD,100500.0,fixture_expanded_spot_future_do_not_use
+2026-05-13T12:04:30Z,BTC-USD,100010.0,synthetic_stress_spot
+2026-05-13T12:04:40Z,BTC-USD,100000.0,synthetic_stress_spot
+2026-05-13T12:04:44Z,BTC-USD,99990.0,synthetic_stress_spot
+2026-05-13T12:04:45Z,BTC-USD,99980.0,synthetic_stress_spot
+2026-05-13T12:04:46Z,BTC-USD,99000.0,synthetic_stress_spot_future_do_not_use

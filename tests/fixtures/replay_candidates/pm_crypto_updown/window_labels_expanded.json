@@ -1,0 +1,20 @@
+[
+  {
+    "market_id": "pm_btc_updown_20260513_1202",
+    "resolved_outcome": "DOWN",
+    "label_status": "RESOLVED",
+    "resolution_source_id": "fixture_expanded_resolution"
+  },
+  {
+    "market_id": "pm_btc_updown_20260513_1203",
+    "resolved_outcome": "UP",
+    "label_status": "RESOLVED",
+    "resolution_source_id": "fixture_expanded_resolution"
+  },
+  {
+    "market_id": "pm_btc_updown_20260513_1204_synthetic",
+    "resolved_outcome": "DOWN",
+    "label_status": "RESOLVED",
+    "resolution_source_id": "synthetic_stress_resolution"
+  }
+]

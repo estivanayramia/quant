@@ -253,6 +253,63 @@ def build_sequence37_autonomy_milestones(
     return payload
 
 
+def build_sequence38_autonomy_milestones(
+    *,
+    expanded_shadow_readiness: dict[str, Any],
+) -> dict[str, Any]:
+    payload = build_autonomy_milestones()
+    milestones = [dict(item) for item in payload["milestones"]]
+    ready = expanded_shadow_readiness["ready_for_expanded_shadow_replay"]
+    readiness_status = expanded_shadow_readiness["readiness_status"]
+    for milestone in milestones:
+        if milestone["milestone_id"] == "evidence_acquisition_repeatable":
+            milestone["status"] = "PARTIAL"
+            milestone["current_blockers"] = expanded_shadow_readiness["blockers"]
+            milestone["evidence_source"] = "sequence38_evidence_expansion"
+            milestone["required_next_action"] = (
+                "collect real-cached read-only UP/DOWN CLOB, spot, and resolution windows"
+            )
+            milestone["phase_likely_responsible"] = "Phase 39"
+        if milestone["milestone_id"] == "replay_inputs_sufficient":
+            milestone["status"] = "PARTIAL" if not ready else "MET"
+            milestone["current_blockers"] = [] if ready else [readiness_status]
+            milestone["evidence_source"] = "sequence38_expanded_dataset"
+            milestone["required_next_action"] = (
+                "raise primary replay-ready evidence to the configured threshold"
+            )
+            milestone["phase_likely_responsible"] = "Phase 39"
+        if milestone["milestone_id"] == "shadow_proving_threshold_met":
+            milestone["status"] = "PARTIAL" if ready else "BLOCKED"
+            milestone["current_blockers"] = [] if ready else [readiness_status]
+            milestone["evidence_source"] = "sequence38_expanded_shadow_replay_readiness"
+            milestone["required_next_action"] = (
+                "run expanded offline shadow replay only after the evidence gate passes"
+            )
+            milestone["phase_likely_responsible"] = "Phase 39"
+        if milestone["milestone_id"] == "bounded_shadow_rehearsal_ready":
+            milestone["status"] = "PARTIAL" if ready else "BLOCKED"
+            milestone["current_blockers"] = [] if ready else ["EXPANDED_SHADOW_REPLAY_NOT_READY"]
+            milestone["evidence_source"] = "sequence38_expanded_shadow_replay_readiness"
+            milestone["required_next_action"] = (
+                "keep canary and live blocked until expanded shadow replay is earned"
+            )
+            milestone["phase_likely_responsible"] = "Future phase"
+    next_required = next(item for item in milestones if item["status"] not in {"MET"})
+    payload.update(
+        {
+            "sequence": "38",
+            "ledger_status": "FINITE_AUTONOMY_PATH_UPDATED_WITH_REPLAY_EVIDENCE_EXPANSION",
+            "milestones": milestones,
+            "next_required_milestone": next_required,
+            "expanded_shadow_replay_readiness_status": readiness_status,
+            "phase38_movement": expanded_shadow_readiness["autonomy_milestones"],
+            "live_orders_allowed": False,
+            "live_promotion_status": "LIVE_BLOCKED",
+        }
+    )
+    return payload
+
+
 def _milestone(
     index: int,
     milestone_id: str,
