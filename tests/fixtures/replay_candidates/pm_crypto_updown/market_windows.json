@@ -1,0 +1,26 @@
+[
+  {
+    "market_id": "pm_btc_updown_20260513_1200",
+    "condition_id": "cond_1200",
+    "slug": "btc-up-or-down-may-13-1200",
+    "spot_symbol": "BTC-USD",
+    "window_start_ts": "2026-05-13T12:00:00Z",
+    "window_end_ts": "2026-05-13T12:01:00Z",
+    "tokens": [
+      {"token_id": "token_up_1200", "outcome": "UP"},
+      {"token_id": "token_down_1200", "outcome": "DOWN"}
+    ]
+  },
+  {
+    "market_id": "pm_btc_updown_20260513_1201",
+    "condition_id": "cond_1201",
+    "slug": "btc-up-or-down-may-13-1201",
+    "spot_symbol": "BTC-USD",
+    "window_start_ts": "2026-05-13T12:01:00Z",
+    "window_end_ts": "2026-05-13T12:02:00Z",
+    "tokens": [
+      {"token_id": "token_up_1201", "outcome": "UP"},
+      {"token_id": "token_down_1201", "outcome": "DOWN"}
+    ]
+  }
+]

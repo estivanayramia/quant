@@ -1,0 +1,50 @@
+[
+  {
+    "clob_snapshot_id": "clob_1200_up_01",
+    "market_id": "pm_btc_updown_20260513_1200",
+    "token_id": "token_up_1200",
+    "event_ts": "2026-05-13T12:00:45Z",
+    "bid": 0.54,
+    "ask": 0.56,
+    "last_trade_price": 0.55,
+    "volume": 1200.0,
+    "liquidity": 800.0,
+    "source_id": "fixture_clob"
+  },
+  {
+    "clob_snapshot_id": "clob_1200_down_01",
+    "market_id": "pm_btc_updown_20260513_1200",
+    "token_id": "token_down_1200",
+    "event_ts": "2026-05-13T12:00:45Z",
+    "bid": 0.44,
+    "ask": 0.46,
+    "last_trade_price": 0.45,
+    "volume": 1180.0,
+    "liquidity": 790.0,
+    "source_id": "fixture_clob"
+  },
+  {
+    "clob_snapshot_id": "clob_1201_up_01",
+    "market_id": "pm_btc_updown_20260513_1201",
+    "token_id": "token_up_1201",
+    "event_ts": "2026-05-13T12:01:50Z",
+    "bid": 0.51,
+    "ask": 0.62,
+    "last_trade_price": 0.52,
+    "volume": 80.0,
+    "liquidity": 40.0,
+    "source_id": "fixture_clob_stale"
+  },
+  {
+    "clob_snapshot_id": "clob_1201_down_01",
+    "market_id": "pm_btc_updown_20260513_1201",
+    "token_id": "token_down_1201",
+    "event_ts": "2026-05-13T12:01:50Z",
+    "bid": 0.38,
+    "ask": 0.49,
+    "last_trade_price": 0.48,
+    "volume": 60.0,
+    "liquidity": 30.0,
+    "source_id": "fixture_clob_stale"
+  }
+]
