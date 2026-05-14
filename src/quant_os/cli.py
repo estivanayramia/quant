@@ -742,6 +742,87 @@ def research_pm_crypto_updown_quality(
     )
 
 
+@research_app.command("pm-crypto-updown-replay-eval")
+def research_pm_crypto_updown_replay_eval(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+) -> None:
+    from quant_os.research.replay_candidates.pm_crypto_updown_replay_eval import (
+        write_pm_crypto_updown_replay_eval_report,
+    )
+
+    payload = write_pm_crypto_updown_replay_eval_report(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+    )
+    print(
+        {
+            "status": payload["evaluation_status"],
+            "row_count": payload["row_count"],
+            "replay_ready_row_count": payload["replay_ready_row_count"],
+            "candidate_signal_count": payload["candidate_signal_count"],
+            "report": "reports/sequence37/replay_eval/latest_pm_crypto_updown_replay_eval.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-crypto-updown-placebo")
+def research_pm_crypto_updown_placebo(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+) -> None:
+    from quant_os.research.replay_candidates.pm_crypto_updown_replay_eval import (
+        write_pm_crypto_updown_replay_eval_report,
+    )
+
+    payload = write_pm_crypto_updown_replay_eval_report(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+    )
+    placebo = payload["placebo_metrics"]
+    print(
+        {
+            "status": placebo["placebo_comparison_status"],
+            "promotion_blocked": placebo["promotion_blocked"],
+            "report": "reports/sequence37/replay_eval/latest_pm_crypto_updown_replay_eval.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-crypto-updown-shadow-bridge")
+def research_pm_crypto_updown_shadow_bridge(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+) -> None:
+    from quant_os.readiness.candidate_replay_readiness_report import (
+        write_candidate_replay_readiness_report,
+    )
+    from quant_os.research.replay_candidates.pm_crypto_updown_replay_eval import (
+        write_pm_crypto_updown_replay_eval_report,
+    )
+    from quant_os.research.replay_candidates.pm_crypto_updown_shadow_bridge import (
+        write_pm_crypto_updown_shadow_bridge_report,
+    )
+
+    evaluation = write_pm_crypto_updown_replay_eval_report(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+    )
+    readiness = write_candidate_replay_readiness_report(evaluation_report=evaluation)
+    payload = write_pm_crypto_updown_shadow_bridge_report(
+        evaluation_report=evaluation,
+        readiness_report=readiness,
+    )
+    print(
+        {
+            "status": payload["readiness_status"],
+            "shadow_intent_count": payload["shadow_intent_count"],
+            "blocked_intent_count": payload["blocked_intent_count"],
+            "report": "reports/sequence37/shadow_bridge/latest_pm_crypto_updown_shadow_bridge.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @research_app.command("prediction-market-quality")
 def research_prediction_market_quality(
     fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
@@ -2912,6 +2993,34 @@ def readiness_replay_dataset_readiness(
                 "ready_for_phase37_candidate_replay"
             ],
             "report": "reports/sequence36/replay_dataset_readiness/latest_replay_dataset_readiness.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("candidate-replay-readiness")
+def readiness_candidate_replay_readiness(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+) -> None:
+    from quant_os.readiness.candidate_replay_readiness_report import (
+        write_candidate_replay_readiness_report,
+    )
+    from quant_os.research.replay_candidates.pm_crypto_updown_replay_eval import (
+        write_pm_crypto_updown_replay_eval_report,
+    )
+
+    evaluation = write_pm_crypto_updown_replay_eval_report(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+    )
+    payload = write_candidate_replay_readiness_report(evaluation_report=evaluation)
+    print(
+        {
+            "status": payload["readiness_status"],
+            "ready_for_expanded_shadow_replay": payload[
+                "ready_for_expanded_shadow_replay"
+            ],
+            "report": "reports/sequence37/replay_readiness/latest_candidate_replay_readiness.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }
