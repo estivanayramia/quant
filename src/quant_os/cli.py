@@ -282,6 +282,12 @@ DEFAULT_REFERENCE_DATASETS_MANIFEST_FIXTURE = (
 )
 
 
+def _repo_default_path(path: Path) -> Path:
+    if path.exists():
+        return path
+    return Path(__file__).resolve().parents[2] / path
+
+
 def _event_store() -> JsonlEventStore:
     return JsonlEventStore("data/events/events.jsonl")
 
@@ -2204,6 +2210,48 @@ def proving_report() -> None:
     )
 
 
+@proving_app.command("shadow-proving-report")
+def proving_shadow_proving_report(
+    polymarket_snapshot_path: Annotated[
+        Path | None,
+        typer.Option("--polymarket-snapshot-path"),
+    ] = None,
+    pmxt_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--pmxt-manifest-path"),
+    ] = None,
+    reference_datasets_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--reference-datasets-manifest-path"),
+    ] = None,
+) -> None:
+    from quant_os.proving.shadow_proving_report import write_shadow_proving_report
+
+    payload = write_shadow_proving_report(
+        polymarket_snapshot_path=(
+            polymarket_snapshot_path
+            or _repo_default_path(DEFAULT_POLYMARKET_PUBLIC_SNAPSHOT_FIXTURE)
+        ),
+        pmxt_manifest_path=pmxt_manifest_path or _repo_default_path(DEFAULT_PMXT_MANIFEST_FIXTURE),
+        reference_datasets_manifest_path=(
+            reference_datasets_manifest_path
+            or _repo_default_path(DEFAULT_REFERENCE_DATASETS_MANIFEST_FIXTURE)
+        ),
+    )
+    print(
+        {
+            "status": payload["shadow_proving_status"],
+            "ready_for_tiny_canary_consideration": payload[
+                "ready_for_tiny_canary_consideration"
+            ],
+            "blockers": payload["blockers"],
+            "report": "reports/sequence32/shadow_proving/latest_shadow_proving_report.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @proving_app.command("dry-run-proving")
 def proving_dry_run_proving(periods: int = typer.Option(180, min=60)) -> None:
     payload = run_dry_run_proving_cycle(config=DryRunProvingConfig(periods=periods))
@@ -2271,6 +2319,90 @@ def readiness_shadow_autonomy(
                 "ready_for_bounded_shadow_autonomy"
             ],
             "report": "reports/sequence31/shadow_autonomy/latest_shadow_autonomy.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("canary-preconditions")
+def readiness_canary_preconditions(
+    polymarket_snapshot_path: Annotated[
+        Path | None,
+        typer.Option("--polymarket-snapshot-path"),
+    ] = None,
+    pmxt_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--pmxt-manifest-path"),
+    ] = None,
+    reference_datasets_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--reference-datasets-manifest-path"),
+    ] = None,
+) -> None:
+    from quant_os.readiness.canary_preconditions_report import (
+        write_canary_preconditions_report,
+    )
+
+    payload = write_canary_preconditions_report(
+        polymarket_snapshot_path=(
+            polymarket_snapshot_path
+            or _repo_default_path(DEFAULT_POLYMARKET_PUBLIC_SNAPSHOT_FIXTURE)
+        ),
+        pmxt_manifest_path=pmxt_manifest_path or _repo_default_path(DEFAULT_PMXT_MANIFEST_FIXTURE),
+        reference_datasets_manifest_path=(
+            reference_datasets_manifest_path
+            or _repo_default_path(DEFAULT_REFERENCE_DATASETS_MANIFEST_FIXTURE)
+        ),
+    )
+    print(
+        {
+            "status": payload["canary_preconditions_status"],
+            "ready_for_tiny_canary_consideration": payload[
+                "ready_for_tiny_canary_consideration"
+            ],
+            "still_blocked_reasons": payload["still_blocked_reasons"],
+            "report": "reports/sequence32/canary_preconditions/latest_canary_preconditions.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("canary-blockers")
+def readiness_canary_blockers(
+    polymarket_snapshot_path: Annotated[
+        Path | None,
+        typer.Option("--polymarket-snapshot-path"),
+    ] = None,
+    pmxt_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--pmxt-manifest-path"),
+    ] = None,
+    reference_datasets_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--reference-datasets-manifest-path"),
+    ] = None,
+) -> None:
+    from quant_os.readiness.canary_blockers_report import write_canary_blockers_report
+
+    payload = write_canary_blockers_report(
+        polymarket_snapshot_path=(
+            polymarket_snapshot_path
+            or _repo_default_path(DEFAULT_POLYMARKET_PUBLIC_SNAPSHOT_FIXTURE)
+        ),
+        pmxt_manifest_path=pmxt_manifest_path or _repo_default_path(DEFAULT_PMXT_MANIFEST_FIXTURE),
+        reference_datasets_manifest_path=(
+            reference_datasets_manifest_path
+            or _repo_default_path(DEFAULT_REFERENCE_DATASETS_MANIFEST_FIXTURE)
+        ),
+    )
+    print(
+        {
+            "status": payload["canary_blocker_status"],
+            "still_blocked": payload["still_blocked"],
+            "not_almost_ready": payload["not_almost_ready"],
+            "report": "reports/sequence32/canary_blockers/latest_canary_blockers.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }

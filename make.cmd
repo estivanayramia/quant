@@ -982,6 +982,28 @@ if "%TARGET%"=="sequence31-smoke" (
   python -m pytest tests/test_sequence31_shadow_replay_autonomy.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="shadow-proving-smoke" (
+  python -m quant_os.cli proving shadow-proving-report
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="canary-preconditions-smoke" (
+  python -m quant_os.cli readiness canary-preconditions
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="canary-blockers-smoke" (
+  python -m quant_os.cli readiness canary-blockers
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence32-smoke" (
+  call "%~f0" shadow-proving-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" canary-preconditions-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" canary-blockers-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence32_shadow_proving_canary_preconditions.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
