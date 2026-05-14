@@ -7,10 +7,12 @@ from typing import Any
 from quant_os.readiness.autonomy_milestones import (
     build_autonomy_milestones,
     build_sequence36_autonomy_milestones,
+    build_sequence37_autonomy_milestones,
 )
 
 REPORT_ROOT = Path("reports/sequence35/autonomy_milestones")
 SEQUENCE36_REPORT_ROOT = Path("reports/sequence36/autonomy_milestones")
+SEQUENCE37_REPORT_ROOT = Path("reports/sequence37/autonomy_milestones")
 
 
 def write_autonomy_milestone_report(*, output_root: str | Path = ".") -> dict[str, Any]:
@@ -35,6 +37,22 @@ def write_sequence36_autonomy_milestone_report(
     return payload
 
 
+def write_sequence37_autonomy_milestone_report(
+    *,
+    candidate_replay_readiness: dict[str, Any],
+    output_root: str | Path = ".",
+) -> dict[str, Any]:
+    payload = build_sequence37_autonomy_milestones(
+        candidate_replay_readiness=candidate_replay_readiness,
+    )
+    payload["report_paths"] = _write_report(
+        payload,
+        output_root=output_root,
+        report_root=SEQUENCE37_REPORT_ROOT,
+    )
+    return payload
+
+
 def _write_report(
     payload: dict[str, Any],
     *,
@@ -47,7 +65,7 @@ def _write_report(
     md_path = root / "latest_autonomy_milestones.md"
     json_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
     lines = [
-        "# Sequence 35 Autonomy Milestone Ledger",
+        f"# Sequence {payload['sequence']} Autonomy Milestone Ledger",
         "",
         "Finite path to autonomous orders. Live orders remain blocked.",
         "",

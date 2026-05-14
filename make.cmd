@@ -1104,6 +1104,30 @@ if "%TARGET%"=="sequence36-smoke" (
   python -m pytest tests/test_sequence36_pm_crypto_updown_replay_dataset.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="pm-crypto-updown-replay-eval-smoke" (
+  python -m quant_os.cli research pm-crypto-updown-replay-eval
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-placebo
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="pm-crypto-updown-shadow-bridge-smoke" (
+  python -m quant_os.cli research pm-crypto-updown-shadow-bridge
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="candidate-replay-readiness-smoke" (
+  python -m quant_os.cli readiness candidate-replay-readiness
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence37-smoke" (
+  call "%~f0" pm-crypto-updown-replay-eval-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" candidate-replay-readiness-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" pm-crypto-updown-shadow-bridge-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence37_pm_crypto_updown_replay_eval.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
