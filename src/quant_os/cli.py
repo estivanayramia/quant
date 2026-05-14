@@ -283,6 +283,7 @@ DEFAULT_REFERENCE_DATASETS_MANIFEST_FIXTURE = (
 DEFAULT_SOCIAL_CAPTURE_FIXTURE = (
     Path("tests") / "fixtures" / "social_capture" / "x_capture_sample"
 )
+DEFAULT_RESEARCH_INTAKE_SOURCE_CONFIG = Path("configs") / "research_intake_sources.yaml"
 
 
 def _repo_default_path(path: Path) -> Path:
@@ -593,6 +594,98 @@ def research_evidence_acquisition_plan(
             "status": payload["evidence_plan_status"],
             "phase33_blocker_addressed": payload["phase33_blocker_addressed"],
             "report": "reports/sequence34/evidence_acquisition/latest_evidence_plan.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("intake-source-policy")
+def research_intake_source_policy(
+    source_config_path: Annotated[Path | None, typer.Option("--source-config-path")] = None,
+) -> None:
+    from quant_os.research.intake.source_config import write_source_policy_report
+
+    payload = write_source_policy_report(
+        source_config_path=source_config_path
+        or _repo_default_path(DEFAULT_RESEARCH_INTAKE_SOURCE_CONFIG),
+    )
+    print(
+        {
+            "status": payload["policy_status"],
+            "allowed_source_count": payload["allowed_source_count"],
+            "blocked_source_count": payload["blocked_source_count"],
+            "report": "reports/sequence35/intake_sources/latest_source_policy.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("intake-run")
+def research_intake_run(
+    source_config_path: Annotated[Path | None, typer.Option("--source-config-path")] = None,
+) -> None:
+    from quant_os.research.intake.intake_run_report import write_intake_run_report
+
+    payload = write_intake_run_report(
+        source_config_path=source_config_path
+        or _repo_default_path(DEFAULT_RESEARCH_INTAKE_SOURCE_CONFIG),
+    )
+    print(
+        {
+            "status": payload["run_status"],
+            "run_id": payload["run_id"],
+            "artifact_count": payload["artifact_count"],
+            "duplicate_count": payload["duplicate_count"],
+            "report": "reports/sequence35/intake_run/latest_intake_run.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("knowledge-ledger-summary")
+def research_knowledge_ledger_summary(
+    source_config_path: Annotated[Path | None, typer.Option("--source-config-path")] = None,
+) -> None:
+    from quant_os.research.intake.intake_run_report import write_intake_run_report
+    from quant_os.research.intake.knowledge_ledger import write_knowledge_ledger_summary
+
+    intake_run = write_intake_run_report(
+        source_config_path=source_config_path
+        or _repo_default_path(DEFAULT_RESEARCH_INTAKE_SOURCE_CONFIG),
+    )
+    payload = write_knowledge_ledger_summary(intake_run=intake_run)
+    print(
+        {
+            "status": payload["ledger_status"],
+            "unique_artifact_count": payload["unique_artifact_count"],
+            "duplicate_artifact_count": payload["duplicate_artifact_count"],
+            "report": "reports/sequence35/knowledge_ledger/latest_knowledge_ledger_summary.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("evidence-to-shadow-bridge")
+def research_evidence_to_shadow_bridge(
+    source_config_path: Annotated[Path | None, typer.Option("--source-config-path")] = None,
+) -> None:
+    from quant_os.research.intake.evidence_to_shadow_report import (
+        write_evidence_to_shadow_report,
+    )
+
+    payload = write_evidence_to_shadow_report(
+        source_config_path=source_config_path
+        or _repo_default_path(DEFAULT_RESEARCH_INTAKE_SOURCE_CONFIG),
+    )
+    print(
+        {
+            "status": payload["bridge_status"],
+            "targeted_blockers": payload["targeted_blockers"],
+            "report": "reports/sequence35/evidence_bridge/latest_evidence_to_shadow_bridge.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }
@@ -2718,6 +2811,25 @@ def readiness_shadow_rehearsal(
                 "ready_for_bounded_shadow_rehearsal"
             ],
             "report": "reports/sequence33/shadow_rehearsal/latest_shadow_rehearsal.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("autonomy-milestones")
+def readiness_autonomy_milestones() -> None:
+    from quant_os.readiness.autonomy_milestone_report import (
+        write_autonomy_milestone_report,
+    )
+
+    payload = write_autonomy_milestone_report()
+    print(
+        {
+            "status": payload["ledger_status"],
+            "milestone_count": payload["milestone_count"],
+            "next_required_milestone": payload["next_required_milestone"]["milestone_id"],
+            "report": "reports/sequence35/autonomy_milestones/latest_autonomy_milestones.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }
