@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -28,7 +29,8 @@ def evaluate_pm_crypto_updown_threshold_progress(
     current_primary = dataset["primary_evidence_row_count"]
     real_cached_rows = dataset["real_cached_replay_ready_row_count"]
     row_gap = max(MIN_PRIMARY_REPLAY_READY_ROWS - current_primary, 0)
-    blockers = _blockers(dataset, row_gap=row_gap)
+    source_coverage = _source_coverage(dataset, row_gap=row_gap)
+    blockers = _blockers(dataset, row_gap=row_gap, source_coverage=source_coverage)
     return {
         "schema_version": "pm_crypto_updown_threshold_progress_v1",
         "sequence": "39",
@@ -48,7 +50,12 @@ def evaluate_pm_crypto_updown_threshold_progress(
         "added_rows_by_source_mode": _added_rows_by_source_mode(dataset),
         "rejected_rows_by_reason": _rejected_rows_by_reason(dataset),
         "source_bottleneck": _source_bottleneck(dataset, row_gap=row_gap),
-        "next_operator_action": _next_operator_action(dataset, row_gap=row_gap),
+        "source_coverage": source_coverage,
+        "next_operator_action": _next_operator_action(
+            dataset,
+            row_gap=row_gap,
+            source_coverage=source_coverage,
+        ),
         "phase40_can_run_expanded_shadow_replay": row_gap == 0,
         "blockers": blockers,
         "dataset_report": dataset,
@@ -82,7 +89,12 @@ def _threshold_status(previous_primary: int, current_primary: int) -> str:
     return "PRIMARY_EVIDENCE_STILL_TOO_THIN"
 
 
-def _blockers(dataset: dict[str, Any], *, row_gap: int) -> list[str]:
+def _blockers(
+    dataset: dict[str, Any],
+    *,
+    row_gap: int,
+    source_coverage: dict[str, Any],
+) -> list[str]:
     blockers = []
     flags = Counter(
         flag for row in dataset["rows"] for flag in row.get("data_quality_flags", [])
@@ -97,6 +109,12 @@ def _blockers(dataset: dict[str, Any], *, row_gap: int) -> list[str]:
         blockers.append(
             f"PRIMARY_ROWS_{dataset['primary_evidence_row_count']}_LT_"
             f"{MIN_PRIMARY_REPLAY_READY_ROWS}"
+        )
+    if source_coverage["coverage_status"] != "REAL_CACHED_SOURCE_COVERAGE_SUFFICIENT":
+        blockers.append(
+            "SOURCE_COVERAGE_REAL_CACHED_ROWS_"
+            f"{source_coverage['real_cached_replay_ready_row_count']}_LT_REQUIRED_"
+            f"{source_coverage['required_real_cached_replay_ready_rows']}"
         )
     return blockers
 
@@ -135,12 +153,82 @@ def _source_bottleneck(dataset: dict[str, Any], *, row_gap: int) -> str:
     return "none"
 
 
-def _next_operator_action(dataset: dict[str, Any], *, row_gap: int) -> str:
+def _source_coverage(dataset: dict[str, Any], *, row_gap: int) -> dict[str, Any]:
+    roots = [_source_root_coverage(source) for source in dataset["real_cached_imports"]]
+    accepted_artifacts = sum(root["accepted_artifact_count"] for root in roots)
+    real_cached_ready = dataset["real_cached_replay_ready_row_count"]
+    fixture_primary = dataset["primary_evidence_row_count"] - real_cached_ready
+    required_real_cached = max(MIN_PRIMARY_REPLAY_READY_ROWS - fixture_primary, 0)
+    if row_gap == 0:
+        status = "REAL_CACHED_SOURCE_COVERAGE_SUFFICIENT"
+    elif real_cached_ready == 0:
+        status = "REAL_CACHED_SOURCE_COVERAGE_MISSING"
+    else:
+        status = "REAL_CACHED_SOURCE_COVERAGE_INCOMPLETE"
+    return {
+        "coverage_status": status,
+        "accepted_artifact_count": accepted_artifacts,
+        "real_cached_replay_ready_row_count": real_cached_ready,
+        "fixture_primary_row_count": fixture_primary,
+        "required_real_cached_replay_ready_rows": required_real_cached,
+        "additional_primary_rows_needed": row_gap,
+        "additional_two_token_windows_needed_estimate": math.ceil(row_gap / 2),
+        "real_cached_roots": roots,
+    }
+
+
+def _source_root_coverage(source: dict[str, Any]) -> dict[str, Any]:
+    missing = _missing_replay_artifact_types(source)
+    if source["real_cached_replay_ready_row_count"] > 0:
+        status = "REPLAY_READY_ROWS_AVAILABLE"
+    elif source["accepted_artifact_count"] > 0:
+        status = "INCOMPLETE_REPLAY_ARTIFACT_COVERAGE"
+    else:
+        status = "NO_REPLAY_ARTIFACTS_FOUND"
+    return {
+        "source_name": source["source_name"],
+        "import_root": source["import_root"],
+        "coverage_status": status,
+        "accepted_artifact_count": source["accepted_artifact_count"],
+        "rejected_artifact_count": source["rejected_artifact_count"],
+        "rejected_by_reason": source.get("rejected_by_reason", {}),
+        "real_cached_replay_ready_row_count": source["real_cached_replay_ready_row_count"],
+        "market_window_count": source["market_window_count"],
+        "clob_snapshot_count": source["clob_snapshot_count"],
+        "spot_snapshot_count": source["spot_snapshot_count"],
+        "window_label_count": source["window_label_count"],
+        "missing_replay_artifact_types": missing,
+    }
+
+
+def _missing_replay_artifact_types(source: dict[str, Any]) -> list[str]:
+    missing = []
+    if source["clob_snapshot_count"] <= 0:
+        missing.append("pm_clob_snapshot")
+    if source["market_window_count"] <= 0:
+        missing.append("pm_market_window")
+    if source["window_label_count"] <= 0:
+        missing.append("pm_window_label_or_pm_resolution_label")
+    if source["spot_snapshot_count"] <= 0:
+        missing.append("spot_snapshot_or_spot_candle")
+    return missing
+
+
+def _next_operator_action(
+    dataset: dict[str, Any],
+    *,
+    row_gap: int,
+    source_coverage: dict[str, Any],
+) -> str:
     if row_gap == 0:
         return "Run python -m quant_os.cli readiness real-cached-replay-readiness and then expanded shadow replay."
     return (
-        "Run python -m quant_os.cli data pm-crypto-updown-capture-plan, collect "
-        "manual read-only artifacts, then run python -m quant_os.cli data "
+        "Run python -m quant_os.cli data pm-crypto-updown-capture-plan, then collect at least "
+        f"{source_coverage['additional_primary_rows_needed']} additional primary "
+        "replay-ready rows (about "
+        f"{source_coverage['additional_two_token_windows_needed_estimate']} two-token "
+        "UP/DOWN windows) with market window, CLOB snapshot, near-time spot snapshot, "
+        "and resolved label artifacts; then run python -m quant_os.cli data "
         "pm-crypto-updown-real-cached-import --import-root <run_root>."
     )
 
@@ -163,6 +251,8 @@ def _write_report(payload: dict[str, Any], *, output_root: str | Path) -> dict[s
         f"Row gap: {payload['row_gap']}",
         f"Readiness status: {payload['readiness_status']}",
         f"Source bottleneck: {payload['source_bottleneck']}",
+        f"Source coverage: {payload['source_coverage']['coverage_status']}",
+        f"Additional primary rows needed: {payload['source_coverage']['additional_primary_rows_needed']}",
         f"Live trading enabled: {payload['live_trading_enabled']}",
         "",
         "## Next Operator Action",
