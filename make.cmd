@@ -1128,6 +1128,30 @@ if "%TARGET%"=="sequence37-smoke" (
   python -m pytest tests/test_sequence37_pm_crypto_updown_replay_eval.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="pm-crypto-updown-evidence-expansion-smoke" (
+  python -m quant_os.cli research pm-crypto-updown-expansion-plan
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-manual-capture-plan
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-expanded-dataset
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-evidence-quality
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-expanded-replay-eval
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="expanded-shadow-replay-readiness-smoke" (
+  python -m quant_os.cli readiness expanded-shadow-replay
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence38-smoke" (
+  call "%~f0" pm-crypto-updown-evidence-expansion-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" expanded-shadow-replay-readiness-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence38_pm_crypto_updown_evidence_expansion.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!

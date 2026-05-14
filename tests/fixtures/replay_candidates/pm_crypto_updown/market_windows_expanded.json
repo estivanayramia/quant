@@ -1,0 +1,41 @@
+[
+  {
+    "market_id": "pm_btc_updown_20260513_1202",
+    "condition_id": "cond_1202",
+    "slug": "btc-up-or-down-may-13-1202",
+    "spot_symbol": "BTC-USD",
+    "window_start_ts": "2026-05-13T12:02:00Z",
+    "window_end_ts": "2026-05-13T12:03:00Z",
+    "source_quality": "fixture_real_shaped",
+    "tokens": [
+      {"token_id": "token_up_1202", "outcome": "UP"},
+      {"token_id": "token_down_1202", "outcome": "DOWN"}
+    ]
+  },
+  {
+    "market_id": "pm_btc_updown_20260513_1203",
+    "condition_id": "cond_1203",
+    "slug": "btc-up-or-down-may-13-1203",
+    "spot_symbol": "BTC-USD",
+    "window_start_ts": "2026-05-13T12:03:00Z",
+    "window_end_ts": "2026-05-13T12:04:00Z",
+    "source_quality": "fixture_real_shaped",
+    "tokens": [
+      {"token_id": "token_up_1203", "outcome": "UP"},
+      {"token_id": "token_down_1203", "outcome": "DOWN"}
+    ]
+  },
+  {
+    "market_id": "pm_btc_updown_20260513_1204_synthetic",
+    "condition_id": "cond_1204_synthetic",
+    "slug": "synthetic-btc-up-or-down-may-13-1204",
+    "spot_symbol": "BTC-USD",
+    "window_start_ts": "2026-05-13T12:04:00Z",
+    "window_end_ts": "2026-05-13T12:05:00Z",
+    "source_quality": "synthetic_stress",
+    "tokens": [
+      {"token_id": "token_up_1204_synthetic", "outcome": "UP"},
+      {"token_id": "token_down_1204_synthetic", "outcome": "DOWN"}
+    ]
+  }
+]
