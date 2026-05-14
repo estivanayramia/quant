@@ -280,6 +280,9 @@ DEFAULT_PMXT_MANIFEST_FIXTURE = DEFAULT_BENCHMARK_FIXTURE_ROOT / "pmxt_manifest.
 DEFAULT_REFERENCE_DATASETS_MANIFEST_FIXTURE = (
     DEFAULT_BENCHMARK_FIXTURE_ROOT / "reference_datasets_manifest.json"
 )
+DEFAULT_SOCIAL_CAPTURE_FIXTURE = (
+    Path("tests") / "fixtures" / "social_capture" / "x_capture_sample"
+)
 
 
 def _repo_default_path(path: Path) -> Path:
@@ -484,6 +487,114 @@ def research_crypto_build(periods: int = typer.Option(240, min=50)) -> None:
             "signals": payload["signal_count"],
             "report": "reports/crypto/latest_research.json",
             "live_trading_enabled": False,
+        }
+    )
+
+
+@research_app.command("social-capture-inventory")
+def research_social_capture_inventory(
+    capture_root: Annotated[Path | None, typer.Option("--capture-root")] = None,
+) -> None:
+    from quant_os.research.social_intake.capture_loader import write_capture_inventory
+
+    payload = write_capture_inventory(
+        capture_root=capture_root or _repo_default_path(DEFAULT_SOCIAL_CAPTURE_FIXTURE),
+    )
+    print(
+        {
+            "status": "CAPTURE_INVENTORIED",
+            "post_count": payload["post_count"],
+            "report": "reports/sequence34/social_intake/latest_capture_inventory.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("social-post-classification")
+def research_social_post_classification(
+    capture_root: Annotated[Path | None, typer.Option("--capture-root")] = None,
+) -> None:
+    from quant_os.research.social_intake.post_classification_report import (
+        write_post_classification_report,
+    )
+
+    payload = write_post_classification_report(
+        capture_root=capture_root or _repo_default_path(DEFAULT_SOCIAL_CAPTURE_FIXTURE),
+    )
+    print(
+        {
+            "status": payload["classification_status"],
+            "post_count": payload["post_count"],
+            "report": "reports/sequence34/social_intake/latest_post_classification.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("social-hypothesis-queue")
+def research_social_hypothesis_queue(
+    capture_root: Annotated[Path | None, typer.Option("--capture-root")] = None,
+) -> None:
+    from quant_os.research.social_intake.hypothesis_queue import (
+        write_hypothesis_queue_report,
+    )
+
+    payload = write_hypothesis_queue_report(
+        capture_root=capture_root or _repo_default_path(DEFAULT_SOCIAL_CAPTURE_FIXTURE),
+    )
+    print(
+        {
+            "status": payload["hypothesis_queue_status"],
+            "hypothesis_count": payload["hypothesis_count"],
+            "report": "reports/sequence34/hypothesis_queue/latest_hypothesis_queue.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("social-task-queue")
+def research_social_task_queue(
+    capture_root: Annotated[Path | None, typer.Option("--capture-root")] = None,
+) -> None:
+    from quant_os.research.social_intake.research_task_queue import (
+        write_research_task_queue_report,
+    )
+
+    payload = write_research_task_queue_report(
+        capture_root=capture_root or _repo_default_path(DEFAULT_SOCIAL_CAPTURE_FIXTURE),
+    )
+    print(
+        {
+            "status": payload["research_task_queue_status"],
+            "top_priority_reason": payload["top_priority_reason"],
+            "report": "reports/sequence34/research_tasks/latest_research_task_queue.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("evidence-acquisition-plan")
+def research_evidence_acquisition_plan(
+    capture_root: Annotated[Path | None, typer.Option("--capture-root")] = None,
+) -> None:
+    from quant_os.research.social_intake.evidence_acquisition_report import (
+        write_evidence_acquisition_report,
+    )
+
+    payload = write_evidence_acquisition_report(
+        capture_root=capture_root or _repo_default_path(DEFAULT_SOCIAL_CAPTURE_FIXTURE),
+    )
+    print(
+        {
+            "status": payload["evidence_plan_status"],
+            "phase33_blocker_addressed": payload["phase33_blocker_addressed"],
+            "report": "reports/sequence34/evidence_acquisition/latest_evidence_plan.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
         }
     )
 

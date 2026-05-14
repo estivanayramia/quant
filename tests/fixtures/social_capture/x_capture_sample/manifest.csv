@@ -1,0 +1,7 @@
+post_id,post_url,author_handle,captured_at,folder,notes
+spec_kit,https://x.example/spec-kit,@builder,2026-05-12T15:00:00Z,posts/spec_kit,Spec driven development idea.
+financialdatasets_mcp,https://x.example/financialdatasets-mcp,@data_builder,2026-05-12T15:05:00Z,posts/financialdatasets_mcp,Read-only data source candidate.
+copy_wallet,https://x.example/copy-politician-wallet,@hype_trader,2026-05-12T15:10:00Z,posts/copy_wallet,Unsafe copy-trade claim.
+nn_warning,https://x.example/neural-dice,@model_skeptic,2026-05-12T15:15:00Z,posts/nn_warning,Model warning with missing optional JSON.
+macro_thesis,https://x.example/macro-liquidity,@macro_research,2026-05-12T15:20:00Z,posts/macro_thesis,Macro hypothesis candidate.
+open_source_stack,https://x.example/open-source-stack,@oss_quant,2026-05-12T15:25:00Z,posts/open_source_stack,Benchmark and replay inspiration.

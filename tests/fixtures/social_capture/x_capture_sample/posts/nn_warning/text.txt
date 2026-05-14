@@ -1,0 +1,1 @@
+Neural networks often regress toward the average, like fancy dice rolls. Baseline-first testing and calibration beat model hype.
