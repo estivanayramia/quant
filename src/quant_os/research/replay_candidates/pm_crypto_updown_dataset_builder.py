@@ -16,6 +16,9 @@ from quant_os.research.replay_candidates.pm_crypto_updown_alignment import (
     align_pm_crypto_updown_rows,
     build_pm_crypto_updown_dataset,
 )
+from quant_os.research.replay_candidates.pm_crypto_updown_real_cached_import import (
+    build_pm_crypto_updown_real_cached_source,
+)
 from quant_os.research.replay_candidates.pm_crypto_updown_schema import CANDIDATE_ID
 from quant_os.research.replay_candidates.pm_crypto_updown_signals import is_replay_ready_row
 from quant_os.research.social_intake.social_capture_models import SOCIAL_INTAKE_SAFETY
@@ -56,6 +59,7 @@ def build_pm_crypto_updown_expanded_dataset(
     fixture_root: str | Path = DEFAULT_FIXTURE_ROOT,
     extra_fixture_roots: list[str | Path] | None = None,
     capture_root: str | Path | None = None,
+    real_cached_artifact_roots: list[str | Path] | None = None,
 ) -> dict[str, Any]:
     root = Path(fixture_root)
     sources = _source_specs(root, extra_fixture_roots=extra_fixture_roots)
@@ -106,12 +110,26 @@ def build_pm_crypto_updown_expanded_dataset(
             continue
         rows.extend(_load_source_rows(source))
 
+    phase38_deduped, phase38_dropped = _dedupe_rows(rows)
+    phase38_primary_rows = _primary_rows(phase38_deduped)
+    phase38_replay_ready = [row for row in phase38_deduped if is_replay_ready_row(row)]
+    real_cached_imports = []
+    for index, artifact_root in enumerate(real_cached_artifact_roots or [], start=1):
+        source = build_pm_crypto_updown_real_cached_source(
+            import_root=artifact_root,
+            source_name=f"real_cached_import_{index}",
+        )
+        real_cached_imports.append(_real_cached_import_summary(source))
+        rows.extend(_annotate_real_cached_import_rows(source["rows"]))
+
     deduped, dropped = _dedupe_rows(rows)
     replay_ready = [row for row in deduped if is_replay_ready_row(row)]
     primary_rows = _primary_rows(deduped)
     synthetic_ready = [
         row for row in replay_ready if row["source_quality"] == "synthetic_stress"
     ]
+    real_cached_rows = [row for row in deduped if row["source_quality"] == "real_cached"]
+    real_cached_ready = [row for row in real_cached_rows if is_replay_ready_row(row)]
 
     source_quality_counts = dict(sorted(Counter(row["source_quality"] for row in deduped).items()))
     source_count = dict(sorted(Counter(row["source_name"] for row in deduped).items()))
@@ -124,18 +142,26 @@ def build_pm_crypto_updown_expanded_dataset(
             [row for row in current["rows"] if is_replay_ready_row(row)]
         ),
         "current_primary_evidence_row_count": len(current_primary),
+        "phase38_replay_ready_row_count": len(phase38_replay_ready),
+        "phase38_primary_evidence_row_count": len(phase38_primary_rows),
         "row_count": len(deduped),
         "replay_ready_row_count": len(replay_ready),
         "primary_evidence_row_count": len(primary_rows),
         "diagnostic_row_count": len(deduped) - len(primary_rows),
+        "real_cached_row_count": len(real_cached_rows),
+        "real_cached_replay_ready_row_count": len(real_cached_ready),
         "synthetic_stress_row_count": source_quality_counts.get("synthetic_stress", 0),
         "synthetic_stress_replay_ready_row_count": len(synthetic_ready),
         "dedupe_dropped_row_count": dropped,
+        "phase38_dedupe_dropped_row_count": phase38_dropped,
         "source_quality_counts": source_quality_counts,
         "source_counts": source_count,
         "skipped_sources": skipped_sources,
+        "real_cached_imports": real_cached_imports,
+        "rows_needed_for_threshold": max(MIN_PRIMARY_REPLAY_READY_ROWS - len(primary_rows), 0),
         "rows": deduped,
         "primary_rows": primary_rows,
+        "real_cached_rows": real_cached_rows,
         "synthetic_stress_rows": [
             row for row in deduped if row["source_quality"] == "synthetic_stress"
         ],
@@ -156,10 +182,12 @@ def write_pm_crypto_updown_expanded_dataset_report(
     fixture_root: str | Path = DEFAULT_FIXTURE_ROOT,
     output_root: str | Path = ".",
     capture_root: str | Path | None = None,
+    real_cached_artifact_roots: list[str | Path] | None = None,
 ) -> dict[str, Any]:
     payload = build_pm_crypto_updown_expanded_dataset(
         fixture_root=fixture_root,
         capture_root=capture_root,
+        real_cached_artifact_roots=real_cached_artifact_roots,
     )
     payload["report_paths"] = _write_report(payload, output_root=output_root)
     return payload
@@ -245,6 +273,40 @@ def _annotate_rows(
     return annotated
 
 
+def _annotate_real_cached_import_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    annotated = []
+    for row in rows:
+        quality = str(row.get("source_quality", "real_cached"))
+        item = {
+            **row,
+            "source_quality": quality,
+            "source_hash": _source_hash(row),
+        }
+        item["primary_evidence_candidate"] = _is_primary_evidence_row(item)
+        item["synthetic_stress_only"] = quality == "synthetic_stress"
+        annotated.append(item)
+    return annotated
+
+
+def _real_cached_import_summary(source: dict[str, Any]) -> dict[str, Any]:
+    normalized = source["normalized_source"]
+    return {
+        "source_name": source["source_name"],
+        "import_root": source["import_root"],
+        "accepted_artifact_count": source["accepted_artifact_count"],
+        "rejected_artifact_count": source["rejected_artifact_count"],
+        "dedupe_dropped_artifact_count": source["dedupe_dropped_artifact_count"],
+        "imported_replay_ready_row_count": source["imported_replay_ready_row_count"],
+        "real_cached_replay_ready_row_count": source["real_cached_replay_ready_row_count"],
+        "source_mode_counts": source["source_mode_counts"],
+        "artifact_type_counts": source["artifact_type_counts"],
+        "market_window_count": len(normalized["market_windows"]),
+        "clob_snapshot_count": len(normalized["clob_snapshots"]),
+        "spot_snapshot_count": len(normalized["spot_snapshots"]),
+        "window_label_count": len(normalized["window_labels"]),
+    }
+
+
 def _market_quality_map(path: Path, *, default_quality: str) -> dict[str, str]:
     raw = json.loads(path.read_text(encoding="utf-8"))
     return {
@@ -324,6 +386,7 @@ def _write_report(payload: dict[str, Any], *, output_root: str | Path) -> dict[s
         f"Rows: {payload['row_count']}",
         f"Replay-ready rows: {payload['replay_ready_row_count']}",
         f"Primary evidence rows: {payload['primary_evidence_row_count']}",
+        f"Real-cached rows: {payload['real_cached_row_count']}",
         f"Synthetic stress rows: {payload['synthetic_stress_row_count']}",
         f"Rows dropped by dedupe: {payload['dedupe_dropped_row_count']}",
         f"Live trading enabled: {payload['live_trading_enabled']}",
