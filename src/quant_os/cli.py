@@ -879,21 +879,62 @@ def data_pm_crypto_updown_capture_plan(
 @data_app.command("pm-crypto-updown-real-cached-import")
 def data_pm_crypto_updown_real_cached_import(
     import_root: Annotated[
-        Path,
+        Path | None,
         typer.Option("--import-root"),
-    ] = Path("data/external/manual_captures/pm_crypto_updown/manual_plan"),
+    ] = None,
+    real_cached_root: Annotated[list[Path] | None, typer.Option("--real-cached-root")] = None,
 ) -> None:
     from quant_os.research.replay_candidates.pm_crypto_updown_real_cached_import import (
+        import_pm_crypto_updown_real_cached_artifact_roots,
         import_pm_crypto_updown_real_cached_artifacts,
     )
 
-    payload = import_pm_crypto_updown_real_cached_artifacts(import_root=import_root)
+    real_cached_roots = _optional_path_list(real_cached_root)
+    if real_cached_roots:
+        payload = import_pm_crypto_updown_real_cached_artifact_roots(
+            import_roots=real_cached_roots,
+        )
+        report_path = "reports/sequence41/real_cached_import/latest_real_cached_import.json"
+    else:
+        payload = import_pm_crypto_updown_real_cached_artifacts(
+            import_root=import_root or Path("data/external/manual_captures/pm_crypto_updown/manual_plan"),
+        )
+        report_path = "reports/sequence39/real_cached_import/latest_real_cached_import.json"
     print(
         {
             "status": payload["import_status"],
             "accepted_artifact_count": payload["accepted_artifact_count"],
             "real_cached_rows_imported": payload["real_cached_rows_imported"],
-            "report": "reports/sequence39/real_cached_import/latest_real_cached_import.json",
+            "report": report_path,
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-crypto-updown-window-acquisition")
+def research_pm_crypto_updown_window_acquisition(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+    real_cached_root: Annotated[list[Path] | None, typer.Option("--real-cached-root")] = None,
+) -> None:
+    from quant_os.research.replay_candidates.pm_crypto_updown_window_acquisition_report import (
+        write_pm_crypto_updown_window_acquisition_plan,
+    )
+
+    payload = write_pm_crypto_updown_window_acquisition_plan(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+        real_cached_artifact_roots=_optional_path_list(real_cached_root),
+    )
+    print(
+        {
+            "status": payload["capture_or_import_status"],
+            "current_primary_row_count": payload["current_primary_row_count"],
+            "current_real_cached_row_count": payload["current_real_cached_row_count"],
+            "row_gap": payload["row_gap"],
+            "required_remaining_two_token_windows": payload[
+                "required_remaining_two_token_windows"
+            ],
+            "report": "reports/sequence41/window_acquisition/latest_window_acquisition_plan.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }
@@ -992,15 +1033,25 @@ def research_pm_crypto_updown_expanded_replay_eval(
 def research_pm_crypto_updown_threshold_progress(
     fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
     real_cached_root: Annotated[list[Path] | None, typer.Option("--real-cached-root")] = None,
+    sequence41: bool = typer.Option(False, "--sequence41"),
 ) -> None:
     from quant_os.research.replay_candidates.pm_crypto_updown_threshold_progress import (
+        write_pm_crypto_updown_sequence41_threshold_progress_report,
         write_pm_crypto_updown_threshold_progress_report,
     )
 
-    payload = write_pm_crypto_updown_threshold_progress_report(
-        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
-        real_cached_artifact_roots=_optional_path_list(real_cached_root),
-    )
+    if sequence41:
+        payload = write_pm_crypto_updown_sequence41_threshold_progress_report(
+            fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+            real_cached_artifact_roots=_optional_path_list(real_cached_root),
+        )
+        report_path = "reports/sequence41/threshold_progress/latest_threshold_progress.json"
+    else:
+        payload = write_pm_crypto_updown_threshold_progress_report(
+            fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+            real_cached_artifact_roots=_optional_path_list(real_cached_root),
+        )
+        report_path = "reports/sequence39/threshold_progress/latest_threshold_progress.json"
     print(
         {
             "status": payload["threshold_status"],
@@ -1008,7 +1059,7 @@ def research_pm_crypto_updown_threshold_progress(
             "current_primary_row_count": payload["current_primary_row_count"],
             "current_real_cached_row_count": payload["current_real_cached_row_count"],
             "row_gap": payload["row_gap"],
-            "report": "reports/sequence39/threshold_progress/latest_threshold_progress.json",
+            "report": report_path,
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }
@@ -1019,15 +1070,25 @@ def research_pm_crypto_updown_threshold_progress(
 def research_pm_crypto_updown_real_cached_replay_eval(
     fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
     real_cached_root: Annotated[list[Path] | None, typer.Option("--real-cached-root")] = None,
+    sequence41: bool = typer.Option(False, "--sequence41"),
 ) -> None:
     from quant_os.research.replay_candidates.pm_crypto_updown_real_cached_replay_eval import (
         write_pm_crypto_updown_real_cached_replay_eval_report,
+        write_pm_crypto_updown_sequence41_replay_eval_report,
     )
 
-    payload = write_pm_crypto_updown_real_cached_replay_eval_report(
-        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
-        real_cached_artifact_roots=_optional_path_list(real_cached_root),
-    )
+    if sequence41:
+        payload = write_pm_crypto_updown_sequence41_replay_eval_report(
+            fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+            real_cached_artifact_roots=_optional_path_list(real_cached_root),
+        )
+        report_path = "reports/sequence41/replay_eval/latest_pm_crypto_updown_replay_eval.json"
+    else:
+        payload = write_pm_crypto_updown_real_cached_replay_eval_report(
+            fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+            real_cached_artifact_roots=_optional_path_list(real_cached_root),
+        )
+        report_path = "reports/sequence39/real_cached_replay_eval/latest_real_cached_replay_eval.json"
     print(
         {
             "status": payload["evaluation_status"],
@@ -1038,7 +1099,7 @@ def research_pm_crypto_updown_real_cached_replay_eval(
             "synthetic_rows_counted_as_primary": payload[
                 "synthetic_rows_counted_as_primary"
             ],
-            "report": "reports/sequence39/real_cached_replay_eval/latest_real_cached_replay_eval.json",
+            "report": report_path,
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }
@@ -3311,6 +3372,43 @@ def readiness_real_cached_replay(
                 "real_cached_replay_ready_row_count"
             ],
             "report": "reports/sequence39/real_cached_readiness/latest_real_cached_replay_readiness.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("expanded-shadow-replay-readiness")
+def readiness_expanded_shadow_replay_readiness(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+    real_cached_root: Annotated[list[Path] | None, typer.Option("--real-cached-root")] = None,
+) -> None:
+    from quant_os.readiness.expanded_shadow_replay_readiness_report import (
+        write_sequence41_expanded_shadow_replay_readiness_report,
+    )
+    from quant_os.research.replay_candidates.pm_crypto_updown_real_cached_replay_eval import (
+        write_pm_crypto_updown_sequence41_replay_eval_report,
+    )
+
+    evaluation = write_pm_crypto_updown_sequence41_replay_eval_report(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+        real_cached_artifact_roots=_optional_path_list(real_cached_root),
+    )
+    payload = write_sequence41_expanded_shadow_replay_readiness_report(
+        real_cached_replay_eval=evaluation,
+    )
+    print(
+        {
+            "status": payload["readiness_status"],
+            "overall_status": payload["overall_status"],
+            "ready_for_expanded_shadow_replay": payload[
+                "ready_for_expanded_shadow_replay"
+            ],
+            "primary_evidence_row_count": payload["primary_evidence_row_count"],
+            "real_cached_replay_ready_row_count": payload[
+                "real_cached_replay_ready_row_count"
+            ],
+            "report": "reports/sequence41/expanded_shadow_replay_readiness/latest_expanded_shadow_replay_readiness.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }
