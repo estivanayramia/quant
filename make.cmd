@@ -1004,6 +1004,40 @@ if "%TARGET%"=="sequence32-smoke" (
   python -m pytest tests/test_sequence32_shadow_proving_canary_preconditions.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="shadow-sample-windows-smoke" (
+  python -m quant_os.cli proving shadow-sample-windows
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="shadow-blocker-attribution-smoke" (
+  python -m quant_os.cli proving shadow-blocker-attribution
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="shadow-sensitivity-smoke" (
+  python -m quant_os.cli proving shadow-sensitivity
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="shadow-unblockability-smoke" (
+  python -m quant_os.cli proving unblockability
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="shadow-rehearsal-smoke" (
+  python -m quant_os.cli readiness shadow-rehearsal
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence33-smoke" (
+  call "%~f0" shadow-sample-windows-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" shadow-blocker-attribution-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" shadow-sensitivity-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" shadow-unblockability-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" shadow-rehearsal-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence33_shadow_sample_unblockability.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!

@@ -2252,6 +2252,169 @@ def proving_shadow_proving_report(
     )
 
 
+@proving_app.command("shadow-sample-windows")
+def proving_shadow_sample_windows(
+    polymarket_snapshot_path: Annotated[
+        Path | None,
+        typer.Option("--polymarket-snapshot-path"),
+    ] = None,
+    pmxt_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--pmxt-manifest-path"),
+    ] = None,
+    reference_datasets_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--reference-datasets-manifest-path"),
+    ] = None,
+) -> None:
+    from quant_os.proving.shadow_window_report import write_shadow_window_report
+
+    payload = write_shadow_window_report(
+        polymarket_snapshot_path=(
+            polymarket_snapshot_path
+            or _repo_default_path(DEFAULT_POLYMARKET_PUBLIC_SNAPSHOT_FIXTURE)
+        ),
+        pmxt_manifest_path=pmxt_manifest_path or _repo_default_path(DEFAULT_PMXT_MANIFEST_FIXTURE),
+        reference_datasets_manifest_path=(
+            reference_datasets_manifest_path
+            or _repo_default_path(DEFAULT_REFERENCE_DATASETS_MANIFEST_FIXTURE)
+        ),
+    )
+    print(
+        {
+            "status": payload["shadow_sample_status"],
+            "total_window_count": payload["total_window_count"],
+            "proving_effective_window_count": payload["proving_effective_window_count"],
+            "report": "reports/sequence33/shadow_samples/latest_shadow_windows.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("shadow-blocker-attribution")
+def proving_shadow_blocker_attribution(
+    polymarket_snapshot_path: Annotated[
+        Path | None,
+        typer.Option("--polymarket-snapshot-path"),
+    ] = None,
+    pmxt_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--pmxt-manifest-path"),
+    ] = None,
+    reference_datasets_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--reference-datasets-manifest-path"),
+    ] = None,
+) -> None:
+    from quant_os.proving.shadow_blocker_report import write_shadow_blocker_report
+
+    payload = write_shadow_blocker_report(
+        polymarket_snapshot_path=(
+            polymarket_snapshot_path
+            or _repo_default_path(DEFAULT_POLYMARKET_PUBLIC_SNAPSHOT_FIXTURE)
+        ),
+        pmxt_manifest_path=pmxt_manifest_path or _repo_default_path(DEFAULT_PMXT_MANIFEST_FIXTURE),
+        reference_datasets_manifest_path=(
+            reference_datasets_manifest_path
+            or _repo_default_path(DEFAULT_REFERENCE_DATASETS_MANIFEST_FIXTURE)
+        ),
+    )
+    print(
+        {
+            "status": payload["blocker_attribution_status"],
+            "blocker_groups": payload["blocker_groups"],
+            "report": "reports/sequence33/blocker_attribution/latest_blocker_attribution.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("shadow-sensitivity")
+def proving_shadow_sensitivity(
+    polymarket_snapshot_path: Annotated[
+        Path | None,
+        typer.Option("--polymarket-snapshot-path"),
+    ] = None,
+    pmxt_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--pmxt-manifest-path"),
+    ] = None,
+    reference_datasets_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--reference-datasets-manifest-path"),
+    ] = None,
+) -> None:
+    from quant_os.proving.shadow_sensitivity_report import (
+        write_shadow_sensitivity_report,
+    )
+
+    payload = write_shadow_sensitivity_report(
+        polymarket_snapshot_path=(
+            polymarket_snapshot_path
+            or _repo_default_path(DEFAULT_POLYMARKET_PUBLIC_SNAPSHOT_FIXTURE)
+        ),
+        pmxt_manifest_path=pmxt_manifest_path or _repo_default_path(DEFAULT_PMXT_MANIFEST_FIXTURE),
+        reference_datasets_manifest_path=(
+            reference_datasets_manifest_path
+            or _repo_default_path(DEFAULT_REFERENCE_DATASETS_MANIFEST_FIXTURE)
+        ),
+    )
+    print(
+        {
+            "status": payload["shadow_sensitivity_status"],
+            "blocked_state_robust_across_assumptions": payload[
+                "blocked_state_robust_across_assumptions"
+            ],
+            "report": "reports/sequence33/shadow_sensitivity/latest_shadow_sensitivity.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("unblockability")
+def proving_unblockability(
+    polymarket_snapshot_path: Annotated[
+        Path | None,
+        typer.Option("--polymarket-snapshot-path"),
+    ] = None,
+    pmxt_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--pmxt-manifest-path"),
+    ] = None,
+    reference_datasets_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--reference-datasets-manifest-path"),
+    ] = None,
+) -> None:
+    from quant_os.proving.unblockability_report import write_unblockability_report
+
+    payload = write_unblockability_report(
+        polymarket_snapshot_path=(
+            polymarket_snapshot_path
+            or _repo_default_path(DEFAULT_POLYMARKET_PUBLIC_SNAPSHOT_FIXTURE)
+        ),
+        pmxt_manifest_path=pmxt_manifest_path or _repo_default_path(DEFAULT_PMXT_MANIFEST_FIXTURE),
+        reference_datasets_manifest_path=(
+            reference_datasets_manifest_path
+            or _repo_default_path(DEFAULT_REFERENCE_DATASETS_MANIFEST_FIXTURE)
+        ),
+    )
+    print(
+        {
+            "status": payload["unblockability_status"],
+            "ready_for_bounded_shadow_rehearsal": payload[
+                "ready_for_bounded_shadow_rehearsal"
+            ],
+            "report": "reports/sequence33/unblockability/latest_unblockability.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @proving_app.command("dry-run-proving")
 def proving_dry_run_proving(periods: int = typer.Option(180, min=60)) -> None:
     payload = run_dry_run_proving_cycle(config=DryRunProvingConfig(periods=periods))
@@ -2403,6 +2566,47 @@ def readiness_canary_blockers(
             "still_blocked": payload["still_blocked"],
             "not_almost_ready": payload["not_almost_ready"],
             "report": "reports/sequence32/canary_blockers/latest_canary_blockers.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("shadow-rehearsal")
+def readiness_shadow_rehearsal(
+    polymarket_snapshot_path: Annotated[
+        Path | None,
+        typer.Option("--polymarket-snapshot-path"),
+    ] = None,
+    pmxt_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--pmxt-manifest-path"),
+    ] = None,
+    reference_datasets_manifest_path: Annotated[
+        Path | None,
+        typer.Option("--reference-datasets-manifest-path"),
+    ] = None,
+) -> None:
+    from quant_os.readiness.shadow_rehearsal_report import write_shadow_rehearsal_report
+
+    payload = write_shadow_rehearsal_report(
+        polymarket_snapshot_path=(
+            polymarket_snapshot_path
+            or _repo_default_path(DEFAULT_POLYMARKET_PUBLIC_SNAPSHOT_FIXTURE)
+        ),
+        pmxt_manifest_path=pmxt_manifest_path or _repo_default_path(DEFAULT_PMXT_MANIFEST_FIXTURE),
+        reference_datasets_manifest_path=(
+            reference_datasets_manifest_path
+            or _repo_default_path(DEFAULT_REFERENCE_DATASETS_MANIFEST_FIXTURE)
+        ),
+    )
+    print(
+        {
+            "status": payload["shadow_rehearsal_status"],
+            "ready_for_bounded_shadow_rehearsal": payload[
+                "ready_for_bounded_shadow_rehearsal"
+            ],
+            "report": "reports/sequence33/shadow_rehearsal/latest_shadow_rehearsal.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }
