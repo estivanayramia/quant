@@ -1,0 +1,61 @@
+sources:
+  - source_id: approved_social_capture_fixture
+    source_type: social_capture
+    url: ""
+    local_path: tests/fixtures/social_capture/x_capture_sample
+    allowed_fetch_mode: LOCAL_CAPTURE_ONLY
+    robots_policy: local_file_not_applicable
+    rate_limit_seconds: 0
+    requires_manual_approval: false
+    network_allowed_by_default: false
+    expected_artifact_type: social_capture_directory
+    safety_classification: research_only
+    notes: Tiny fixture-safe social capture from Phase 34.
+  - source_id: cached_research_page
+    source_type: cached_html
+    url: https://example.invalid/research-note
+    local_path: tests/fixtures/research_intake/cached_research_page.html
+    allowed_fetch_mode: CACHED_HTML_ONLY
+    robots_policy: cached_operator_supplied
+    rate_limit_seconds: 0
+    requires_manual_approval: false
+    network_allowed_by_default: false
+    expected_artifact_type: cached_html
+    safety_classification: research_only
+    notes: Cached page parsing fixture for Scrapling adapter.
+  - source_id: cached_research_page_duplicate
+    source_type: cached_html
+    url: https://example.invalid/research-note-copy
+    local_path: tests/fixtures/research_intake/cached_research_page.html
+    allowed_fetch_mode: CACHED_HTML_ONLY
+    robots_policy: cached_operator_supplied
+    rate_limit_seconds: 0
+    requires_manual_approval: false
+    network_allowed_by_default: false
+    expected_artifact_type: cached_html
+    safety_classification: research_only
+    notes: Intentional duplicate fixture for hash dedupe.
+  - source_id: public_manual_only_blocked_by_default
+    source_type: public_page
+    url: https://example.invalid/public-research
+    local_path: ""
+    allowed_fetch_mode: PUBLIC_DYNAMIC_MANUAL_ONLY
+    robots_policy: obey_robots_and_source_policy
+    rate_limit_seconds: 30
+    requires_manual_approval: true
+    network_allowed_by_default: false
+    expected_artifact_type: html
+    safety_classification: manual_public_research_only
+    notes: Manual network source blocked unless operator explicitly approves.
+  - source_id: blocked_evasive_source
+    source_type: public_page
+    url: https://example.invalid/blocked
+    local_path: ""
+    allowed_fetch_mode: BLOCKED_BY_POLICY
+    robots_policy: blocked
+    rate_limit_seconds: 0
+    requires_manual_approval: true
+    network_allowed_by_default: false
+    expected_artifact_type: none
+    safety_classification: blocked
+    notes: Explicitly blocked by source policy.

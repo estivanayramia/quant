@@ -1064,6 +1064,28 @@ if "%TARGET%"=="sequence34-smoke" (
   python -m pytest tests/test_sequence34_social_research_intake.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="research-intake-smoke" (
+  python -m quant_os.cli research intake-source-policy
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research intake-run
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research knowledge-ledger-summary
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="autonomy-milestones-smoke" (
+  python -m quant_os.cli research evidence-to-shadow-bridge
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness autonomy-milestones
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence35-smoke" (
+  call "%~f0" research-intake-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" autonomy-milestones-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence35_governed_intake_runner.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
