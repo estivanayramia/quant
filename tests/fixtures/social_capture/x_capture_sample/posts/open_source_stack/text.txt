@@ -1,0 +1,1 @@
+Open-source trading stacks like OpenBB, Qlib, LEAN, and lightweight chart tools are useful as benchmark, source, and replay inspiration only.

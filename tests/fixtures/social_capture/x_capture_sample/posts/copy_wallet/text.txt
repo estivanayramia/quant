@@ -1,0 +1,1 @@
+Copy this politician wallet and trader wallet for alpha. Follow their trades automatically and mirror entries.

@@ -1,0 +1,1 @@
+Macro liquidity leads BTC risk appetite over the next quarter. This is only useful if timestamped, replayable, and tested out of sample against a baseline.

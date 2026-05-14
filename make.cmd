@@ -1038,6 +1038,32 @@ if "%TARGET%"=="sequence33-smoke" (
   python -m pytest tests/test_sequence33_shadow_sample_unblockability.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="social-intake-smoke" (
+  python -m quant_os.cli research social-capture-inventory
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research social-post-classification
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="hypothesis-queue-smoke" (
+  python -m quant_os.cli research social-hypothesis-queue
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research social-task-queue
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="evidence-acquisition-smoke" (
+  python -m quant_os.cli research evidence-acquisition-plan
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence34-smoke" (
+  call "%~f0" social-intake-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" hypothesis-queue-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" evidence-acquisition-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence34_social_research_intake.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!

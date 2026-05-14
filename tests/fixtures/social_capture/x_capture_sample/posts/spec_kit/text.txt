@@ -1,0 +1,1 @@
+Spec-driven development turns messy ideas into spec, plan, tasks, and implementation. Use it to preserve reusable research instructions, not trading signals.

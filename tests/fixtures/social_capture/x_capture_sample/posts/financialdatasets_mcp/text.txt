@@ -1,0 +1,1 @@
+financialdatasets MCP style source may expose historical market data. Treat as a read-only source candidate subject to registry, license, cost, coverage, and offline fixture checks.
