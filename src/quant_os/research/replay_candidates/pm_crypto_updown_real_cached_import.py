@@ -20,6 +20,7 @@ from quant_os.research.replay_candidates.real_cached_artifact_models import (
 from quant_os.research.social_intake.social_capture_models import SOCIAL_INTAKE_SAFETY
 
 REPORT_ROOT = Path("reports/sequence39/real_cached_import")
+SEQUENCE41_REPORT_ROOT = Path("reports/sequence41/real_cached_import")
 
 
 def build_pm_crypto_updown_real_cached_source(
@@ -92,6 +93,74 @@ def import_pm_crypto_updown_real_cached_artifacts(
     return payload
 
 
+def import_pm_crypto_updown_real_cached_artifact_roots(
+    *,
+    import_roots: list[str | Path],
+    output_root: str | Path = ".",
+) -> dict[str, Any]:
+    artifacts, rejected, dedupe_dropped, root_summaries = _load_valid_artifacts_from_roots(
+        import_roots,
+    )
+    normalized = _normalize_artifacts(
+        artifacts,
+        source_name="real_cached_import_aggregate",
+    )
+    rows = normalized["rows"]
+    replay_ready = [row for row in rows if is_replay_ready_row(row)]
+    real_cached_rows = [
+        row
+        for row in replay_ready
+        if row.get("source_quality") == "real_cached"
+        and row.get("label_status") == "RESOLVED"
+        and row.get("resolved_outcome") is not None
+    ]
+    payload = {
+        "schema_version": "pm_crypto_updown_real_cached_import_v2",
+        "sequence": "41",
+        "candidate_id": CANDIDATE_ID,
+        "import_status": (
+            "REAL_CACHED_ROWS_IMPORTED"
+            if real_cached_rows
+            else "REAL_CACHED_CAPTURE_READY"
+            if not artifacts
+            else "REAL_CACHED_IMPORT_READY"
+        ),
+        "import_roots": [str(Path(root)).replace("\\", "/") for root in import_roots],
+        "root_summaries": root_summaries,
+        "manifest_only_root_count": sum(
+            1
+            for item in root_summaries
+            if item["coverage_status"] == "MANIFEST_ONLY_NO_ARTIFACTS"
+        ),
+        "accepted_artifact_count": len(artifacts),
+        "rejected_artifact_count": len(rejected),
+        "dedupe_dropped_artifact_count": dedupe_dropped,
+        "rejected_artifacts": rejected,
+        "rejected_by_reason": dict(sorted(Counter(item["reason"] for item in rejected).items())),
+        "source_mode_counts": dict(sorted(Counter(item.capture_mode for item in artifacts).items())),
+        "source_quality_counts": dict(sorted(Counter(item.source_quality for item in artifacts).items())),
+        "artifact_type_counts": dict(sorted(Counter(item.artifact_type for item in artifacts).items())),
+        "normalized_source": _summarize_normalized_source(normalized),
+        "imported_replay_ready_row_count": len(replay_ready),
+        "real_cached_replay_ready_row_count": len(real_cached_rows),
+        "real_cached_rows_imported": len(real_cached_rows),
+        "local_files_only": True,
+        "network_fetch_attempted": False,
+        "raw_unvalidated_artifacts_replay_ready": False,
+        **SOCIAL_INTAKE_SAFETY,
+        "live_allowed": False,
+        "live_promotion_status": "LIVE_BLOCKED",
+        "evidence_only": True,
+    }
+    payload["report_paths"] = _write_report(
+        payload,
+        output_root=output_root,
+        report_root=SEQUENCE41_REPORT_ROOT,
+        title="Sequence 41 Real-Cached Import",
+    )
+    return payload
+
+
 def _load_valid_artifacts(import_root: str | Path) -> tuple[list[RealCachedArtifact], list[dict[str, Any]], int]:
     accepted: list[RealCachedArtifact] = []
     rejected: list[dict[str, Any]] = []
@@ -121,6 +190,96 @@ def _load_valid_artifacts(import_root: str | Path) -> tuple[list[RealCachedArtif
         seen_keys.add(artifact.artifact_key)
         accepted.append(artifact)
     return accepted, rejected, dedupe_dropped
+
+
+def _load_valid_artifacts_from_roots(
+    import_roots: list[str | Path],
+) -> tuple[list[RealCachedArtifact], list[dict[str, Any]], int, list[dict[str, Any]]]:
+    accepted: list[RealCachedArtifact] = []
+    rejected: list[dict[str, Any]] = []
+    seen_hashes: set[str] = set()
+    seen_keys: set[tuple[str, str, str, str]] = set()
+    dedupe_dropped = 0
+    root_summaries: list[dict[str, Any]] = []
+    global_index = 0
+    for root_index, import_root in enumerate(import_roots, start=1):
+        root = Path(import_root)
+        root_raws = _iter_raw_artifacts(root)
+        root_accepted = 0
+        root_rejected = 0
+        root_dedupe = 0
+        for local_index, raw in enumerate(root_raws, start=1):
+            global_index += 1
+            reason = _precheck_reject_reason(raw)
+            if reason is not None:
+                rejected.append(
+                    {
+                        "index": global_index,
+                        "root_index": root_index,
+                        "root_local_index": local_index,
+                        "reason": reason,
+                        "source_id": raw.get("source_id"),
+                        "import_root": str(root).replace("\\", "/"),
+                    }
+                )
+                root_rejected += 1
+                continue
+            try:
+                artifact = RealCachedArtifact.model_validate(raw)
+            except ValidationError as exc:
+                rejected.append(
+                    {
+                        "index": global_index,
+                        "root_index": root_index,
+                        "root_local_index": local_index,
+                        "reason": _validation_reject_reason(raw, exc),
+                        "source_id": raw.get("source_id"),
+                        "import_root": str(root).replace("\\", "/"),
+                    }
+                )
+                root_rejected += 1
+                continue
+            if artifact.normalized_hash in seen_hashes or artifact.artifact_key in seen_keys:
+                dedupe_dropped += 1
+                root_dedupe += 1
+                continue
+            seen_hashes.add(artifact.normalized_hash)
+            seen_keys.add(artifact.artifact_key)
+            accepted.append(artifact)
+            root_accepted += 1
+        root_summaries.append(
+            {
+                "root_index": root_index,
+                "import_root": str(root).replace("\\", "/"),
+                "raw_artifact_count": len(root_raws),
+                "accepted_artifact_count": root_accepted,
+                "rejected_artifact_count": root_rejected,
+                "dedupe_dropped_artifact_count": root_dedupe,
+                "coverage_status": _root_coverage_status(
+                    root,
+                    raw_artifact_count=len(root_raws),
+                    accepted_artifact_count=root_accepted,
+                    rejected_artifact_count=root_rejected,
+                ),
+            }
+        )
+    return accepted, rejected, dedupe_dropped, root_summaries
+
+
+def _root_coverage_status(
+    root: Path,
+    *,
+    raw_artifact_count: int,
+    accepted_artifact_count: int,
+    rejected_artifact_count: int,
+) -> str:
+    if accepted_artifact_count > 0:
+        return "REPLAY_ARTIFACTS_AVAILABLE"
+    if raw_artifact_count == 0 and (root / "manifest.json").exists():
+        return "MANIFEST_ONLY_NO_ARTIFACTS"
+    if rejected_artifact_count > 0:
+        return "ONLY_MALFORMED_ARTIFACTS"
+    return "NO_REPLAY_ARTIFACTS_FOUND"
 
 
 def _iter_raw_artifacts(import_root: str | Path) -> list[dict[str, Any]]:
@@ -341,14 +500,20 @@ def _import_status(source: dict[str, Any]) -> str:
     return "REAL_CACHED_CAPTURE_READY"
 
 
-def _write_report(payload: dict[str, Any], *, output_root: str | Path) -> dict[str, str]:
-    root = Path(output_root) / REPORT_ROOT
+def _write_report(
+    payload: dict[str, Any],
+    *,
+    output_root: str | Path,
+    report_root: Path = REPORT_ROOT,
+    title: str = "Sequence 39 Real-Cached Import",
+) -> dict[str, str]:
+    root = Path(output_root) / report_root
     root.mkdir(parents=True, exist_ok=True)
     json_path = root / "latest_real_cached_import.json"
     md_path = root / "latest_real_cached_import.md"
     json_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
     lines = [
-        "# Sequence 39 Real-Cached Import",
+        f"# {title}",
         "",
         "Local-only import and normalization of read-only replay artifacts.",
         "",

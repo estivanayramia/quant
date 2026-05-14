@@ -14,6 +14,9 @@ from quant_os.research.replay_candidates.pm_crypto_updown_schema import CANDIDAT
 from quant_os.research.social_intake.social_capture_models import SOCIAL_INTAKE_SAFETY
 
 REPORT_ROOT = Path("reports/sequence39/threshold_progress")
+SEQUENCE41_REPORT_ROOT = Path("reports/sequence41/threshold_progress")
+PHASE40_PRIMARY_ROW_COUNT = 10
+PHASE40_REAL_CACHED_ROW_COUNT = 4
 
 
 def evaluate_pm_crypto_updown_threshold_progress(
@@ -78,6 +81,55 @@ def write_pm_crypto_updown_threshold_progress_report(
         real_cached_artifact_roots=real_cached_artifact_roots,
     )
     payload["report_paths"] = _write_report(payload, output_root=output_root)
+    return payload
+
+
+def evaluate_pm_crypto_updown_sequence41_threshold_progress(
+    *,
+    fixture_root: str | Path,
+    real_cached_artifact_roots: list[str | Path] | None = None,
+) -> dict[str, Any]:
+    payload = evaluate_pm_crypto_updown_threshold_progress(
+        fixture_root=fixture_root,
+        real_cached_artifact_roots=real_cached_artifact_roots,
+    )
+    current_primary = payload["current_primary_row_count"]
+    current_real_cached = payload["current_real_cached_row_count"]
+    rows_added_by_source_quality = {}
+    real_cached_added = max(current_real_cached - PHASE40_REAL_CACHED_ROW_COUNT, 0)
+    if real_cached_added:
+        rows_added_by_source_quality["real_cached"] = real_cached_added
+    payload.update(
+        {
+            "sequence": "41",
+            "previous_primary_row_count": PHASE40_PRIMARY_ROW_COUNT,
+            "previous_real_cached_row_count": PHASE40_REAL_CACHED_ROW_COUNT,
+            "primary_rows_moved_toward_20": current_primary > PHASE40_PRIMARY_ROW_COUNT,
+            "threshold_status": _threshold_status(PHASE40_PRIMARY_ROW_COUNT, current_primary),
+            "rows_added_by_source_quality": rows_added_by_source_quality,
+            "phase41_can_run_expanded_shadow_replay": payload["row_gap"] == 0,
+            "next_operator_action": _sequence41_next_operator_action(payload),
+        }
+    )
+    return payload
+
+
+def write_pm_crypto_updown_sequence41_threshold_progress_report(
+    *,
+    fixture_root: str | Path,
+    output_root: str | Path = ".",
+    real_cached_artifact_roots: list[str | Path] | None = None,
+) -> dict[str, Any]:
+    payload = evaluate_pm_crypto_updown_sequence41_threshold_progress(
+        fixture_root=fixture_root,
+        real_cached_artifact_roots=real_cached_artifact_roots,
+    )
+    payload["report_paths"] = _write_report(
+        payload,
+        output_root=output_root,
+        report_root=SEQUENCE41_REPORT_ROOT,
+        title="Sequence 41 Threshold Progress",
+    )
     return payload
 
 
@@ -233,14 +285,42 @@ def _next_operator_action(
     )
 
 
-def _write_report(payload: dict[str, Any], *, output_root: str | Path) -> dict[str, str]:
-    root = Path(output_root) / REPORT_ROOT
+def _sequence41_next_operator_action(payload: dict[str, Any]) -> str:
+    source_coverage = payload["source_coverage"]
+    if payload["row_gap"] == 0:
+        return (
+            "Run python -m quant_os.cli readiness expanded-shadow-replay-readiness "
+            "--real-cached-root <existing_root>."
+        )
+    return (
+        "Run python -m quant_os.cli data pm-crypto-updown-capture-plan --manual-network-ok "
+        "--run-id <run_id>, collect at least "
+        f"{source_coverage['additional_primary_rows_needed']} additional primary replay-ready "
+        "rows (about "
+        f"{source_coverage['additional_two_token_windows_needed_estimate']} two-token "
+        "UP/DOWN windows) with market metadata, condition id, both token ids/outcomes, "
+        "CLOB/orderbook snapshots, near-time spot snapshots/candles, resolved label data, "
+        "liquidity, and spread; then run python -m quant_os.cli data "
+        "pm-crypto-updown-real-cached-import --real-cached-root "
+        "tests/fixtures/replay_candidates/pm_crypto_updown/real_cached_sample "
+        "--real-cached-root data/external/manual_captures/pm_crypto_updown/<run_id>."
+    )
+
+
+def _write_report(
+    payload: dict[str, Any],
+    *,
+    output_root: str | Path,
+    report_root: Path = REPORT_ROOT,
+    title: str = "Sequence 39 Threshold Progress",
+) -> dict[str, str]:
+    root = Path(output_root) / report_root
     root.mkdir(parents=True, exist_ok=True)
     json_path = root / "latest_threshold_progress.json"
     md_path = root / "latest_threshold_progress.md"
     json_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
     lines = [
-        "# Sequence 39 Threshold Progress",
+        f"# {title}",
         "",
         "Evidence-gap report for pm_crypto_updown_repricing_lag.",
         "",

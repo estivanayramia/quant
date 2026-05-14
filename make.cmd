@@ -1188,6 +1188,28 @@ if "%TARGET%"=="sequence40-smoke" (
   python -m pytest tests/test_sequence40_real_cached_replay_threshold.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="pm-crypto-updown-window-acquisition-smoke" (
+  python -m quant_os.cli data pm-crypto-updown-capture-plan --manual-network-ok --run-id pm_crypto_updown_manual_041
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-window-acquisition --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample --real-cached-root data\external\manual_captures\pm_crypto_updown\pm_crypto_updown_manual_041
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence41-smoke" (
+  python -m quant_os.cli data pm-crypto-updown-capture-plan --manual-network-ok --run-id pm_crypto_updown_manual_041
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli data pm-crypto-updown-real-cached-import --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample --real-cached-root data\external\manual_captures\pm_crypto_updown\pm_crypto_updown_manual_041
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-window-acquisition --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample --real-cached-root data\external\manual_captures\pm_crypto_updown\pm_crypto_updown_manual_041
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-threshold-progress --sequence41 --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample --real-cached-root data\external\manual_captures\pm_crypto_updown\pm_crypto_updown_manual_041
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-real-cached-replay-eval --sequence41 --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample --real-cached-root data\external\manual_captures\pm_crypto_updown\pm_crypto_updown_manual_041
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness expanded-shadow-replay-readiness --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample --real-cached-root data\external\manual_captures\pm_crypto_updown\pm_crypto_updown_manual_041
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence41_real_cached_window_acquisition.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!

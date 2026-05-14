@@ -6,12 +6,15 @@ from typing import Any
 
 from quant_os.readiness.autonomy_milestone_report import (
     write_sequence38_autonomy_milestone_report,
+    write_sequence41_autonomy_milestone_report,
 )
 from quant_os.readiness.expanded_shadow_replay_readiness import (
     evaluate_expanded_shadow_replay_readiness,
+    evaluate_sequence41_expanded_shadow_replay_readiness,
 )
 
 REPORT_ROOT = Path("reports/sequence38/expanded_shadow_replay_readiness")
+SEQUENCE41_REPORT_ROOT = Path("reports/sequence41/expanded_shadow_replay_readiness")
 
 
 def write_expanded_shadow_replay_readiness_report(
@@ -31,14 +34,42 @@ def write_expanded_shadow_replay_readiness_report(
     return payload
 
 
-def _write_report(payload: dict[str, Any], *, output_root: str | Path) -> dict[str, str]:
-    root = Path(output_root) / REPORT_ROOT
+def write_sequence41_expanded_shadow_replay_readiness_report(
+    *,
+    real_cached_replay_eval: dict[str, Any],
+    output_root: str | Path = ".",
+) -> dict[str, Any]:
+    payload = evaluate_sequence41_expanded_shadow_replay_readiness(
+        real_cached_replay_eval=real_cached_replay_eval,
+    )
+    payload["report_paths"] = _write_report(
+        payload,
+        output_root=output_root,
+        report_root=SEQUENCE41_REPORT_ROOT,
+        title="Sequence 41 Expanded Shadow Replay Readiness",
+    )
+    autonomy = write_sequence41_autonomy_milestone_report(
+        expanded_shadow_readiness=payload,
+        output_root=output_root,
+    )
+    payload["autonomy_milestone_report_paths"] = autonomy["report_paths"]
+    return payload
+
+
+def _write_report(
+    payload: dict[str, Any],
+    *,
+    output_root: str | Path,
+    report_root: Path = REPORT_ROOT,
+    title: str = "Sequence 38 Expanded Shadow Replay Readiness",
+) -> dict[str, str]:
+    root = Path(output_root) / report_root
     root.mkdir(parents=True, exist_ok=True)
     json_path = root / "latest_expanded_shadow_replay_readiness.json"
     md_path = root / "latest_expanded_shadow_replay_readiness.md"
     json_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
     lines = [
-        "# Sequence 38 Expanded Shadow Replay Readiness",
+        f"# {title}",
         "",
         "Gate for expanded offline shadow replay only. Live and canary remain blocked.",
         "",
