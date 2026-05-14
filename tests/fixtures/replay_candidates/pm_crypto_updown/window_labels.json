@@ -1,0 +1,14 @@
+[
+  {
+    "market_id": "pm_btc_updown_20260513_1200",
+    "resolved_outcome": "UP",
+    "label_status": "RESOLVED",
+    "resolution_source_id": "fixture_resolution"
+  },
+  {
+    "market_id": "pm_btc_updown_20260513_1201",
+    "resolved_outcome": null,
+    "label_status": "UNRESOLVED",
+    "resolution_source_id": "fixture_resolution"
+  }
+]

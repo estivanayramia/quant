@@ -1086,6 +1086,24 @@ if "%TARGET%"=="sequence35-smoke" (
   python -m pytest tests/test_sequence35_governed_intake_runner.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="pm-crypto-updown-dataset-smoke" (
+  python -m quant_os.cli research pm-crypto-updown-dataset
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-quality
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="replay-dataset-readiness-smoke" (
+  python -m quant_os.cli readiness replay-dataset-readiness
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence36-smoke" (
+  call "%~f0" pm-crypto-updown-dataset-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" replay-dataset-readiness-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence36_pm_crypto_updown_replay_dataset.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!

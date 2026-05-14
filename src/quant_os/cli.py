@@ -284,6 +284,9 @@ DEFAULT_SOCIAL_CAPTURE_FIXTURE = (
     Path("tests") / "fixtures" / "social_capture" / "x_capture_sample"
 )
 DEFAULT_RESEARCH_INTAKE_SOURCE_CONFIG = Path("configs") / "research_intake_sources.yaml"
+DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT = (
+    Path("tests") / "fixtures" / "replay_candidates" / "pm_crypto_updown"
+)
 
 
 def _repo_default_path(path: Path) -> Path:
@@ -686,6 +689,53 @@ def research_evidence_to_shadow_bridge(
             "status": payload["bridge_status"],
             "targeted_blockers": payload["targeted_blockers"],
             "report": "reports/sequence35/evidence_bridge/latest_evidence_to_shadow_bridge.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-crypto-updown-dataset")
+def research_pm_crypto_updown_dataset(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+) -> None:
+    from quant_os.research.replay_candidates.pm_crypto_updown_dataset_report import (
+        write_pm_crypto_updown_dataset_report,
+    )
+
+    payload = write_pm_crypto_updown_dataset_report(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+    )
+    print(
+        {
+            "status": payload["readiness_status"],
+            "row_count": payload["row_count"],
+            "replay_ready_row_count": payload["replay_ready_row_count"],
+            "report": "reports/sequence36/replay_dataset/latest_pm_crypto_updown_dataset.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-crypto-updown-quality")
+def research_pm_crypto_updown_quality(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+) -> None:
+    from quant_os.research.replay_candidates.pm_crypto_updown_dataset_report import (
+        write_pm_crypto_updown_dataset_report,
+    )
+
+    payload = write_pm_crypto_updown_dataset_report(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+    )
+    print(
+        {
+            "status": payload["readiness_status"],
+            "clob_coverage": payload["clob_coverage"],
+            "spot_coverage": payload["spot_coverage"],
+            "blockers": payload["blockers"],
+            "report": "reports/sequence36/replay_dataset/latest_pm_crypto_updown_dataset.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }
@@ -2830,6 +2880,38 @@ def readiness_autonomy_milestones() -> None:
             "milestone_count": payload["milestone_count"],
             "next_required_milestone": payload["next_required_milestone"]["milestone_id"],
             "report": "reports/sequence35/autonomy_milestones/latest_autonomy_milestones.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("replay-dataset-readiness")
+def readiness_replay_dataset_readiness(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+) -> None:
+    from quant_os.readiness.autonomy_milestone_report import (
+        write_sequence36_autonomy_milestone_report,
+    )
+    from quant_os.readiness.replay_dataset_readiness_report import (
+        write_replay_dataset_readiness_report,
+    )
+    from quant_os.research.replay_candidates.pm_crypto_updown_dataset_report import (
+        write_pm_crypto_updown_dataset_report,
+    )
+
+    dataset = write_pm_crypto_updown_dataset_report(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+    )
+    payload = write_replay_dataset_readiness_report(dataset_report=dataset)
+    write_sequence36_autonomy_milestone_report(replay_dataset_readiness=payload)
+    print(
+        {
+            "status": payload["readiness_status"],
+            "ready_for_phase37_candidate_replay": payload[
+                "ready_for_phase37_candidate_replay"
+            ],
+            "report": "reports/sequence36/replay_dataset_readiness/latest_replay_dataset_readiness.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }

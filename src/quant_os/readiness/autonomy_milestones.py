@@ -144,6 +144,53 @@ def build_autonomy_milestones() -> dict[str, Any]:
     }
 
 
+def build_sequence36_autonomy_milestones(*, replay_dataset_readiness: dict[str, Any]) -> dict[str, Any]:
+    payload = build_autonomy_milestones()
+    milestones = [dict(item) for item in payload["milestones"]]
+    readiness_status = replay_dataset_readiness["readiness_status"]
+    dataset_has_shape = replay_dataset_readiness["row_count"] > 0
+    for milestone in milestones:
+        if milestone["milestone_id"] == "evidence_acquisition_repeatable":
+            milestone["status"] = "PARTIAL" if dataset_has_shape else "BLOCKED"
+            milestone["evidence_source"] = "sequence36_pm_crypto_updown_dataset"
+            milestone["required_next_action"] = (
+                "resolve dataset quality blockers before candidate replay testing"
+            )
+            milestone["phase_likely_responsible"] = "Phase 36"
+        if milestone["milestone_id"] == "replay_inputs_sufficient":
+            milestone["status"] = (
+                "MET"
+                if readiness_status == "REPLAY_DATASET_READY_FOR_CANDIDATE_TEST"
+                else "PARTIAL"
+                if dataset_has_shape
+                else "BLOCKED"
+            )
+            milestone["current_blockers"] = replay_dataset_readiness["blockers"]
+            milestone["evidence_source"] = "sequence36_replay_dataset_readiness"
+            milestone["required_next_action"] = (
+                "run Phase 37 candidate replay/backtest only after readiness is sufficient"
+            )
+            milestone["phase_likely_responsible"] = "Phase 37"
+        if milestone["milestone_id"] == "shadow_proving_threshold_met":
+            milestone["status"] = "BLOCKED"
+            milestone["current_blockers"] = ["CANDIDATE_REPLAY_NOT_TESTED"]
+            milestone["required_next_action"] = "test candidate in replay before any shadow proving claim"
+            milestone["phase_likely_responsible"] = "Phase 37"
+    next_required = next(item for item in milestones if item["status"] not in {"MET"})
+    payload.update(
+        {
+            "sequence": "36",
+            "ledger_status": "FINITE_AUTONOMY_PATH_UPDATED_WITH_REPLAY_DATASET",
+            "milestones": milestones,
+            "next_required_milestone": next_required,
+            "replay_dataset_readiness_status": readiness_status,
+            "live_orders_allowed": False,
+            "live_promotion_status": "LIVE_BLOCKED",
+        }
+    )
+    return payload
+
+
 def _milestone(
     index: int,
     milestone_id: str,

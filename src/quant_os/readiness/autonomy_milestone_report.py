@@ -4,9 +4,13 @@ import json
 from pathlib import Path
 from typing import Any
 
-from quant_os.readiness.autonomy_milestones import build_autonomy_milestones
+from quant_os.readiness.autonomy_milestones import (
+    build_autonomy_milestones,
+    build_sequence36_autonomy_milestones,
+)
 
 REPORT_ROOT = Path("reports/sequence35/autonomy_milestones")
+SEQUENCE36_REPORT_ROOT = Path("reports/sequence36/autonomy_milestones")
 
 
 def write_autonomy_milestone_report(*, output_root: str | Path = ".") -> dict[str, Any]:
@@ -15,8 +19,29 @@ def write_autonomy_milestone_report(*, output_root: str | Path = ".") -> dict[st
     return payload
 
 
-def _write_report(payload: dict[str, Any], *, output_root: str | Path) -> dict[str, str]:
-    root = Path(output_root) / REPORT_ROOT
+def write_sequence36_autonomy_milestone_report(
+    *,
+    replay_dataset_readiness: dict[str, Any],
+    output_root: str | Path = ".",
+) -> dict[str, Any]:
+    payload = build_sequence36_autonomy_milestones(
+        replay_dataset_readiness=replay_dataset_readiness,
+    )
+    payload["report_paths"] = _write_report(
+        payload,
+        output_root=output_root,
+        report_root=SEQUENCE36_REPORT_ROOT,
+    )
+    return payload
+
+
+def _write_report(
+    payload: dict[str, Any],
+    *,
+    output_root: str | Path,
+    report_root: Path = REPORT_ROOT,
+) -> dict[str, str]:
+    root = Path(output_root) / report_root
     root.mkdir(parents=True, exist_ok=True)
     json_path = root / "latest_autonomy_milestones.json"
     md_path = root / "latest_autonomy_milestones.md"
