@@ -78,7 +78,7 @@ def _guard_blockers(paper_report: dict[str, Any]) -> list[str]:
         blockers.append("OOS_WALK_FORWARD_MISSING")
     if paper_report.get("one_row_dominance", {}).get("detected"):
         blockers.append("ONE_ROW_DOMINANCE")
-    if paper_report.get("source_quality_tier") in {"UNKNOWN", "WEAK", None}:
+    if paper_report.get("source_quality_tier") in {"UNKNOWN", "WEAK", "SYNTHETIC_ONLY", None}:
         blockers.append("SOURCE_QUALITY_TOO_WEAK")
     if paper_report.get("synthetic_rows_counted_as_profit_evidence") is True:
         blockers.append("SYNTHETIC_ROWS_COUNTED_AS_EVIDENCE")
