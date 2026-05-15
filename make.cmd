@@ -1254,6 +1254,36 @@ if "%TARGET%"=="sequence44-smoke" (
   python -m pytest tests/test_sequence44_allowed_intent_signal_discrimination.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="allowed-intent-acquisition-smoke" (
+  python -m quant_os.cli data pm-crypto-updown-capture-plan --manual-network-ok --run-id pm_crypto_updown_manual_045
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-allowed-intent-acquisition --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-allowed-intent-progress --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="allowed-intent-decision-smoke" (
+  python -m quant_os.cli research pm-crypto-updown-discriminator-update --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-overfit-guard-update --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-baseline-placebo-update --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness pm-crypto-updown-allowed-intent-decision --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving pm-crypto-updown-bounded-shadow-rehearsal-spec --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-phase45-reference-notes
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence45-smoke" (
+  call "%~f0" allowed-intent-acquisition-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" allowed-intent-decision-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence45_allowed_intent_evidence_expansion.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!

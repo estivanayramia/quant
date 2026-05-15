@@ -562,6 +562,110 @@ def build_sequence44_autonomy_milestones(
     return payload
 
 
+def build_sequence45_autonomy_milestones(
+    *,
+    candidate_decision: dict[str, Any],
+) -> dict[str, Any]:
+    payload = build_autonomy_milestones()
+    milestones = [dict(item) for item in payload["milestones"]]
+    allowed_threshold_met = (
+        int(candidate_decision["allowed_primary_intent_count"]) >= 5
+        and int(candidate_decision["allowed_real_cached_intent_count"]) >= 3
+    )
+    ready = candidate_decision["ready_for_bounded_shadow_rehearsal"]
+    decision_status = candidate_decision["decision_status"]
+    allowed_milestone = _milestone(
+        6,
+        "allowed_intent_threshold_met",
+        "Allowed-intent threshold met",
+        "MET" if allowed_threshold_met else "BLOCKED",
+        [] if allowed_threshold_met else candidate_decision["blockers"],
+        "sequence45_allowed_intent_decision",
+        (
+            "continue bounded offline shadow rehearsal checks"
+            if allowed_threshold_met
+            else "collect enough allowed primary and real-cached intents before rehearsal"
+        ),
+        "Phase 45",
+    )
+    milestones.insert(6, allowed_milestone)
+    for index, milestone in enumerate(milestones, start=1):
+        milestone["milestone_index"] = index
+        if milestone["milestone_id"] == "evidence_acquisition_repeatable":
+            milestone["status"] = "MET"
+            milestone["current_blockers"] = []
+            milestone["evidence_source"] = "sequence42_real_cached_window_import"
+            milestone["required_next_action"] = (
+                "preserve real-cached evidence acquisition and collect allowed-intent-targeted windows"
+            )
+            milestone["phase_likely_responsible"] = "Phase 45"
+        if milestone["milestone_id"] == "replay_inputs_sufficient":
+            milestone["status"] = "MET"
+            milestone["current_blockers"] = []
+            milestone["evidence_source"] = "sequence43_policy_replay_eval"
+            milestone["required_next_action"] = (
+                "rerun allowed-intent policy gates after each import"
+            )
+            milestone["phase_likely_responsible"] = "Phase 45"
+        if milestone["milestone_id"] == "shadow_proving_threshold_met":
+            milestone["status"] = "MET"
+            milestone["current_blockers"] = []
+            milestone["evidence_source"] = "sequence44_candidate_decision"
+            milestone["required_next_action"] = (
+                "keep anti-overfit and baseline/placebo gates active"
+            )
+            milestone["phase_likely_responsible"] = "Phase 45"
+        if milestone["milestone_id"] == "bounded_shadow_rehearsal_ready":
+            milestone["status"] = "MET" if ready else "BLOCKED"
+            milestone["current_blockers"] = [] if ready else candidate_decision["blockers"]
+            milestone["evidence_source"] = "sequence45_candidate_decision"
+            milestone["required_next_action"] = (
+                "start bounded offline shadow rehearsal"
+                if ready
+                else "do not rehearse until the Phase 45 candidate decision gate passes"
+            )
+            milestone["phase_likely_responsible"] = "Phase 45"
+        if milestone["milestone_id"] in {
+            "canary_preconditions_met",
+            "manual_arming_protocol_present",
+            "first_tiny_canary_allowed",
+            "real_canary_reconciliation_passed",
+            "expansion_blocked_until_repeated_proof",
+        }:
+            milestone["status"] = "BLOCKED"
+            milestone["current_blockers"] = ["LIVE_AND_CANARY_STILL_DISABLED"]
+            milestone["required_next_action"] = "do not enable live or canary in Phase 45"
+            milestone["phase_likely_responsible"] = "Future phase"
+    next_required = next(item for item in milestones if item["status"] not in {"MET"})
+    payload.update(
+        {
+            "sequence": "45",
+            "ledger_status": "FINITE_AUTONOMY_PATH_UPDATED_WITH_ALLOWED_INTENT_EXPANSION",
+            "milestone_count": len(milestones),
+            "milestones": milestones,
+            "next_required_milestone": next_required,
+            "candidate_decision_status": decision_status,
+            "phase45_movement": candidate_decision.get(
+                "autonomy_milestones",
+                {
+                    "allowed_intent_threshold": "met"
+                    if allowed_threshold_met
+                    else "blocked",
+                    "bounded_shadow_rehearsal": "ready" if ready else "blocked",
+                    "canary": "blocked",
+                    "live": "blocked",
+                },
+            ),
+            "allowed_intent_threshold_met": allowed_threshold_met,
+            "bounded_shadow_rehearsal_ready": ready,
+            "canary_ready": False,
+            "live_orders_allowed": False,
+            "live_promotion_status": "LIVE_BLOCKED",
+        }
+    )
+    return payload
+
+
 def _milestone(
     index: int,
     milestone_id: str,

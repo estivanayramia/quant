@@ -1302,6 +1302,163 @@ def research_pm_crypto_updown_baseline_placebo_attribution(
     )
 
 
+@research_app.command("pm-crypto-updown-allowed-intent-acquisition")
+def research_pm_crypto_updown_allowed_intent_acquisition(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+    real_cached_root: Annotated[list[Path] | None, typer.Option("--real-cached-root")] = None,
+) -> None:
+    from quant_os.research.replay_candidates.pm_crypto_updown_allowed_intent_acquisition import (
+        write_pm_crypto_updown_allowed_intent_acquisition_plan,
+    )
+
+    payload = write_pm_crypto_updown_allowed_intent_acquisition_plan(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+        real_cached_artifact_roots=_optional_path_list(real_cached_root),
+    )
+    print(
+        {
+            "status": payload["capture_or_import_status"],
+            "required_additional_allowed_primary_intents": payload[
+                "required_additional_allowed_primary_intents"
+            ],
+            "required_additional_allowed_real_cached_intents": payload[
+                "required_additional_allowed_real_cached_intents"
+            ],
+            "estimated_additional_two_token_windows_required": payload[
+                "estimated_additional_two_token_windows_required"
+            ],
+            "report": "reports/sequence45/allowed_intent_acquisition/latest_allowed_intent_acquisition_plan.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-crypto-updown-allowed-intent-progress")
+def research_pm_crypto_updown_allowed_intent_progress(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+    real_cached_root: Annotated[list[Path] | None, typer.Option("--real-cached-root")] = None,
+) -> None:
+    from quant_os.research.replay_candidates.pm_crypto_updown_allowed_intent_progress import (
+        write_pm_crypto_updown_allowed_intent_progress_report,
+    )
+
+    payload = write_pm_crypto_updown_allowed_intent_progress_report(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+        real_cached_artifact_roots=_optional_path_list(real_cached_root),
+    )
+    print(
+        {
+            "status": payload["progress_status"],
+            "new_allowed_primary_intents": payload["new_allowed_primary_intents"],
+            "new_allowed_real_cached_intents": payload["new_allowed_real_cached_intents"],
+            "current_allowed_primary_intents": payload["current_allowed_primary_intents"],
+            "current_allowed_real_cached_intents": payload[
+                "current_allowed_real_cached_intents"
+            ],
+            "report": "reports/sequence45/allowed_intent_progress/latest_allowed_intent_progress.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-crypto-updown-discriminator-update")
+def research_pm_crypto_updown_discriminator_update(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+    real_cached_root: Annotated[list[Path] | None, typer.Option("--real-cached-root")] = None,
+) -> None:
+    from quant_os.research.replay_candidates.pm_crypto_updown_allowed_intent_progress import (
+        write_pm_crypto_updown_discriminator_update_report,
+    )
+
+    payload = write_pm_crypto_updown_discriminator_update_report(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+        real_cached_artifact_roots=_optional_path_list(real_cached_root),
+    )
+    print(
+        {
+            "status": payload["update_status"],
+            "input_allowed_primary_count": payload["input_allowed_primary_count"],
+            "discriminator_count": len(payload["discriminators"]),
+            "report": "reports/sequence45/discriminators/latest_discriminator_update.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-crypto-updown-overfit-guard-update")
+def research_pm_crypto_updown_overfit_guard_update(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+    real_cached_root: Annotated[list[Path] | None, typer.Option("--real-cached-root")] = None,
+) -> None:
+    from quant_os.research.replay_candidates.pm_crypto_updown_allowed_intent_progress import (
+        write_pm_crypto_updown_overfit_guard_update_report,
+    )
+
+    payload = write_pm_crypto_updown_overfit_guard_update_report(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+        real_cached_artifact_roots=_optional_path_list(real_cached_root),
+    )
+    print(
+        {
+            "status": payload["status"],
+            "passes": payload["passes"],
+            "blockers": payload["blockers"],
+            "report": "reports/sequence45/overfit_guard/latest_overfit_guard_update.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-crypto-updown-baseline-placebo-update")
+def research_pm_crypto_updown_baseline_placebo_update(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+    real_cached_root: Annotated[list[Path] | None, typer.Option("--real-cached-root")] = None,
+) -> None:
+    from quant_os.research.replay_candidates.pm_crypto_updown_allowed_intent_progress import (
+        write_pm_crypto_updown_baseline_placebo_update_report,
+    )
+
+    payload = write_pm_crypto_updown_baseline_placebo_update_report(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+        real_cached_artifact_roots=_optional_path_list(real_cached_root),
+    )
+    print(
+        {
+            "status": payload["active_blocker"],
+            "candidate_beats_market_baseline": payload["candidate_beats_market_baseline"],
+            "candidate_beats_no_skill_baseline": payload["candidate_beats_no_skill_baseline"],
+            "candidate_beats_or_separates_from_placebos": payload[
+                "candidate_beats_or_separates_from_placebos"
+            ],
+            "report": "reports/sequence45/baseline_placebo/latest_baseline_placebo_update.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-crypto-updown-phase45-reference-notes")
+def research_pm_crypto_updown_phase45_reference_notes() -> None:
+    from quant_os.research.replay_candidates.pm_crypto_updown_phase45_notes import (
+        write_pm_crypto_updown_phase45_reference_notes,
+    )
+
+    payload = write_pm_crypto_updown_phase45_reference_notes()
+    print(
+        {
+            "status": "REFERENCE_NOTES_WRITTEN",
+            "candidate_backlog_families": payload["candidate_backlog_families"],
+            "report": "reports/sequence45/reference_notes/latest_phase45_reference_notes.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @research_app.command("prediction-market-quality")
 def research_prediction_market_quality(
     fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
@@ -3668,6 +3825,64 @@ def readiness_pm_crypto_updown_candidate_decision(
             "allowed_primary_intent_count": payload["allowed_primary_intent_count"],
             "allowed_real_cached_intent_count": payload["allowed_real_cached_intent_count"],
             "report": "reports/sequence44/candidate_decision/latest_pm_crypto_updown_candidate_decision.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("pm-crypto-updown-allowed-intent-decision")
+def readiness_pm_crypto_updown_allowed_intent_decision(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+    real_cached_root: Annotated[list[Path] | None, typer.Option("--real-cached-root")] = None,
+) -> None:
+    from quant_os.readiness.pm_crypto_updown_allowed_intent_decision_report import (
+        write_pm_crypto_updown_allowed_intent_decision_report,
+    )
+
+    payload = write_pm_crypto_updown_allowed_intent_decision_report(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+        real_cached_artifact_roots=_optional_path_list(real_cached_root),
+    )
+    print(
+        {
+            "status": payload["decision_status"],
+            "ready_for_bounded_shadow_rehearsal": payload[
+                "ready_for_bounded_shadow_rehearsal"
+            ],
+            "allowed_primary_intent_count": payload["allowed_primary_intent_count"],
+            "allowed_real_cached_intent_count": payload["allowed_real_cached_intent_count"],
+            "report": "reports/sequence45/candidate_decision/latest_pm_crypto_updown_candidate_decision.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("pm-crypto-updown-bounded-shadow-rehearsal-spec")
+def proving_pm_crypto_updown_bounded_shadow_rehearsal_spec(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+    real_cached_root: Annotated[list[Path] | None, typer.Option("--real-cached-root")] = None,
+) -> None:
+    from quant_os.proving.pm_crypto_updown_bounded_shadow_rehearsal_spec import (
+        write_pm_crypto_updown_bounded_shadow_rehearsal_report,
+    )
+    from quant_os.readiness.pm_crypto_updown_allowed_intent_decision import (
+        evaluate_pm_crypto_updown_allowed_intent_decision,
+    )
+
+    decision = evaluate_pm_crypto_updown_allowed_intent_decision(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+        real_cached_artifact_roots=_optional_path_list(real_cached_root),
+    )
+    payload = write_pm_crypto_updown_bounded_shadow_rehearsal_report(
+        candidate_decision=decision,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "package_created": payload["package_created"],
+            "report": "reports/sequence45/bounded_shadow_rehearsal/latest_bounded_shadow_rehearsal.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }
