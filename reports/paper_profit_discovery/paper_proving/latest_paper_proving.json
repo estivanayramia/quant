@@ -1,0 +1,241 @@
+{
+  "average_loss": -0.73705,
+  "average_win": 0.82075,
+  "baseline_comparison": {
+    "baseline_count": 2,
+    "beats_best_baseline": true,
+    "best_baseline_net_pnl": 0.03,
+    "rows": [
+      {
+        "description": "Hold market-implied bucket without forecast adjustment.",
+        "name": "market_baseline",
+        "net_pnl": 0.02
+      },
+      {
+        "description": "Forecast direction without market-price mismatch filter.",
+        "name": "forecast_baseline",
+        "net_pnl": 0.03
+      }
+    ]
+  },
+  "baseline_comparison_present": true,
+  "confidence_status": "LOW_CONFIDENCE_DIAGNOSTIC_ONLY",
+  "copy_trading_enabled": false,
+  "cost_model_present": true,
+  "evidence_only": true,
+  "execution_authority": "NONE",
+  "exposure": 5.7,
+  "fill_adjusted_pnl": 0.44091938,
+  "fill_model_present": true,
+  "gross_simulated_pnl": 1.0,
+  "hit_rate": 0.666667,
+  "input_summary": {
+    "baselines": [
+      {
+        "description": "Hold market-implied bucket without forecast adjustment.",
+        "name": "market_baseline",
+        "net_pnl": 0.02
+      },
+      {
+        "description": "Forecast direction without market-price mismatch filter.",
+        "name": "forecast_baseline",
+        "net_pnl": 0.03
+      }
+    ],
+    "cost_model": {
+      "description": "Fixture-only conservative spread, fee, and slippage assumption.",
+      "fee_bps": 10.0,
+      "slippage_bps": 20.0,
+      "spread_bps": 35.0
+    },
+    "fill_model": {
+      "average_fill_fraction": 0.75,
+      "description": "Fixture-only conservative partial-fill assumption.",
+      "effective_fill_fraction": 0.48750000000000004,
+      "fill_probability": 0.65
+    },
+    "intents": [
+      {
+        "entry_price": 0.42,
+        "exit_price": 0.54,
+        "quantity": 10.0,
+        "side": "BUY",
+        "time_in_market_minutes": 180.0,
+        "timestamp": "2026-05-01T12:01:00Z"
+      },
+      {
+        "entry_price": 0.57,
+        "exit_price": 0.5,
+        "quantity": 10.0,
+        "side": "BUY",
+        "time_in_market_minutes": 170.0,
+        "timestamp": "2026-05-02T12:01:00Z"
+      },
+      {
+        "entry_price": 0.48,
+        "exit_price": 0.53,
+        "quantity": 10.0,
+        "side": "BUY",
+        "time_in_market_minutes": 160.0,
+        "timestamp": "2026-05-03T12:01:00Z"
+      }
+    ],
+    "lane_id": "pm_weather_forecast_market_mismatch",
+    "live_fills_assumed_equal_to_paper": false,
+    "min_trades_required": 30,
+    "oos_walk_forward_required": true,
+    "oos_walk_forward_status": "MISSING",
+    "placebos": [
+      {
+        "description": "Use stale forecast timestamp.",
+        "name": "stale_forecast_placebo",
+        "net_pnl": 0.01
+      },
+      {
+        "description": "Random bucket selection.",
+        "name": "random_bucket_placebo",
+        "net_pnl": -0.02
+      },
+      {
+        "description": "Shift signal timestamps away from market snapshots.",
+        "name": "timestamp_shift_placebo",
+        "net_pnl": 0.0
+      }
+    ],
+    "signals": [
+      {
+        "provenance": "fixture_safe_weather_mini_pack",
+        "signal": "forecast_bucket_above_market_mid",
+        "strength": 0.22,
+        "timestamp": "2026-05-01T12:00:00Z"
+      },
+      {
+        "provenance": "fixture_safe_weather_mini_pack",
+        "signal": "forecast_bucket_below_market_mid",
+        "strength": 0.18,
+        "timestamp": "2026-05-02T12:00:00Z"
+      },
+      {
+        "provenance": "fixture_safe_weather_mini_pack",
+        "signal": "forecast_bucket_above_market_mid",
+        "strength": 0.12,
+        "timestamp": "2026-05-03T12:00:00Z"
+      }
+    ],
+    "source_dependencies": [
+      "public_manual_capture_design"
+    ],
+    "source_quality": "SYNTHETIC_FIXTURE_ONLY",
+    "synthetic_only": true,
+    "trial_count": 1,
+    "trial_count_warning_present": true,
+    "uses_copy_trade_or_wallet_mirroring": false,
+    "uses_leverage_futures_or_margin": false
+  },
+  "lane_id": "pm_weather_forecast_market_mismatch",
+  "live_allowed": false,
+  "live_fills_assumed_equal_to_paper": false,
+  "live_promotion_status": "LIVE_BLOCKED",
+  "live_trading_enabled": false,
+  "max_drawdown": -0.73705,
+  "net_simulated_pnl_after_costs": 0.90445,
+  "one_row_dominance": false,
+  "oos_walk_forward_required": true,
+  "oos_walk_forward_status": "MISSING",
+  "paper_only": true,
+  "placebo_comparison": {
+    "beats_best_placebo": true,
+    "best_placebo_net_pnl": 0.01,
+    "placebo_count": 3,
+    "rows": [
+      {
+        "description": "Use stale forecast timestamp.",
+        "name": "stale_forecast_placebo",
+        "net_pnl": 0.01
+      },
+      {
+        "description": "Random bucket selection.",
+        "name": "random_bucket_placebo",
+        "net_pnl": -0.02
+      },
+      {
+        "description": "Shift signal timestamps away from market snapshots.",
+        "name": "timestamp_shift_placebo",
+        "net_pnl": 0.0
+      }
+    ]
+  },
+  "placebo_comparison_present": true,
+  "prediction_market_execution_authority_added": false,
+  "profitability_claimed": false,
+  "readiness_status": "PAPER_PROFIT_DIAGNOSTIC_ONLY",
+  "real_orders_enabled": false,
+  "sample_warnings": [
+    "SAMPLE_TOO_THIN"
+  ],
+  "schema_version": "paper_proving_harness_v1",
+  "social_posts_are_trade_signals": false,
+  "source_dependencies": [
+    "public_manual_capture_design"
+  ],
+  "source_quality": "SYNTHETIC_FIXTURE_ONLY",
+  "synthetic_only": true,
+  "time_in_market_minutes": 510.0,
+  "trade_count": 3,
+  "trade_rows": [
+    {
+      "cost": 0.0273,
+      "entry_price": 0.42,
+      "exit_price": 0.54,
+      "fill_adjusted_pnl": 0.57169125,
+      "gross_pnl": 1.2,
+      "net_pnl_after_costs": 1.1727,
+      "notional": 4.2,
+      "quantity": 10.0,
+      "side": "BUY",
+      "time_in_market_minutes": 180.0,
+      "timestamp": "2026-05-01T12:01:00Z"
+    },
+    {
+      "cost": 0.03705,
+      "entry_price": 0.57,
+      "exit_price": 0.5,
+      "fill_adjusted_pnl": -0.35931187,
+      "gross_pnl": -0.7,
+      "net_pnl_after_costs": -0.73705,
+      "notional": 5.7,
+      "quantity": 10.0,
+      "side": "BUY",
+      "time_in_market_minutes": 170.0,
+      "timestamp": "2026-05-02T12:01:00Z"
+    },
+    {
+      "cost": 0.0312,
+      "entry_price": 0.48,
+      "exit_price": 0.53,
+      "fill_adjusted_pnl": 0.22854,
+      "gross_pnl": 0.5,
+      "net_pnl_after_costs": 0.4688,
+      "notional": 4.8,
+      "quantity": 10.0,
+      "side": "BUY",
+      "time_in_market_minutes": 160.0,
+      "timestamp": "2026-05-03T12:01:00Z"
+    }
+  ],
+  "trial_count": 1,
+  "trial_count_warning_present": true,
+  "turnover": 14.7,
+  "uses_copy_trade_or_wallet_mirroring": false,
+  "uses_leverage_futures_or_margin": false,
+  "wallet_signing_enabled": false,
+  "warnings": [
+    "PAPER_ONLY_NOT_LIVE",
+    "SIMULATED_FILLS_NOT_REAL_FILLS",
+    "BACKTEST_NOT_PROOF",
+    "COST_MODEL_ASSUMPTION",
+    "SOURCE_QUALITY_LIMITATION",
+    "NO_LIVE_AUTHORITY",
+    "SAMPLE_TOO_THIN"
+  ]
+}

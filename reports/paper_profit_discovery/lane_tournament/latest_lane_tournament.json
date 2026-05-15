@@ -1,0 +1,1350 @@
+{
+  "allowed_statuses": [
+    "PROMOTE_TO_PAPER_TEST",
+    "PROMOTE_TO_DATA_CAPTURE",
+    "RESEARCH_ONLY",
+    "BLOCKED_SOURCE_UNAVAILABLE",
+    "BLOCKED_EXECUTION_UNSAFE",
+    "BLOCKED_COST_FILL_UNREALISTIC",
+    "BLOCKED_TOO_CROWDED_OR_LATENCY_SENSITIVE",
+    "DEPRIORITIZED",
+    "REJECTED"
+  ],
+  "candidate_lanes": [
+    {
+      "baselines": [
+        "market_baseline",
+        "forecast_baseline"
+      ],
+      "blockers": [],
+      "cost_model": "spread plus fee and slippage stress",
+      "data_requirements": [
+        "forecast_snapshots",
+        "forecast_timestamp",
+        "market_metadata",
+        "bucket_range_rules",
+        "market_price_snapshots",
+        "liquidity_spread",
+        "resolution_labels"
+      ],
+      "description": "Weather forecast bucket mismatch against prediction-market range contracts.",
+      "family": "prediction_market",
+      "fill_model": "limit-taker conservative fill fraction with spread/liquidity stress",
+      "lane_id": "pm_weather_forecast_market_mismatch",
+      "mini_pack_type": "weather",
+      "minimum_sample_requirement": "at least 30 independent weather events before any claim",
+      "placebos": [
+        "stale_forecast_placebo",
+        "random_bucket_placebo",
+        "timestamp_shift_placebo"
+      ],
+      "promotable": true,
+      "research_only": false,
+      "reviewed_sources": [
+        "https://www.weather.gov/documentation/services-web-api",
+        "https://open-meteo.com/en/docs",
+        "https://docs.polymarket.com/market-data/overview"
+      ],
+      "score_profile": {
+        "anti_overfit_feasibility": 5,
+        "baseline_testability": 5,
+        "calibration_feasibility": 5,
+        "capacity_crowding_resilience": 4,
+        "execution_simplicity": 5,
+        "fee_slippage_resilience": 5,
+        "fill_realism": 4,
+        "frequency": 4,
+        "historical_depth": 5,
+        "label_resolution_quality": 5,
+        "latency_resilience": 4,
+        "minimum_sample_feasibility": 4,
+        "no_auth_wallet_order_requirement": 5,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 5,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 5,
+        "oos_walk_forward_feasibility": 5,
+        "placebo_testability": 5,
+        "public_data_availability": 5,
+        "replayability": 5,
+        "repo_compatibility": 5,
+        "source_provenance": 5,
+        "spread_liquidity": 4,
+        "time_to_honest_paper_evidence": 5,
+        "timestamp_quality": 5
+      },
+      "source_path": "public weather APIs plus public prediction-market snapshots",
+      "status": "PROMOTE_TO_DATA_CAPTURE",
+      "status_reason": "Clean public-data shape and strong replay design, but real public snapshots are not present in repo yet.",
+      "total_score": 127,
+      "warnings": [
+        "manual_public_capture_required",
+        "fixture_is_plumbing_only"
+      ]
+    },
+    {
+      "baselines": [
+        "btc_buy_hold",
+        "eth_buy_hold",
+        "cash_baseline"
+      ],
+      "blockers": [],
+      "cost_model": "spot fee and turnover sensitivity",
+      "data_requirements": [
+        "public_candles",
+        "fee_spread_slippage_assumptions"
+      ],
+      "description": "Long-only BTC/ETH spot relative strength rotation.",
+      "family": "crypto_spot",
+      "fill_model": "next-bar conservative public-candle fill",
+      "lane_id": "btc_eth_relative_strength_rotation",
+      "mini_pack_type": "crypto_spot",
+      "minimum_sample_requirement": "multiple market regimes and OOS folds",
+      "placebos": [
+        "timestamp_shift_placebo",
+        "sign_flip_placebo"
+      ],
+      "promotable": true,
+      "research_only": false,
+      "reviewed_sources": [],
+      "score_profile": {
+        "anti_overfit_feasibility": 4,
+        "baseline_testability": 5,
+        "calibration_feasibility": 4,
+        "capacity_crowding_resilience": 3,
+        "execution_simplicity": 5,
+        "fee_slippage_resilience": 4,
+        "fill_realism": 4,
+        "frequency": 4,
+        "historical_depth": 5,
+        "label_resolution_quality": 3,
+        "latency_resilience": 4,
+        "minimum_sample_feasibility": 5,
+        "no_auth_wallet_order_requirement": 5,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 5,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 4,
+        "oos_walk_forward_feasibility": 5,
+        "placebo_testability": 5,
+        "public_data_availability": 5,
+        "replayability": 5,
+        "repo_compatibility": 5,
+        "source_provenance": 5,
+        "spread_liquidity": 4,
+        "time_to_honest_paper_evidence": 5,
+        "timestamp_quality": 5
+      },
+      "source_path": "public spot OHLCV only",
+      "status": "PROMOTE_TO_PAPER_TEST",
+      "status_reason": "Clean spot-only replay, but probably lower structural edge.",
+      "total_score": 123,
+      "warnings": [
+        "baseline_hard_to_beat"
+      ]
+    },
+    {
+      "baselines": [
+        "buy_and_hold_baseline",
+        "cash_baseline"
+      ],
+      "blockers": [],
+      "cost_model": "spot fee, spread, slippage, and turnover cap",
+      "data_requirements": [
+        "public_btc_candles",
+        "spread_fee_assumptions",
+        "walk_forward_splits"
+      ],
+      "description": "BTC range breakout with explicit cost and slippage filter.",
+      "family": "crypto_spot",
+      "fill_model": "next-bar conservative public-candle fill",
+      "lane_id": "btc_range_breakout_with_cost_filter",
+      "mini_pack_type": "crypto_spot",
+      "minimum_sample_requirement": "multiple OOS folds",
+      "placebos": [
+        "breakout_threshold_shuffle",
+        "timestamp_shift_placebo"
+      ],
+      "promotable": true,
+      "research_only": false,
+      "reviewed_sources": [],
+      "score_profile": {
+        "anti_overfit_feasibility": 4,
+        "baseline_testability": 5,
+        "calibration_feasibility": 4,
+        "capacity_crowding_resilience": 3,
+        "execution_simplicity": 5,
+        "fee_slippage_resilience": 4,
+        "fill_realism": 4,
+        "frequency": 4,
+        "historical_depth": 5,
+        "label_resolution_quality": 3,
+        "latency_resilience": 4,
+        "minimum_sample_feasibility": 5,
+        "no_auth_wallet_order_requirement": 5,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 5,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 4,
+        "oos_walk_forward_feasibility": 5,
+        "placebo_testability": 5,
+        "public_data_availability": 5,
+        "replayability": 5,
+        "repo_compatibility": 5,
+        "source_provenance": 5,
+        "spread_liquidity": 4,
+        "time_to_honest_paper_evidence": 5,
+        "timestamp_quality": 5
+      },
+      "source_path": "public spot OHLCV only",
+      "status": "PROMOTE_TO_PAPER_TEST",
+      "status_reason": "Replayable but likely crowded.",
+      "total_score": 123,
+      "warnings": [
+        "crowded_signal_family"
+      ]
+    },
+    {
+      "baselines": [
+        "buy_and_hold_baseline",
+        "no_skill_baseline"
+      ],
+      "blockers": [],
+      "cost_model": "spot fee, spread, and slippage sensitivity",
+      "data_requirements": [
+        "public_candles",
+        "fee_schedule_assumption",
+        "spread_slippage_model"
+      ],
+      "description": "Spot-only intraday momentum/reversion with walk-forward cost filters.",
+      "family": "crypto_spot",
+      "fill_model": "public candle execution with conservative next-bar fill assumption",
+      "lane_id": "crypto_spot_momentum_reversion_intraday",
+      "mini_pack_type": "crypto_spot",
+      "minimum_sample_requirement": "at least 200 bars per walk-forward fold",
+      "placebos": [
+        "random_timestamp_placebo",
+        "sign_flip_placebo",
+        "volatility_regime_placebo"
+      ],
+      "promotable": true,
+      "research_only": false,
+      "reviewed_sources": [
+        "https://github.com/binance/binance-public-data"
+      ],
+      "score_profile": {
+        "anti_overfit_feasibility": 4,
+        "baseline_testability": 5,
+        "calibration_feasibility": 4,
+        "capacity_crowding_resilience": 3,
+        "execution_simplicity": 5,
+        "fee_slippage_resilience": 3,
+        "fill_realism": 4,
+        "frequency": 5,
+        "historical_depth": 5,
+        "label_resolution_quality": 3,
+        "latency_resilience": 3,
+        "minimum_sample_feasibility": 5,
+        "no_auth_wallet_order_requirement": 5,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 5,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 4,
+        "oos_walk_forward_feasibility": 5,
+        "placebo_testability": 5,
+        "public_data_availability": 5,
+        "replayability": 5,
+        "repo_compatibility": 5,
+        "source_provenance": 5,
+        "spread_liquidity": 3,
+        "time_to_honest_paper_evidence": 4,
+        "timestamp_quality": 5
+      },
+      "source_path": "public spot OHLCV only",
+      "status": "PROMOTE_TO_PAPER_TEST",
+      "status_reason": "Strong replayability, but edge risk is crowded and cost sensitive.",
+      "total_score": 120,
+      "warnings": [
+        "crowding_risk",
+        "cost_sensitivity_high"
+      ]
+    },
+    {
+      "baselines": [
+        "buy_and_hold_baseline",
+        "no_signal_baseline"
+      ],
+      "blockers": [],
+      "cost_model": "spot fee plus slippage sensitivity",
+      "data_requirements": [
+        "public_candles",
+        "volatility_features",
+        "walk_forward_splits"
+      ],
+      "description": "Spot-only volatility regime filter for existing signals.",
+      "family": "crypto_spot",
+      "fill_model": "next-bar conservative public-candle fill",
+      "lane_id": "crypto_volatility_regime_signal",
+      "mini_pack_type": "crypto_spot",
+      "minimum_sample_requirement": "multiple volatility regimes and OOS folds",
+      "placebos": [
+        "volatility_regime_shuffle",
+        "timestamp_shift_placebo"
+      ],
+      "promotable": true,
+      "research_only": false,
+      "reviewed_sources": [],
+      "score_profile": {
+        "anti_overfit_feasibility": 4,
+        "baseline_testability": 5,
+        "calibration_feasibility": 4,
+        "capacity_crowding_resilience": 3,
+        "execution_simplicity": 5,
+        "fee_slippage_resilience": 3,
+        "fill_realism": 4,
+        "frequency": 4,
+        "historical_depth": 5,
+        "label_resolution_quality": 3,
+        "latency_resilience": 4,
+        "minimum_sample_feasibility": 5,
+        "no_auth_wallet_order_requirement": 5,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 5,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 4,
+        "oos_walk_forward_feasibility": 5,
+        "placebo_testability": 5,
+        "public_data_availability": 5,
+        "replayability": 5,
+        "repo_compatibility": 5,
+        "source_provenance": 5,
+        "spread_liquidity": 3,
+        "time_to_honest_paper_evidence": 4,
+        "timestamp_quality": 5
+      },
+      "source_path": "public spot OHLCV only",
+      "status": "PROMOTE_TO_PAPER_TEST",
+      "status_reason": "Good diagnostic lane, but likely a filter rather than standalone edge.",
+      "total_score": 120,
+      "warnings": [
+        "standalone_edge_uncertain"
+      ]
+    },
+    {
+      "baselines": [
+        "buy_and_hold_baseline",
+        "cash_baseline"
+      ],
+      "blockers": [],
+      "cost_model": "two-leg spot fee and slippage sensitivity",
+      "data_requirements": [
+        "public_candles",
+        "pair_universe",
+        "transaction_cost_assumptions"
+      ],
+      "description": "Spot-only pair spread diagnostics without shorting or leverage.",
+      "family": "crypto_spot",
+      "fill_model": "long-only rotation fills; no live shorting assumed",
+      "lane_id": "crypto_stat_arb_pairs",
+      "mini_pack_type": "crypto_spot",
+      "minimum_sample_requirement": "multiple pair folds with turnover cap",
+      "placebos": [
+        "pair_shuffle_placebo",
+        "timestamp_shift_placebo"
+      ],
+      "promotable": true,
+      "research_only": false,
+      "reviewed_sources": [
+        "https://github.com/binance/binance-public-data"
+      ],
+      "score_profile": {
+        "anti_overfit_feasibility": 4,
+        "baseline_testability": 5,
+        "calibration_feasibility": 4,
+        "capacity_crowding_resilience": 3,
+        "execution_simplicity": 4,
+        "fee_slippage_resilience": 2,
+        "fill_realism": 3,
+        "frequency": 4,
+        "historical_depth": 5,
+        "label_resolution_quality": 3,
+        "latency_resilience": 3,
+        "minimum_sample_feasibility": 4,
+        "no_auth_wallet_order_requirement": 5,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 5,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 4,
+        "oos_walk_forward_feasibility": 5,
+        "placebo_testability": 5,
+        "public_data_availability": 5,
+        "replayability": 4,
+        "repo_compatibility": 4,
+        "source_provenance": 5,
+        "spread_liquidity": 3,
+        "time_to_honest_paper_evidence": 3,
+        "timestamp_quality": 5
+      },
+      "source_path": "public spot OHLCV only",
+      "status": "PROMOTE_TO_PAPER_TEST",
+      "status_reason": "Replayable as long-only rotation, not true short stat arb.",
+      "total_score": 112,
+      "warnings": [
+        "short_leg_not_live_executable",
+        "cost_sensitivity_high"
+      ]
+    },
+    {
+      "baselines": [
+        "market_baseline",
+        "reference_value_baseline"
+      ],
+      "blockers": [],
+      "cost_model": "spread and liquidity stress near bucket boundaries",
+      "data_requirements": [
+        "bucket_rules",
+        "reference_values",
+        "price_snapshots",
+        "labels"
+      ],
+      "description": "Bucket-boundary market pricing versus public reference values.",
+      "family": "prediction_market",
+      "fill_model": "conservative fill fraction and no-fill stress",
+      "lane_id": "pm_market_bucket_boundary_mispricing",
+      "mini_pack_type": "weather",
+      "minimum_sample_requirement": "resolved boundary-adjacent market sample",
+      "placebos": [
+        "random_bucket_placebo",
+        "timestamp_shift_placebo"
+      ],
+      "promotable": true,
+      "research_only": false,
+      "reviewed_sources": [],
+      "score_profile": {
+        "anti_overfit_feasibility": 4,
+        "baseline_testability": 5,
+        "calibration_feasibility": 4,
+        "capacity_crowding_resilience": 4,
+        "execution_simplicity": 4,
+        "fee_slippage_resilience": 3,
+        "fill_realism": 3,
+        "frequency": 3,
+        "historical_depth": 3,
+        "label_resolution_quality": 4,
+        "latency_resilience": 4,
+        "minimum_sample_feasibility": 3,
+        "no_auth_wallet_order_requirement": 5,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 5,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 4,
+        "oos_walk_forward_feasibility": 4,
+        "placebo_testability": 5,
+        "public_data_availability": 4,
+        "replayability": 4,
+        "repo_compatibility": 4,
+        "source_provenance": 4,
+        "spread_liquidity": 3,
+        "time_to_honest_paper_evidence": 4,
+        "timestamp_quality": 4
+      },
+      "source_path": "public reference values and market snapshots",
+      "status": "PROMOTE_TO_DATA_CAPTURE",
+      "status_reason": "Testable after curated public bucket/rule capture.",
+      "total_score": 107,
+      "warnings": [
+        "manual_rule_mapping_required"
+      ]
+    },
+    {
+      "baselines": [
+        "no_skill_baseline",
+        "market_mid_baseline"
+      ],
+      "blockers": [],
+      "cost_model": "two-venue spread, fee, partial-fill, and no-fill stress",
+      "data_requirements": [
+        "market_metadata",
+        "semantic_relation_mapping",
+        "orderbook_snapshots",
+        "fees_spreads_liquidity",
+        "resolution_labels",
+        "timestamps"
+      ],
+      "description": "Equivalent contracts across venues or semantically matched markets.",
+      "family": "prediction_market",
+      "fill_model": "both-leg fill/no-fill and partial-fill model",
+      "lane_id": "pm_cross_market_equivalence_arbitrage",
+      "mini_pack_type": "cross_market",
+      "minimum_sample_requirement": "at least 20 relation groups across event types",
+      "placebos": [
+        "random_relation_placebo",
+        "stale_relation_placebo"
+      ],
+      "promotable": true,
+      "research_only": false,
+      "reviewed_sources": [
+        "https://docs.polymarket.com/market-data/overview"
+      ],
+      "score_profile": {
+        "anti_overfit_feasibility": 4,
+        "baseline_testability": 5,
+        "calibration_feasibility": 3,
+        "capacity_crowding_resilience": 3,
+        "execution_simplicity": 2,
+        "fee_slippage_resilience": 3,
+        "fill_realism": 2,
+        "frequency": 3,
+        "historical_depth": 3,
+        "label_resolution_quality": 4,
+        "latency_resilience": 3,
+        "minimum_sample_feasibility": 3,
+        "no_auth_wallet_order_requirement": 5,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 5,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 4,
+        "oos_walk_forward_feasibility": 4,
+        "placebo_testability": 5,
+        "public_data_availability": 4,
+        "replayability": 3,
+        "repo_compatibility": 3,
+        "source_provenance": 4,
+        "spread_liquidity": 2,
+        "time_to_honest_paper_evidence": 3,
+        "timestamp_quality": 4
+      },
+      "source_path": "public metadata and read-only orderbook snapshots",
+      "status": "PROMOTE_TO_DATA_CAPTURE",
+      "status_reason": "Testable if relation mapping is curated and source-policy approved.",
+      "total_score": 97,
+      "warnings": [
+        "semantic_mapping_risk",
+        "manual_relation_review_required"
+      ]
+    },
+    {
+      "baselines": [
+        "market_mid_baseline"
+      ],
+      "blockers": [],
+      "cost_model": "spread and fee sensitivity",
+      "data_requirements": [
+        "market_rules",
+        "price_snapshots",
+        "resolution_labels"
+      ],
+      "description": "Mispricing around public resolution rules and ambiguous buckets.",
+      "family": "prediction_market",
+      "fill_model": "conservative no-fill and partial-fill variants",
+      "lane_id": "pm_resolution_rule_mispricing",
+      "mini_pack_type": null,
+      "minimum_sample_requirement": "many resolved markets with comparable rule text",
+      "placebos": [
+        "random_rule_placebo",
+        "timestamp_shift_placebo"
+      ],
+      "promotable": false,
+      "research_only": false,
+      "reviewed_sources": [],
+      "score_profile": {
+        "anti_overfit_feasibility": 4,
+        "baseline_testability": 4,
+        "calibration_feasibility": 3,
+        "capacity_crowding_resilience": 3,
+        "execution_simplicity": 3,
+        "fee_slippage_resilience": 3,
+        "fill_realism": 2,
+        "frequency": 2,
+        "historical_depth": 3,
+        "label_resolution_quality": 3,
+        "latency_resilience": 3,
+        "minimum_sample_feasibility": 2,
+        "no_auth_wallet_order_requirement": 5,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 5,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 3,
+        "oos_walk_forward_feasibility": 3,
+        "placebo_testability": 4,
+        "public_data_availability": 4,
+        "replayability": 3,
+        "repo_compatibility": 3,
+        "source_provenance": 4,
+        "spread_liquidity": 2,
+        "time_to_honest_paper_evidence": 3,
+        "timestamp_quality": 3
+      },
+      "source_path": "public rules and resolved-market metadata",
+      "status": "DEPRIORITIZED",
+      "status_reason": "Source path exists, but semantic ambiguity makes first evidence slow.",
+      "total_score": 67,
+      "warnings": [
+        "label_ambiguity_risk"
+      ]
+    },
+    {
+      "baselines": [
+        "market_baseline",
+        "no_intent_baseline"
+      ],
+      "blockers": [
+        "prior_allowed_intent_gate_failed"
+      ],
+      "cost_model": "existing spread/fill stress from prior lane",
+      "data_requirements": [
+        "real_cached_market_windows",
+        "spot_snapshots",
+        "allowed_intents"
+      ],
+      "description": "Revisit crypto up/down repricing lag after prior allowed-intent failure.",
+      "family": "prediction_market",
+      "fill_model": "existing shadow policy only",
+      "lane_id": "pm_crypto_updown_repricing_lag_revival",
+      "mini_pack_type": null,
+      "minimum_sample_requirement": "expanded real-cached evidence beyond prior failure",
+      "placebos": [
+        "allowed_intent_shuffle",
+        "spot_timestamp_shift"
+      ],
+      "promotable": false,
+      "research_only": false,
+      "reviewed_sources": [],
+      "score_profile": {
+        "anti_overfit_feasibility": 3,
+        "baseline_testability": 4,
+        "calibration_feasibility": 3,
+        "capacity_crowding_resilience": 2,
+        "execution_simplicity": 3,
+        "fee_slippage_resilience": 2,
+        "fill_realism": 2,
+        "frequency": 5,
+        "historical_depth": 3,
+        "label_resolution_quality": 4,
+        "latency_resilience": 2,
+        "minimum_sample_feasibility": 2,
+        "no_auth_wallet_order_requirement": 5,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 5,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 3,
+        "oos_walk_forward_feasibility": 3,
+        "placebo_testability": 4,
+        "public_data_availability": 3,
+        "replayability": 3,
+        "repo_compatibility": 3,
+        "source_provenance": 4,
+        "spread_liquidity": 2,
+        "time_to_honest_paper_evidence": 2,
+        "timestamp_quality": 4
+      },
+      "source_path": "existing public/manual cache only",
+      "status": "DEPRIORITIZED",
+      "status_reason": "Prior real-cached evidence and allowed-intent gates failed.",
+      "total_score": 66,
+      "warnings": []
+    },
+    {
+      "baselines": [
+        "market_baseline"
+      ],
+      "blockers": [],
+      "cost_model": "spread, fee, and event-latency stress",
+      "data_requirements": [
+        "event_timestamps",
+        "market_snapshots",
+        "resolution_labels"
+      ],
+      "description": "Event timing underreaction using public event timestamps.",
+      "family": "prediction_market",
+      "fill_model": "late-arrival and no-fill model",
+      "lane_id": "pm_event_timing_underreaction",
+      "mini_pack_type": null,
+      "minimum_sample_requirement": "many independent event windows",
+      "placebos": [
+        "event_timestamp_shift",
+        "random_event_placebo"
+      ],
+      "promotable": false,
+      "research_only": false,
+      "reviewed_sources": [],
+      "score_profile": {
+        "anti_overfit_feasibility": 3,
+        "baseline_testability": 4,
+        "calibration_feasibility": 3,
+        "capacity_crowding_resilience": 3,
+        "execution_simplicity": 3,
+        "fee_slippage_resilience": 3,
+        "fill_realism": 2,
+        "frequency": 3,
+        "historical_depth": 3,
+        "label_resolution_quality": 4,
+        "latency_resilience": 2,
+        "minimum_sample_feasibility": 2,
+        "no_auth_wallet_order_requirement": 5,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 5,
+        "no_social_post_shortcut": 4,
+        "one_row_dominance_resilience": 3,
+        "oos_walk_forward_feasibility": 3,
+        "placebo_testability": 4,
+        "public_data_availability": 3,
+        "replayability": 3,
+        "repo_compatibility": 3,
+        "source_provenance": 3,
+        "spread_liquidity": 2,
+        "time_to_honest_paper_evidence": 3,
+        "timestamp_quality": 3
+      },
+      "source_path": "public event feeds only if source-policy approved",
+      "status": "DEPRIORITIZED",
+      "status_reason": "Event feeds are source-specific and risk social-post shortcuts.",
+      "total_score": 64,
+      "warnings": [
+        "source_policy_review_required"
+      ]
+    },
+    {
+      "baselines": [
+        "cash_baseline"
+      ],
+      "blockers": [
+        "leverage_or_margin_or_futures_required"
+      ],
+      "cost_model": "funding, spread, fee, and liquidation risk",
+      "data_requirements": [
+        "perps",
+        "funding_rates",
+        "margin",
+        "basis_marks"
+      ],
+      "description": "Funding/basis arbitrage feasibility only.",
+      "family": "research_only",
+      "fill_model": "requires perps/futures and margin assumptions",
+      "lane_id": "funding_basis_arbitrage",
+      "mini_pack_type": null,
+      "minimum_sample_requirement": "multi-cycle funding sample",
+      "placebos": [
+        "funding_timestamp_shift"
+      ],
+      "promotable": false,
+      "research_only": true,
+      "reviewed_sources": [],
+      "score_profile": {
+        "anti_overfit_feasibility": 3,
+        "baseline_testability": 4,
+        "calibration_feasibility": 3,
+        "capacity_crowding_resilience": 2,
+        "execution_simplicity": 2,
+        "fee_slippage_resilience": 2,
+        "fill_realism": 2,
+        "frequency": 4,
+        "historical_depth": 4,
+        "label_resolution_quality": 2,
+        "latency_resilience": 2,
+        "minimum_sample_feasibility": 3,
+        "no_auth_wallet_order_requirement": 5,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 1,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 3,
+        "oos_walk_forward_feasibility": 3,
+        "placebo_testability": 4,
+        "public_data_availability": 4,
+        "replayability": 3,
+        "repo_compatibility": 3,
+        "source_provenance": 4,
+        "spread_liquidity": 2,
+        "time_to_honest_paper_evidence": 2,
+        "timestamp_quality": 4
+      },
+      "source_path": "research only under no-futures doctrine",
+      "status": "RESEARCH_ONLY",
+      "status_reason": "Requires futures/perps, leverage, or margin under current doctrine.",
+      "total_score": 36,
+      "warnings": []
+    },
+    {
+      "baselines": [
+        "buy_and_hold_baseline",
+        "no_news_baseline"
+      ],
+      "blockers": [
+        "public_non_auth_news_proxy_missing"
+      ],
+      "cost_model": "spot fee and event slippage stress",
+      "data_requirements": [
+        "public_liquidation_proxy",
+        "spot_candles",
+        "source_policy_review"
+      ],
+      "description": "Spot-only mean reversion after public liquidation/news proxy.",
+      "family": "crypto_spot",
+      "fill_model": "next-bar conservative public-candle fill",
+      "lane_id": "crypto_spot_mean_reversion_after_liquidation_news_proxy",
+      "mini_pack_type": null,
+      "minimum_sample_requirement": "source-approved public proxy history",
+      "placebos": [
+        "news_timestamp_shift",
+        "random_event_placebo"
+      ],
+      "promotable": false,
+      "research_only": false,
+      "reviewed_sources": [],
+      "score_profile": {
+        "anti_overfit_feasibility": 2,
+        "baseline_testability": 3,
+        "calibration_feasibility": 2,
+        "capacity_crowding_resilience": 2,
+        "execution_simplicity": 4,
+        "fee_slippage_resilience": 2,
+        "fill_realism": 3,
+        "frequency": 3,
+        "historical_depth": 3,
+        "label_resolution_quality": 2,
+        "latency_resilience": 2,
+        "minimum_sample_feasibility": 2,
+        "no_auth_wallet_order_requirement": 5,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 5,
+        "no_social_post_shortcut": 3,
+        "one_row_dominance_resilience": 3,
+        "oos_walk_forward_feasibility": 2,
+        "placebo_testability": 3,
+        "public_data_availability": 3,
+        "replayability": 2,
+        "repo_compatibility": 2,
+        "source_provenance": 3,
+        "spread_liquidity": 2,
+        "time_to_honest_paper_evidence": 2,
+        "timestamp_quality": 3
+      },
+      "source_path": "blocked unless public non-auth proxy is approved",
+      "status": "BLOCKED_SOURCE_UNAVAILABLE",
+      "status_reason": "No approved public non-auth proxy is present.",
+      "total_score": 28,
+      "warnings": []
+    },
+    {
+      "baselines": [
+        "no_skill_baseline",
+        "market_mid_baseline"
+      ],
+      "blockers": [
+        "BLOCKED_MISSING_PUBLIC_FILL_ATTRIBUTION"
+      ],
+      "cost_model": "maker/taker fee and adverse-selection stress",
+      "data_requirements": [
+        "maker_taker_role",
+        "maker_wallet_order_attribution",
+        "orderbook_history"
+      ],
+      "description": "LP refresh-lag arbitrage only if public attribution constraints disappear.",
+      "family": "prediction_market",
+      "fill_model": "requires public maker/taker and maker-order attribution",
+      "lane_id": "pm_lp_refresh_lag_arbitrage",
+      "mini_pack_type": null,
+      "minimum_sample_requirement": "publicly attributed fill sample",
+      "placebos": [
+        "stale_quote_placebo"
+      ],
+      "promotable": false,
+      "research_only": false,
+      "reviewed_sources": [],
+      "score_profile": {
+        "anti_overfit_feasibility": 3,
+        "baseline_testability": 4,
+        "calibration_feasibility": 2,
+        "capacity_crowding_resilience": 2,
+        "execution_simplicity": 2,
+        "fee_slippage_resilience": 2,
+        "fill_realism": 1,
+        "frequency": 4,
+        "historical_depth": 2,
+        "label_resolution_quality": 4,
+        "latency_resilience": 1,
+        "minimum_sample_feasibility": 2,
+        "no_auth_wallet_order_requirement": 2,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 5,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 2,
+        "oos_walk_forward_feasibility": 2,
+        "placebo_testability": 4,
+        "public_data_availability": 3,
+        "replayability": 2,
+        "repo_compatibility": 2,
+        "source_provenance": 4,
+        "spread_liquidity": 2,
+        "time_to_honest_paper_evidence": 1,
+        "timestamp_quality": 3
+      },
+      "source_path": "blocked by missing public fill attribution",
+      "status": "BLOCKED_SOURCE_UNAVAILABLE",
+      "status_reason": "Public maker/taker and maker-wallet/order attribution are missing.",
+      "total_score": 26,
+      "warnings": [
+        "prior_phase48_blocker_preserved"
+      ]
+    },
+    {
+      "baselines": [
+        "no_trade_baseline"
+      ],
+      "blockers": [
+        "fill_realism_unavailable",
+        "latency_sensitive"
+      ],
+      "cost_model": "three-leg fee/spread/latency stress",
+      "data_requirements": [
+        "exchange_orderbooks",
+        "fees",
+        "latency",
+        "capacity"
+      ],
+      "description": "Triangular spot arbitrage feasibility research only.",
+      "family": "crypto_spot",
+      "fill_model": "requires atomic or near-atomic fill assumptions",
+      "lane_id": "crypto_triangular_arbitrage_research_only",
+      "mini_pack_type": null,
+      "minimum_sample_requirement": "deep orderbook archive",
+      "placebos": [
+        "symbol_shuffle_placebo"
+      ],
+      "promotable": false,
+      "research_only": true,
+      "reviewed_sources": [],
+      "score_profile": {
+        "anti_overfit_feasibility": 2,
+        "baseline_testability": 3,
+        "calibration_feasibility": 2,
+        "capacity_crowding_resilience": 1,
+        "execution_simplicity": 1,
+        "fee_slippage_resilience": 1,
+        "fill_realism": 1,
+        "frequency": 5,
+        "historical_depth": 3,
+        "label_resolution_quality": 2,
+        "latency_resilience": 1,
+        "minimum_sample_feasibility": 2,
+        "no_auth_wallet_order_requirement": 5,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 5,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 2,
+        "oos_walk_forward_feasibility": 2,
+        "placebo_testability": 3,
+        "public_data_availability": 4,
+        "replayability": 2,
+        "repo_compatibility": 2,
+        "source_provenance": 4,
+        "spread_liquidity": 1,
+        "time_to_honest_paper_evidence": 1,
+        "timestamp_quality": 5
+      },
+      "source_path": "public books only; execution realism weak",
+      "status": "RESEARCH_ONLY",
+      "status_reason": "Cost/fill realism is too weak without execution authority.",
+      "total_score": 25,
+      "warnings": []
+    },
+    {
+      "baselines": [
+        "no_trade_baseline"
+      ],
+      "blockers": [
+        "latency_sensitive",
+        "capacity_crowding_risk"
+      ],
+      "cost_model": "fee, spread, transfer, and latency stress",
+      "data_requirements": [
+        "multi_exchange_books",
+        "withdrawal_disabled",
+        "fees",
+        "latency"
+      ],
+      "description": "Cross-exchange spot arbitrage feasibility research only.",
+      "family": "crypto_spot",
+      "fill_model": "requires simultaneous multi-venue fills; paper only",
+      "lane_id": "crypto_cross_exchange_spot_arbitrage_research_only",
+      "mini_pack_type": null,
+      "minimum_sample_requirement": "orderbook archive across venues",
+      "placebos": [
+        "exchange_shuffle_placebo"
+      ],
+      "promotable": false,
+      "research_only": true,
+      "reviewed_sources": [],
+      "score_profile": {
+        "anti_overfit_feasibility": 2,
+        "baseline_testability": 3,
+        "calibration_feasibility": 2,
+        "capacity_crowding_resilience": 1,
+        "execution_simplicity": 1,
+        "fee_slippage_resilience": 1,
+        "fill_realism": 1,
+        "frequency": 5,
+        "historical_depth": 3,
+        "label_resolution_quality": 2,
+        "latency_resilience": 1,
+        "minimum_sample_feasibility": 2,
+        "no_auth_wallet_order_requirement": 5,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 5,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 2,
+        "oos_walk_forward_feasibility": 2,
+        "placebo_testability": 3,
+        "public_data_availability": 4,
+        "replayability": 2,
+        "repo_compatibility": 2,
+        "source_provenance": 4,
+        "spread_liquidity": 1,
+        "time_to_honest_paper_evidence": 1,
+        "timestamp_quality": 4
+      },
+      "source_path": "public books may exist, but realistic execution is latency-sensitive",
+      "status": "RESEARCH_ONLY",
+      "status_reason": "Too latency-sensitive and crowded for promotion under current doctrine.",
+      "total_score": 24,
+      "warnings": []
+    },
+    {
+      "baselines": [
+        "delta_hedged_baseline"
+      ],
+      "blockers": [
+        "options_required",
+        "leverage_or_margin_or_futures_required"
+      ],
+      "cost_model": "options spread, fee, and margin stress",
+      "data_requirements": [
+        "options_chain",
+        "vol_surface",
+        "margin",
+        "greeks"
+      ],
+      "description": "Options volatility arbitrage feasibility only.",
+      "family": "research_only",
+      "fill_model": "requires options execution and hedging assumptions",
+      "lane_id": "options_volatility_arbitrage",
+      "mini_pack_type": null,
+      "minimum_sample_requirement": "large option-chain history",
+      "placebos": [
+        "vol_surface_shuffle"
+      ],
+      "promotable": false,
+      "research_only": true,
+      "reviewed_sources": [],
+      "score_profile": {
+        "anti_overfit_feasibility": 3,
+        "baseline_testability": 4,
+        "calibration_feasibility": 3,
+        "capacity_crowding_resilience": 1,
+        "execution_simplicity": 1,
+        "fee_slippage_resilience": 1,
+        "fill_realism": 1,
+        "frequency": 2,
+        "historical_depth": 3,
+        "label_resolution_quality": 2,
+        "latency_resilience": 2,
+        "minimum_sample_feasibility": 2,
+        "no_auth_wallet_order_requirement": 5,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 1,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 2,
+        "oos_walk_forward_feasibility": 2,
+        "placebo_testability": 4,
+        "public_data_availability": 3,
+        "replayability": 2,
+        "repo_compatibility": 2,
+        "source_provenance": 3,
+        "spread_liquidity": 1,
+        "time_to_honest_paper_evidence": 1,
+        "timestamp_quality": 3
+      },
+      "source_path": "research only under no-options doctrine",
+      "status": "RESEARCH_ONLY",
+      "status_reason": "Options are forbidden under current doctrine.",
+      "total_score": 19,
+      "warnings": []
+    },
+    {
+      "baselines": [
+        "hodl_baseline"
+      ],
+      "blockers": [
+        "wallet_required",
+        "gas_sensitive_on_chain_execution"
+      ],
+      "cost_model": "gas, fee tier, impermanent loss, and MEV stress",
+      "data_requirements": [
+        "wallet",
+        "pool_state",
+        "gas",
+        "lp_positions"
+      ],
+      "description": "Uniswap v3 LP strategy feasibility only.",
+      "family": "research_only",
+      "fill_model": "requires on-chain LP position management",
+      "lane_id": "uniswap_v3_lp_strategy",
+      "mini_pack_type": null,
+      "minimum_sample_requirement": "pool state archive",
+      "placebos": [
+        "range_shuffle_placebo"
+      ],
+      "promotable": false,
+      "research_only": true,
+      "reviewed_sources": [],
+      "score_profile": {
+        "anti_overfit_feasibility": 2,
+        "baseline_testability": 3,
+        "calibration_feasibility": 2,
+        "capacity_crowding_resilience": 1,
+        "execution_simplicity": 1,
+        "fee_slippage_resilience": 1,
+        "fill_realism": 1,
+        "frequency": 2,
+        "historical_depth": 3,
+        "label_resolution_quality": 2,
+        "latency_resilience": 1,
+        "minimum_sample_feasibility": 2,
+        "no_auth_wallet_order_requirement": 1,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 4,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 2,
+        "oos_walk_forward_feasibility": 2,
+        "placebo_testability": 3,
+        "public_data_availability": 3,
+        "replayability": 2,
+        "repo_compatibility": 2,
+        "source_provenance": 3,
+        "spread_liquidity": 1,
+        "time_to_honest_paper_evidence": 1,
+        "timestamp_quality": 3
+      },
+      "source_path": "unsafe for current doctrine",
+      "status": "BLOCKED_EXECUTION_UNSAFE",
+      "status_reason": "Requires wallets and on-chain position management.",
+      "total_score": 13,
+      "warnings": []
+    },
+    {
+      "baselines": [
+        "no_trade_baseline"
+      ],
+      "blockers": [
+        "wallet_required",
+        "gas_sensitive_on_chain_execution"
+      ],
+      "cost_model": "gas, MEV, fee, and latency stress",
+      "data_requirements": [
+        "wallet",
+        "gas",
+        "on_chain_execution",
+        "cex_fills"
+      ],
+      "description": "CEX/DEX arbitrage feasibility only.",
+      "family": "research_only",
+      "fill_model": "requires wallets and gas-sensitive execution",
+      "lane_id": "defi_cex_dex_arbitrage",
+      "mini_pack_type": null,
+      "minimum_sample_requirement": "on-chain and CEX synchronized archive",
+      "placebos": [
+        "pool_shuffle_placebo"
+      ],
+      "promotable": false,
+      "research_only": true,
+      "reviewed_sources": [],
+      "score_profile": {
+        "anti_overfit_feasibility": 1,
+        "baseline_testability": 2,
+        "calibration_feasibility": 1,
+        "capacity_crowding_resilience": 1,
+        "execution_simplicity": 1,
+        "fee_slippage_resilience": 1,
+        "fill_realism": 1,
+        "frequency": 4,
+        "historical_depth": 2,
+        "label_resolution_quality": 2,
+        "latency_resilience": 1,
+        "minimum_sample_feasibility": 1,
+        "no_auth_wallet_order_requirement": 1,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 3,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 1,
+        "oos_walk_forward_feasibility": 1,
+        "placebo_testability": 2,
+        "public_data_availability": 2,
+        "replayability": 1,
+        "repo_compatibility": 1,
+        "source_provenance": 2,
+        "spread_liquidity": 1,
+        "time_to_honest_paper_evidence": 1,
+        "timestamp_quality": 2
+      },
+      "source_path": "unsafe for current doctrine",
+      "status": "BLOCKED_EXECUTION_UNSAFE",
+      "status_reason": "Requires wallets and gas-sensitive on-chain execution.",
+      "total_score": 1,
+      "warnings": []
+    },
+    {
+      "baselines": [
+        "no_trade_baseline"
+      ],
+      "blockers": [
+        "copy_trade_or_wallet_mirroring_forbidden"
+      ],
+      "cost_model": "not applicable; forbidden strategy family",
+      "data_requirements": [
+        "wallet_identity",
+        "copy_trade_mapping",
+        "private_attribution"
+      ],
+      "description": "Copy-trader and wallet-following strategies.",
+      "family": "research_only",
+      "fill_model": "not applicable; forbidden strategy family",
+      "lane_id": "copy_trader_wallet_following_strategies",
+      "mini_pack_type": null,
+      "minimum_sample_requirement": "not applicable",
+      "placebos": [
+        "wallet_shuffle_placebo"
+      ],
+      "promotable": false,
+      "research_only": true,
+      "reviewed_sources": [],
+      "score_profile": {
+        "anti_overfit_feasibility": 1,
+        "baseline_testability": 1,
+        "calibration_feasibility": 1,
+        "capacity_crowding_resilience": 1,
+        "execution_simplicity": 1,
+        "fee_slippage_resilience": 1,
+        "fill_realism": 1,
+        "frequency": 2,
+        "historical_depth": 1,
+        "label_resolution_quality": 1,
+        "latency_resilience": 1,
+        "minimum_sample_feasibility": 1,
+        "no_auth_wallet_order_requirement": 1,
+        "no_copy_trade_dependency": 1,
+        "no_leverage_futures_margin_requirement": 5,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 1,
+        "oos_walk_forward_feasibility": 1,
+        "placebo_testability": 1,
+        "public_data_availability": 1,
+        "replayability": 1,
+        "repo_compatibility": 1,
+        "source_provenance": 1,
+        "spread_liquidity": 1,
+        "time_to_honest_paper_evidence": 1,
+        "timestamp_quality": 1
+      },
+      "source_path": "forbidden",
+      "status": "BLOCKED_EXECUTION_UNSAFE",
+      "status_reason": "Copy trading and wallet mirroring are forbidden.",
+      "total_score": -10,
+      "warnings": []
+    }
+  ],
+  "ci_network_dependency": false,
+  "copy_trading_enabled": false,
+  "evidence_only": true,
+  "execution_authority": "NONE",
+  "lane_count": 20,
+  "live_allowed": false,
+  "live_promotion_status": "LIVE_BLOCKED",
+  "live_trading_enabled": false,
+  "paper_only": true,
+  "prediction_market_execution_authority_added": false,
+  "profitability_claimed": false,
+  "ranking_rules": [
+    "Rank deterministic path-to-proof, not expected profit.",
+    "Never promote lanes with auth, wallet, order, cancellation, copy-trade, leverage, margin, futures, options, or source-unavailable blockers.",
+    "Prefer public data, replayability, baselines, placebos, cost/fill realism, and low source ambiguity."
+  ],
+  "real_orders_enabled": false,
+  "schema_version": "paper_profit_lane_tournament_v1",
+  "selected_lane": {
+    "baselines": [
+      "market_baseline",
+      "forecast_baseline"
+    ],
+    "blockers": [],
+    "cost_model": "spread plus fee and slippage stress",
+    "data_requirements": [
+      "forecast_snapshots",
+      "forecast_timestamp",
+      "market_metadata",
+      "bucket_range_rules",
+      "market_price_snapshots",
+      "liquidity_spread",
+      "resolution_labels"
+    ],
+    "description": "Weather forecast bucket mismatch against prediction-market range contracts.",
+    "family": "prediction_market",
+    "fill_model": "limit-taker conservative fill fraction with spread/liquidity stress",
+    "lane_id": "pm_weather_forecast_market_mismatch",
+    "mini_pack_type": "weather",
+    "minimum_sample_requirement": "at least 30 independent weather events before any claim",
+    "placebos": [
+      "stale_forecast_placebo",
+      "random_bucket_placebo",
+      "timestamp_shift_placebo"
+    ],
+    "promotable": true,
+    "research_only": false,
+    "reviewed_sources": [
+      "https://www.weather.gov/documentation/services-web-api",
+      "https://open-meteo.com/en/docs",
+      "https://docs.polymarket.com/market-data/overview"
+    ],
+    "score_profile": {
+      "anti_overfit_feasibility": 5,
+      "baseline_testability": 5,
+      "calibration_feasibility": 5,
+      "capacity_crowding_resilience": 4,
+      "execution_simplicity": 5,
+      "fee_slippage_resilience": 5,
+      "fill_realism": 4,
+      "frequency": 4,
+      "historical_depth": 5,
+      "label_resolution_quality": 5,
+      "latency_resilience": 4,
+      "minimum_sample_feasibility": 4,
+      "no_auth_wallet_order_requirement": 5,
+      "no_copy_trade_dependency": 5,
+      "no_leverage_futures_margin_requirement": 5,
+      "no_social_post_shortcut": 5,
+      "one_row_dominance_resilience": 5,
+      "oos_walk_forward_feasibility": 5,
+      "placebo_testability": 5,
+      "public_data_availability": 5,
+      "replayability": 5,
+      "repo_compatibility": 5,
+      "source_provenance": 5,
+      "spread_liquidity": 4,
+      "time_to_honest_paper_evidence": 5,
+      "timestamp_quality": 5
+    },
+    "source_path": "public weather APIs plus public prediction-market snapshots",
+    "status": "PROMOTE_TO_DATA_CAPTURE",
+    "status_reason": "Clean public-data shape and strong replay design, but real public snapshots are not present in repo yet.",
+    "total_score": 127,
+    "warnings": [
+      "manual_public_capture_required",
+      "fixture_is_plumbing_only"
+    ]
+  },
+  "selected_lane_id": "pm_weather_forecast_market_mismatch",
+  "selected_lane_score": 127,
+  "selected_lane_status": "PROMOTE_TO_DATA_CAPTURE",
+  "social_posts_are_trade_signals": false,
+  "status": "LANE_TOURNAMENT_COMPLETE",
+  "wallet_signing_enabled": false
+}

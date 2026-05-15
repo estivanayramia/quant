@@ -4116,6 +4116,74 @@ def readiness_pm_lp_refresh_lag_source_readiness(
     )
 
 
+@research_app.command("paper-profit-lane-tournament")
+def research_paper_profit_lane_tournament() -> None:
+    from quant_os.research.lane_selection.paper_profit_lane_report import (
+        write_paper_profit_lane_tournament_report,
+    )
+
+    payload = write_paper_profit_lane_tournament_report()
+    print(
+        {
+            "status": payload["status"],
+            "selected_lane_id": payload["selected_lane_id"],
+            "selected_lane_status": payload["selected_lane_status"],
+            "report": "reports/paper_profit_discovery/lane_tournament/latest_lane_tournament.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("paper-profit-discovery-loop")
+def proving_paper_profit_discovery_loop() -> None:
+    from quant_os.proving.paper_profit_discovery_loop import run_paper_profit_discovery_loop
+
+    payload = run_paper_profit_discovery_loop()
+    print(
+        {
+            "status": payload["discovery_status"],
+            "paper_profit_status": payload["paper_profit_status"],
+            "selected_lane_id": payload["selected_lane_id"],
+            "report": "reports/paper_profit_discovery/discovery_loop/latest_discovery_loop.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("paper-proving-report")
+def proving_paper_proving_report() -> None:
+    from quant_os.proving.paper_proving_report import write_paper_proving_report
+
+    payload = write_paper_proving_report()
+    print(
+        {
+            "status": payload["readiness_status"],
+            "lane_id": payload["lane_id"],
+            "report": "reports/paper_profit_discovery/paper_proving/latest_paper_proving.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("profit-claim-guard")
+def proving_profit_claim_guard() -> None:
+    from quant_os.proving.profit_claim_guard import write_profit_claim_guard_report
+
+    payload = write_profit_claim_guard_report()
+    print(
+        {
+            "status": payload["guard_status"],
+            "blockers": payload["blockers"],
+            "report": "reports/paper_profit_discovery/profit_claim_guard/latest_profit_claim_guard.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @proving_app.command("pm-crypto-updown-bounded-shadow-rehearsal-spec")
 def proving_pm_crypto_updown_bounded_shadow_rehearsal_spec(
     fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,

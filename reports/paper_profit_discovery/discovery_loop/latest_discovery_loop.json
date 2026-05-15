@@ -1,0 +1,588 @@
+{
+  "bounded_limits": {
+    "max_fixture_only_diagnostics": 3,
+    "max_lanes": 10,
+    "max_promoted_lanes": 2
+  },
+  "ci_network_dependency": false,
+  "copy_trading_enabled": false,
+  "discovery_status": "PAPER_PROFIT_DIAGNOSTIC_ONLY_FOUND",
+  "evaluated_lane_count": 2,
+  "evaluated_lanes": [
+    {
+      "baselines": [
+        "market_baseline",
+        "forecast_baseline"
+      ],
+      "blockers": [],
+      "cost_model": "spread plus fee and slippage stress",
+      "data_requirements": [
+        "forecast_snapshots",
+        "forecast_timestamp",
+        "market_metadata",
+        "bucket_range_rules",
+        "market_price_snapshots",
+        "liquidity_spread",
+        "resolution_labels"
+      ],
+      "description": "Weather forecast bucket mismatch against prediction-market range contracts.",
+      "exact_next_commands": [
+        "python -m quant_os.cli research paper-profit-lane-tournament",
+        "python -m quant_os.cli proving paper-profit-discovery-loop",
+        "Prepare a source-policy-approved public weather and market snapshot bundle outside CI before re-running paper proving."
+      ],
+      "family": "prediction_market",
+      "fill_model": "limit-taker conservative fill fraction with spread/liquidity stress",
+      "lane_id": "pm_weather_forecast_market_mismatch",
+      "mini_pack": {
+        "fixture_safe_sample": [
+          {
+            "best_ask": 0.44,
+            "best_bid": 0.4,
+            "bucket_rule": "fixture range bucket",
+            "event_id": "fixture_weather_event_001",
+            "forecast_bucket": "temperature_70_to_74",
+            "forecast_source": "fixture_public_weather_shape",
+            "forecast_timestamp": "2026-05-01T12:00:00Z",
+            "liquidity": 1000.0,
+            "market_id": "fixture_market_weather_bucket",
+            "provenance_hash": "sha256:fixture_weather_mini_pack",
+            "resolution_label": "temperature_70_to_74",
+            "spread": 0.04
+          }
+        ],
+        "lane_id": "pm_weather_forecast_market_mismatch",
+        "paper_only": true,
+        "profit_claim_allowed": false,
+        "required_data": [
+          "forecast_snapshots",
+          "forecast_timestamp",
+          "market_metadata",
+          "bucket_range_rules",
+          "market_price_snapshots",
+          "liquidity_spread",
+          "resolution_labels"
+        ],
+        "required_tests": [
+          "market_baseline",
+          "forecast_baseline",
+          "stale_forecast_placebo",
+          "random_bucket_placebo",
+          "timestamp_shift_placebo",
+          "spread_liquidity_stress",
+          "oos_by_event_date"
+        ],
+        "schema_fields": [
+          "event_id",
+          "forecast_source",
+          "forecast_timestamp",
+          "forecast_bucket",
+          "market_id",
+          "bucket_rule",
+          "best_bid",
+          "best_ask",
+          "spread",
+          "liquidity",
+          "resolution_label",
+          "provenance_hash"
+        ],
+        "schema_version": "weather_forecast_market_mismatch_mini_pack_v1",
+        "source_review": [
+          "Public forecast snapshots must come from source-policy-approved public endpoints or manual downloads.",
+          "Prediction-market snapshots must be public/read-only; authenticated trading endpoints are forbidden."
+        ]
+      },
+      "mini_pack_type": "weather",
+      "minimum_sample_requirement": "at least 30 independent weather events before any claim",
+      "paper_profit_status": "PAPER_PROFIT_DIAGNOSTIC_ONLY",
+      "paper_proving": {
+        "fill_adjusted_pnl": 0.44091938,
+        "net_simulated_pnl_after_costs": 0.90445,
+        "readiness_status": "PAPER_PROFIT_DIAGNOSTIC_ONLY",
+        "warnings": [
+          "PAPER_ONLY_NOT_LIVE",
+          "SIMULATED_FILLS_NOT_REAL_FILLS",
+          "BACKTEST_NOT_PROOF",
+          "COST_MODEL_ASSUMPTION",
+          "SOURCE_QUALITY_LIMITATION",
+          "NO_LIVE_AUTHORITY",
+          "SAMPLE_TOO_THIN"
+        ]
+      },
+      "placebos": [
+        "stale_forecast_placebo",
+        "random_bucket_placebo",
+        "timestamp_shift_placebo"
+      ],
+      "profit_claim_guard": {
+        "allowed_statuses": [
+          "PAPER_PROFIT_CANDIDATE",
+          "PAPER_PROFIT_DIAGNOSTIC_ONLY",
+          "PAPER_PROFIT_BLOCKED",
+          "NO_PROFIT_CLAIM_ALLOWED"
+        ],
+        "blockers": [
+          "OOS_WALK_FORWARD_MISSING",
+          "SAMPLE_TOO_THIN",
+          "SOURCE_QUALITY_TOO_WEAK",
+          "SYNTHETIC_ONLY_DATA"
+        ],
+        "copy_trading_enabled": false,
+        "evidence_only": true,
+        "execution_authority": "NONE",
+        "forbidden_labels": [
+          "CANARY_READY",
+          "GUARANTEED",
+          "LIVE_READY",
+          "PROFITABLE",
+          "SAFE"
+        ],
+        "guard_status": "NO_PROFIT_CLAIM_ALLOWED",
+        "live_allowed": false,
+        "live_promotion_status": "LIVE_BLOCKED",
+        "live_trading_enabled": false,
+        "paper_only": true,
+        "prediction_market_execution_authority_added": false,
+        "profitability_claimed": false,
+        "real_orders_enabled": false,
+        "requested_readiness_status": "PAPER_PROFIT_DIAGNOSTIC_ONLY",
+        "schema_version": "profit_claim_guard_v1",
+        "social_posts_are_trade_signals": false,
+        "wallet_signing_enabled": false
+      },
+      "promotable": true,
+      "research_only": false,
+      "reviewed_sources": [
+        "https://www.weather.gov/documentation/services-web-api",
+        "https://open-meteo.com/en/docs",
+        "https://docs.polymarket.com/market-data/overview"
+      ],
+      "score_profile": {
+        "anti_overfit_feasibility": 5,
+        "baseline_testability": 5,
+        "calibration_feasibility": 5,
+        "capacity_crowding_resilience": 4,
+        "execution_simplicity": 5,
+        "fee_slippage_resilience": 5,
+        "fill_realism": 4,
+        "frequency": 4,
+        "historical_depth": 5,
+        "label_resolution_quality": 5,
+        "latency_resilience": 4,
+        "minimum_sample_feasibility": 4,
+        "no_auth_wallet_order_requirement": 5,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 5,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 5,
+        "oos_walk_forward_feasibility": 5,
+        "placebo_testability": 5,
+        "public_data_availability": 5,
+        "replayability": 5,
+        "repo_compatibility": 5,
+        "source_provenance": 5,
+        "spread_liquidity": 4,
+        "time_to_honest_paper_evidence": 5,
+        "timestamp_quality": 5
+      },
+      "source_path": "public weather APIs plus public prediction-market snapshots",
+      "status": "PROMOTE_TO_DATA_CAPTURE",
+      "status_reason": "Clean public-data shape and strong replay design, but real public snapshots are not present in repo yet.",
+      "total_score": 127,
+      "upgrade_blockers": [
+        "OOS_WALK_FORWARD_MISSING",
+        "SAMPLE_TOO_THIN",
+        "SOURCE_QUALITY_TOO_WEAK",
+        "SYNTHETIC_ONLY_DATA",
+        "minimum_sample_requirement_not_met",
+        "real_public_source_capture_required",
+        "walk_forward_oos_required"
+      ],
+      "warnings": [
+        "manual_public_capture_required",
+        "fixture_is_plumbing_only"
+      ]
+    },
+    {
+      "baselines": [
+        "btc_buy_hold",
+        "eth_buy_hold",
+        "cash_baseline"
+      ],
+      "blockers": [],
+      "cost_model": "spot fee and turnover sensitivity",
+      "data_requirements": [
+        "public_candles",
+        "fee_spread_slippage_assumptions"
+      ],
+      "description": "Long-only BTC/ETH spot relative strength rotation.",
+      "exact_next_commands": [
+        "python -m quant_os.cli proving paper-profit-discovery-loop",
+        "Use public spot OHLCV only; keep exchange credentials absent."
+      ],
+      "family": "crypto_spot",
+      "fill_model": "next-bar conservative public-candle fill",
+      "lane_id": "btc_eth_relative_strength_rotation",
+      "mini_pack": {
+        "lane_id": "btc_eth_relative_strength_rotation",
+        "no_exchange_credentials": true,
+        "no_futures_perps": true,
+        "no_leverage": true,
+        "no_margin": true,
+        "no_order_placement": true,
+        "paper_only": true,
+        "profit_claim_allowed": false,
+        "required_data": [
+          "public_candles",
+          "public_orderbook_snapshots_if_available",
+          "fees_spreads_slippage_assumptions",
+          "timestamped_signals",
+          "baselines",
+          "placebos",
+          "walk_forward_split"
+        ],
+        "required_tests": [
+          "buy_and_hold_baseline",
+          "no_skill_baseline",
+          "random_timestamp_placebo",
+          "sign_flip_placebo",
+          "volatility_regime_placebo",
+          "cost_slippage_sensitivity",
+          "oos_walk_forward"
+        ],
+        "schema_fields": [
+          "symbol",
+          "timestamp",
+          "open",
+          "high",
+          "low",
+          "close",
+          "volume",
+          "signal",
+          "fee_bps",
+          "spread_bps",
+          "slippage_bps",
+          "split_id"
+        ],
+        "schema_version": "crypto_spot_mini_pack_v1",
+        "spot_only": true
+      },
+      "mini_pack_type": "crypto_spot",
+      "minimum_sample_requirement": "multiple market regimes and OOS folds",
+      "paper_profit_status": "PAPER_PROFIT_DIAGNOSTIC_ONLY",
+      "paper_proving": {
+        "fill_adjusted_pnl": -0.0027693,
+        "net_simulated_pnl_after_costs": -0.003077,
+        "readiness_status": "PAPER_PROFIT_DIAGNOSTIC_ONLY",
+        "warnings": [
+          "PAPER_ONLY_NOT_LIVE",
+          "SIMULATED_FILLS_NOT_REAL_FILLS",
+          "BACKTEST_NOT_PROOF",
+          "COST_MODEL_ASSUMPTION",
+          "SOURCE_QUALITY_LIMITATION",
+          "NO_LIVE_AUTHORITY",
+          "SAMPLE_TOO_THIN"
+        ]
+      },
+      "placebos": [
+        "timestamp_shift_placebo",
+        "sign_flip_placebo"
+      ],
+      "profit_claim_guard": {
+        "allowed_statuses": [
+          "PAPER_PROFIT_CANDIDATE",
+          "PAPER_PROFIT_DIAGNOSTIC_ONLY",
+          "PAPER_PROFIT_BLOCKED",
+          "NO_PROFIT_CLAIM_ALLOWED"
+        ],
+        "blockers": [
+          "OOS_WALK_FORWARD_MISSING",
+          "SAMPLE_TOO_THIN",
+          "SOURCE_QUALITY_TOO_WEAK",
+          "SYNTHETIC_ONLY_DATA"
+        ],
+        "copy_trading_enabled": false,
+        "evidence_only": true,
+        "execution_authority": "NONE",
+        "forbidden_labels": [
+          "CANARY_READY",
+          "GUARANTEED",
+          "LIVE_READY",
+          "PROFITABLE",
+          "SAFE"
+        ],
+        "guard_status": "NO_PROFIT_CLAIM_ALLOWED",
+        "live_allowed": false,
+        "live_promotion_status": "LIVE_BLOCKED",
+        "live_trading_enabled": false,
+        "paper_only": true,
+        "prediction_market_execution_authority_added": false,
+        "profitability_claimed": false,
+        "real_orders_enabled": false,
+        "requested_readiness_status": "PAPER_PROFIT_DIAGNOSTIC_ONLY",
+        "schema_version": "profit_claim_guard_v1",
+        "social_posts_are_trade_signals": false,
+        "wallet_signing_enabled": false
+      },
+      "promotable": true,
+      "research_only": false,
+      "reviewed_sources": [],
+      "score_profile": {
+        "anti_overfit_feasibility": 4,
+        "baseline_testability": 5,
+        "calibration_feasibility": 4,
+        "capacity_crowding_resilience": 3,
+        "execution_simplicity": 5,
+        "fee_slippage_resilience": 4,
+        "fill_realism": 4,
+        "frequency": 4,
+        "historical_depth": 5,
+        "label_resolution_quality": 3,
+        "latency_resilience": 4,
+        "minimum_sample_feasibility": 5,
+        "no_auth_wallet_order_requirement": 5,
+        "no_copy_trade_dependency": 5,
+        "no_leverage_futures_margin_requirement": 5,
+        "no_social_post_shortcut": 5,
+        "one_row_dominance_resilience": 4,
+        "oos_walk_forward_feasibility": 5,
+        "placebo_testability": 5,
+        "public_data_availability": 5,
+        "replayability": 5,
+        "repo_compatibility": 5,
+        "source_provenance": 5,
+        "spread_liquidity": 4,
+        "time_to_honest_paper_evidence": 5,
+        "timestamp_quality": 5
+      },
+      "source_path": "public spot OHLCV only",
+      "status": "PROMOTE_TO_PAPER_TEST",
+      "status_reason": "Clean spot-only replay, but probably lower structural edge.",
+      "total_score": 123,
+      "upgrade_blockers": [
+        "OOS_WALK_FORWARD_MISSING",
+        "SAMPLE_TOO_THIN",
+        "SOURCE_QUALITY_TOO_WEAK",
+        "SYNTHETIC_ONLY_DATA",
+        "minimum_sample_requirement_not_met",
+        "real_public_source_capture_required",
+        "walk_forward_oos_required"
+      ],
+      "warnings": [
+        "baseline_hard_to_beat"
+      ]
+    }
+  ],
+  "evidence_only": true,
+  "execution_authority": "NONE",
+  "fixture_only_diagnostic_count": 2,
+  "live_allowed": false,
+  "live_promotion_status": "LIVE_BLOCKED",
+  "live_trading_enabled": false,
+  "paper_only": true,
+  "paper_profit_status": "PAPER_PROFIT_DIAGNOSTIC_ONLY",
+  "prediction_market_execution_authority_added": false,
+  "profitability_claimed": false,
+  "promoted_lane_count": 2,
+  "real_orders_enabled": false,
+  "schema_version": "paper_profit_discovery_loop_v1",
+  "selected_lane": {
+    "baselines": [
+      "market_baseline",
+      "forecast_baseline"
+    ],
+    "blockers": [],
+    "cost_model": "spread plus fee and slippage stress",
+    "data_requirements": [
+      "forecast_snapshots",
+      "forecast_timestamp",
+      "market_metadata",
+      "bucket_range_rules",
+      "market_price_snapshots",
+      "liquidity_spread",
+      "resolution_labels"
+    ],
+    "description": "Weather forecast bucket mismatch against prediction-market range contracts.",
+    "exact_next_commands": [
+      "python -m quant_os.cli research paper-profit-lane-tournament",
+      "python -m quant_os.cli proving paper-profit-discovery-loop",
+      "Prepare a source-policy-approved public weather and market snapshot bundle outside CI before re-running paper proving."
+    ],
+    "family": "prediction_market",
+    "fill_model": "limit-taker conservative fill fraction with spread/liquidity stress",
+    "lane_id": "pm_weather_forecast_market_mismatch",
+    "mini_pack": {
+      "fixture_safe_sample": [
+        {
+          "best_ask": 0.44,
+          "best_bid": 0.4,
+          "bucket_rule": "fixture range bucket",
+          "event_id": "fixture_weather_event_001",
+          "forecast_bucket": "temperature_70_to_74",
+          "forecast_source": "fixture_public_weather_shape",
+          "forecast_timestamp": "2026-05-01T12:00:00Z",
+          "liquidity": 1000.0,
+          "market_id": "fixture_market_weather_bucket",
+          "provenance_hash": "sha256:fixture_weather_mini_pack",
+          "resolution_label": "temperature_70_to_74",
+          "spread": 0.04
+        }
+      ],
+      "lane_id": "pm_weather_forecast_market_mismatch",
+      "paper_only": true,
+      "profit_claim_allowed": false,
+      "required_data": [
+        "forecast_snapshots",
+        "forecast_timestamp",
+        "market_metadata",
+        "bucket_range_rules",
+        "market_price_snapshots",
+        "liquidity_spread",
+        "resolution_labels"
+      ],
+      "required_tests": [
+        "market_baseline",
+        "forecast_baseline",
+        "stale_forecast_placebo",
+        "random_bucket_placebo",
+        "timestamp_shift_placebo",
+        "spread_liquidity_stress",
+        "oos_by_event_date"
+      ],
+      "schema_fields": [
+        "event_id",
+        "forecast_source",
+        "forecast_timestamp",
+        "forecast_bucket",
+        "market_id",
+        "bucket_rule",
+        "best_bid",
+        "best_ask",
+        "spread",
+        "liquidity",
+        "resolution_label",
+        "provenance_hash"
+      ],
+      "schema_version": "weather_forecast_market_mismatch_mini_pack_v1",
+      "source_review": [
+        "Public forecast snapshots must come from source-policy-approved public endpoints or manual downloads.",
+        "Prediction-market snapshots must be public/read-only; authenticated trading endpoints are forbidden."
+      ]
+    },
+    "mini_pack_type": "weather",
+    "minimum_sample_requirement": "at least 30 independent weather events before any claim",
+    "paper_profit_status": "PAPER_PROFIT_DIAGNOSTIC_ONLY",
+    "paper_proving": {
+      "fill_adjusted_pnl": 0.44091938,
+      "net_simulated_pnl_after_costs": 0.90445,
+      "readiness_status": "PAPER_PROFIT_DIAGNOSTIC_ONLY",
+      "warnings": [
+        "PAPER_ONLY_NOT_LIVE",
+        "SIMULATED_FILLS_NOT_REAL_FILLS",
+        "BACKTEST_NOT_PROOF",
+        "COST_MODEL_ASSUMPTION",
+        "SOURCE_QUALITY_LIMITATION",
+        "NO_LIVE_AUTHORITY",
+        "SAMPLE_TOO_THIN"
+      ]
+    },
+    "placebos": [
+      "stale_forecast_placebo",
+      "random_bucket_placebo",
+      "timestamp_shift_placebo"
+    ],
+    "profit_claim_guard": {
+      "allowed_statuses": [
+        "PAPER_PROFIT_CANDIDATE",
+        "PAPER_PROFIT_DIAGNOSTIC_ONLY",
+        "PAPER_PROFIT_BLOCKED",
+        "NO_PROFIT_CLAIM_ALLOWED"
+      ],
+      "blockers": [
+        "OOS_WALK_FORWARD_MISSING",
+        "SAMPLE_TOO_THIN",
+        "SOURCE_QUALITY_TOO_WEAK",
+        "SYNTHETIC_ONLY_DATA"
+      ],
+      "copy_trading_enabled": false,
+      "evidence_only": true,
+      "execution_authority": "NONE",
+      "forbidden_labels": [
+        "CANARY_READY",
+        "GUARANTEED",
+        "LIVE_READY",
+        "PROFITABLE",
+        "SAFE"
+      ],
+      "guard_status": "NO_PROFIT_CLAIM_ALLOWED",
+      "live_allowed": false,
+      "live_promotion_status": "LIVE_BLOCKED",
+      "live_trading_enabled": false,
+      "paper_only": true,
+      "prediction_market_execution_authority_added": false,
+      "profitability_claimed": false,
+      "real_orders_enabled": false,
+      "requested_readiness_status": "PAPER_PROFIT_DIAGNOSTIC_ONLY",
+      "schema_version": "profit_claim_guard_v1",
+      "social_posts_are_trade_signals": false,
+      "wallet_signing_enabled": false
+    },
+    "promotable": true,
+    "research_only": false,
+    "reviewed_sources": [
+      "https://www.weather.gov/documentation/services-web-api",
+      "https://open-meteo.com/en/docs",
+      "https://docs.polymarket.com/market-data/overview"
+    ],
+    "score_profile": {
+      "anti_overfit_feasibility": 5,
+      "baseline_testability": 5,
+      "calibration_feasibility": 5,
+      "capacity_crowding_resilience": 4,
+      "execution_simplicity": 5,
+      "fee_slippage_resilience": 5,
+      "fill_realism": 4,
+      "frequency": 4,
+      "historical_depth": 5,
+      "label_resolution_quality": 5,
+      "latency_resilience": 4,
+      "minimum_sample_feasibility": 4,
+      "no_auth_wallet_order_requirement": 5,
+      "no_copy_trade_dependency": 5,
+      "no_leverage_futures_margin_requirement": 5,
+      "no_social_post_shortcut": 5,
+      "one_row_dominance_resilience": 5,
+      "oos_walk_forward_feasibility": 5,
+      "placebo_testability": 5,
+      "public_data_availability": 5,
+      "replayability": 5,
+      "repo_compatibility": 5,
+      "source_provenance": 5,
+      "spread_liquidity": 4,
+      "time_to_honest_paper_evidence": 5,
+      "timestamp_quality": 5
+    },
+    "source_path": "public weather APIs plus public prediction-market snapshots",
+    "status": "PROMOTE_TO_DATA_CAPTURE",
+    "status_reason": "Clean public-data shape and strong replay design, but real public snapshots are not present in repo yet.",
+    "total_score": 127,
+    "upgrade_blockers": [
+      "OOS_WALK_FORWARD_MISSING",
+      "SAMPLE_TOO_THIN",
+      "SOURCE_QUALITY_TOO_WEAK",
+      "SYNTHETIC_ONLY_DATA",
+      "minimum_sample_requirement_not_met",
+      "real_public_source_capture_required",
+      "walk_forward_oos_required"
+    ],
+    "warnings": [
+      "manual_public_capture_required",
+      "fixture_is_plumbing_only"
+    ]
+  },
+  "selected_lane_id": "pm_weather_forecast_market_mismatch",
+  "selected_lane_status": "PROMOTE_TO_DATA_CAPTURE",
+  "social_posts_are_trade_signals": false,
+  "stop_reason": "diagnostic-only fixture pack requires public source capture before any profit claim",
+  "wallet_signing_enabled": false
+}

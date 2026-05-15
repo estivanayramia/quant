@@ -1,0 +1,44 @@
+{
+  "allowed_statuses": [
+    "PAPER_PROFIT_CANDIDATE",
+    "PAPER_PROFIT_DIAGNOSTIC_ONLY",
+    "PAPER_PROFIT_BLOCKED",
+    "NO_PROFIT_CLAIM_ALLOWED"
+  ],
+  "blockers": [
+    "OOS_WALK_FORWARD_MISSING",
+    "SAMPLE_TOO_THIN",
+    "SOURCE_QUALITY_TOO_WEAK",
+    "SYNTHETIC_ONLY_DATA"
+  ],
+  "copy_trading_enabled": false,
+  "evidence_only": true,
+  "execution_authority": "NONE",
+  "forbidden_labels": [
+    "CANARY_READY",
+    "GUARANTEED",
+    "LIVE_READY",
+    "PROFITABLE",
+    "SAFE"
+  ],
+  "guard_status": "NO_PROFIT_CLAIM_ALLOWED",
+  "live_allowed": false,
+  "live_promotion_status": "LIVE_BLOCKED",
+  "live_trading_enabled": false,
+  "paper_only": true,
+  "prediction_market_execution_authority_added": false,
+  "profitability_claimed": false,
+  "proving_summary": {
+    "fill_adjusted_pnl": 0.44091938,
+    "lane_id": "pm_weather_forecast_market_mismatch",
+    "net_simulated_pnl_after_costs": 0.90445,
+    "readiness_status": "PAPER_PROFIT_DIAGNOSTIC_ONLY",
+    "source_quality": "SYNTHETIC_FIXTURE_ONLY",
+    "trade_count": 3
+  },
+  "real_orders_enabled": false,
+  "requested_readiness_status": "PAPER_PROFIT_DIAGNOSTIC_ONLY",
+  "schema_version": "profit_claim_guard_v1",
+  "social_posts_are_trade_signals": false,
+  "wallet_signing_enabled": false
+}
