@@ -1,0 +1,111 @@
+{
+  "schema_version": "pm_lp_refresh_lag_fixture_v1",
+  "events": [
+    {
+      "candidate_id": "pm_lp_refresh_lag_arbitrage",
+      "event_id": "fixture_refresh_lag_001",
+      "event_type": "refresh_lag_window",
+      "market_id": "pm_fixture_market_001",
+      "condition_id": "condition_fixture_001",
+      "token_id": "yes_token_fixture_001",
+      "outcome": "YES",
+      "window_start_ts": "2026-05-14T12:00:01Z",
+      "window_end_ts": "2026-05-14T12:00:04Z",
+      "fill_ts": "2026-05-14T12:00:01Z",
+      "quote_seen_ts": "2026-05-14T12:00:02Z",
+      "quote_refresh_ts": "2026-05-14T12:00:04Z",
+      "quote_refresh_lag_ms": 3000,
+      "stale_quote_side": "ASK",
+      "stale_quote_price": 0.46,
+      "stale_quote_size": 250.0,
+      "opposite_quote_price_after_fill": 0.54,
+      "pre_fill_best_bid": 0.44,
+      "pre_fill_best_ask": 0.46,
+      "post_fill_best_bid": 0.53,
+      "post_fill_best_ask": 0.55,
+      "spread_bps_before": 434.78,
+      "spread_bps_after": 370.37,
+      "two_sided_quote_present": true,
+      "maker_attribution_public": false,
+      "maker_label_source": "unavailable_public_data",
+      "liquidity_reward_market": true,
+      "inter_trade_interval_ms": 850,
+      "taker_burst_trade_count": 4,
+      "spot_symbol": "BTCUSDT",
+      "spot_trigger_source": "binance_public_spot_fixture",
+      "spot_return_1s": 0.0012,
+      "spot_return_5s": 0.0034,
+      "directional_trigger": "UP",
+      "resolution_label": "PENDING",
+      "fill_realism": {
+        "queue_position_observed": false,
+        "expected_fill_fraction": 0.0,
+        "requires_future_model": true
+      },
+      "source_ids": [
+        "public_clob_snapshot_fixture",
+        "public_trade_fixture",
+        "public_spot_trigger_fixture"
+      ],
+      "provenance_hash": "fixture_hash_001",
+      "data_quality_flags": [
+        "FIXTURE_SAFE",
+        "PUBLIC_READ_ONLY_SAMPLE",
+        "NO_WALLET_LABEL_TRUTH"
+      ]
+    },
+    {
+      "candidate_id": "pm_lp_refresh_lag_arbitrage",
+      "event_id": "fixture_refresh_lag_002",
+      "event_type": "refresh_lag_window",
+      "market_id": "pm_fixture_market_002",
+      "condition_id": "condition_fixture_002",
+      "token_id": "no_token_fixture_002",
+      "outcome": "NO",
+      "window_start_ts": "2026-05-14T12:05:10Z",
+      "window_end_ts": "2026-05-14T12:05:12Z",
+      "fill_ts": "2026-05-14T12:05:10Z",
+      "quote_seen_ts": "2026-05-14T12:05:10Z",
+      "quote_refresh_ts": "2026-05-14T12:05:12Z",
+      "quote_refresh_lag_ms": 2200,
+      "stale_quote_side": "BID",
+      "stale_quote_price": 0.52,
+      "stale_quote_size": 180.0,
+      "opposite_quote_price_after_fill": 0.43,
+      "pre_fill_best_bid": 0.52,
+      "pre_fill_best_ask": 0.55,
+      "post_fill_best_bid": 0.42,
+      "post_fill_best_ask": 0.45,
+      "spread_bps_before": 560.75,
+      "spread_bps_after": 689.66,
+      "two_sided_quote_present": true,
+      "maker_attribution_public": false,
+      "maker_label_source": "unavailable_public_data",
+      "liquidity_reward_market": true,
+      "inter_trade_interval_ms": 1200,
+      "taker_burst_trade_count": 3,
+      "spot_symbol": "ETHUSDT",
+      "spot_trigger_source": "public_spot_fixture",
+      "spot_return_1s": -0.001,
+      "spot_return_5s": -0.0028,
+      "directional_trigger": "DOWN",
+      "resolution_label": "PENDING",
+      "fill_realism": {
+        "queue_position_observed": false,
+        "expected_fill_fraction": 0.0,
+        "requires_future_model": true
+      },
+      "source_ids": [
+        "public_clob_snapshot_fixture",
+        "public_trade_fixture",
+        "public_spot_trigger_fixture"
+      ],
+      "provenance_hash": "fixture_hash_002",
+      "data_quality_flags": [
+        "FIXTURE_SAFE",
+        "PUBLIC_READ_ONLY_SAMPLE",
+        "NO_CLAIMED_PNL_EVIDENCE"
+      ]
+    }
+  ]
+}

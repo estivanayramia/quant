@@ -1296,6 +1296,18 @@ if "%TARGET%"=="sequence46-smoke" (
   python -m pytest tests/test_sequence46_allowed_intent_capture_path.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="sequence47-smoke" (
+  python -m quant_os.cli research pm-lp-refresh-lag-candidate-pack
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-lp-refresh-lag-replay-schema
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-lp-refresh-lag-source-policy
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness pm-lp-refresh-lag-candidate-readiness --fixture-path tests\fixtures\replay_candidates\pm_lp_refresh_lag\refresh_lag_windows.json
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence47_pm_lp_refresh_lag_candidate_pack.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!

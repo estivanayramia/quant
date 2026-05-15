@@ -666,6 +666,104 @@ def build_sequence45_autonomy_milestones(
     return payload
 
 
+def build_sequence47_autonomy_milestones(
+    *,
+    candidate_readiness: dict[str, Any],
+) -> dict[str, Any]:
+    payload = build_autonomy_milestones()
+    milestones = [dict(item) for item in payload["milestones"]]
+    ready_for_data = (
+        candidate_readiness["candidate_readiness_status"]
+        == "CANDIDATE_PACK_READY_FOR_DATA_ACQUISITION"
+    )
+    candidate_pack_milestone = _milestone(
+        7,
+        "refresh_lag_candidate_pack_ready",
+        "Refresh-lag candidate pack ready",
+        "MET" if ready_for_data else "BLOCKED",
+        [] if ready_for_data else candidate_readiness["blockers"],
+        "sequence47_pm_lp_refresh_lag_candidate_pack",
+        (
+            "acquire public read-only CLOB, trade, quote-refresh, spot-trigger, and resolution data"
+            if ready_for_data
+            else "repair the candidate pack before any data acquisition"
+        ),
+        "Phase 47",
+    )
+    milestones.insert(6, candidate_pack_milestone)
+    for index, milestone in enumerate(milestones, start=1):
+        milestone["milestone_index"] = index
+        if milestone["milestone_id"] == "evidence_acquisition_repeatable":
+            milestone["status"] = "PARTIAL"
+            milestone["current_blockers"] = candidate_readiness["blockers"]
+            milestone["evidence_source"] = "sequence47_source_policy"
+            milestone["required_next_action"] = (
+                "collect only public read-only refresh-lag source artifacts"
+            )
+            milestone["phase_likely_responsible"] = "Phase 48"
+        if milestone["milestone_id"] == "replay_inputs_sufficient":
+            milestone["status"] = "PARTIAL" if ready_for_data else "BLOCKED"
+            milestone["current_blockers"] = ["PUBLIC_SOURCES_REQUIRED_NOT_ACQUIRED"]
+            milestone["evidence_source"] = "sequence47_replay_schema"
+            milestone["required_next_action"] = (
+                "validate real cached refresh-lag windows before replay evaluation"
+            )
+            milestone["phase_likely_responsible"] = "Phase 48"
+        if milestone["milestone_id"] == "shadow_proving_threshold_met":
+            milestone["status"] = "BLOCKED"
+            milestone["current_blockers"] = ["NO_REFRESH_LAG_REPLAY_EVIDENCE"]
+            milestone["evidence_source"] = "sequence47_candidate_readiness"
+            milestone["required_next_action"] = "do not run shadow proving in Phase 47"
+            milestone["phase_likely_responsible"] = "Future phase"
+        if milestone["milestone_id"] == "bounded_shadow_rehearsal_ready":
+            milestone["status"] = "BLOCKED"
+            milestone["current_blockers"] = ["CANDIDATE_PACK_ONLY"]
+            milestone["evidence_source"] = "sequence47_candidate_pack"
+            milestone["required_next_action"] = (
+                "block rehearsal until public data, baselines, placebos, and fill realism pass"
+            )
+            milestone["phase_likely_responsible"] = "Future phase"
+        if milestone["milestone_id"] in {
+            "canary_preconditions_met",
+            "manual_arming_protocol_present",
+            "first_tiny_canary_allowed",
+            "real_canary_reconciliation_passed",
+            "expansion_blocked_until_repeated_proof",
+        }:
+            milestone["status"] = "BLOCKED"
+            milestone["current_blockers"] = ["LIVE_AND_CANARY_STILL_DISABLED"]
+            milestone["required_next_action"] = "do not enable live or canary in Phase 47"
+            milestone["phase_likely_responsible"] = "Future phase"
+    next_required = next(item for item in milestones if item["status"] not in {"MET"})
+    payload.update(
+        {
+            "sequence": "47",
+            "ledger_status": "FINITE_AUTONOMY_PATH_UPDATED_WITH_REFRESH_LAG_CANDIDATE_PACK",
+            "milestone_count": len(milestones),
+            "milestones": milestones,
+            "next_required_milestone": next_required,
+            "prior_candidate_status": "DEPRIORITIZE_CANDIDATE",
+            "selected_candidate_id": "pm_lp_refresh_lag_arbitrage",
+            "candidate_readiness_status": candidate_readiness["candidate_readiness_status"],
+            "phase47_movement": candidate_readiness.get(
+                "autonomy_milestones",
+                {
+                    "candidate_pack": "ready_for_data_acquisition"
+                    if ready_for_data
+                    else "blocked",
+                    "public_source_acquisition": "blocked",
+                    "bounded_shadow_rehearsal": "blocked",
+                    "canary": "blocked",
+                    "live": "blocked",
+                },
+            ),
+            "live_orders_allowed": False,
+            "live_promotion_status": "LIVE_BLOCKED",
+        }
+    )
+    return payload
+
+
 def _milestone(
     index: int,
     milestone_id: str,
