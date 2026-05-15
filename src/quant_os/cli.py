@@ -302,6 +302,13 @@ DEFAULT_PM_LP_REFRESH_LAG_PUBLIC_SOURCE_FIXTURE = (
     / "public_source_sample"
     / "blocked_missing_public_fill_attribution.json"
 )
+DEFAULT_WEATHER_MARKET_MISMATCH_FIXTURE = (
+    Path("tests")
+    / "fixtures"
+    / "replay_candidates"
+    / "weather_market_mismatch"
+    / "fixture_only_rows.json"
+)
 
 
 def _repo_default_path(path: Path) -> Path:
@@ -905,6 +912,34 @@ def data_pm_lp_refresh_lag_capture_plan() -> None:
             "network_enabled": payload["network_enabled"],
             "network_fetch_attempted": payload["network_fetch_attempted"],
             "report": ("reports/sequence48/capture_plan/latest_lp_refresh_lag_capture_plan.json"),
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@data_app.command("weather-market-capture-plan")
+def data_weather_market_capture_plan(
+    manual_network_ok: bool = typer.Option(False, "--manual-network-ok"),
+    market_id: str | None = typer.Option(None, "--market-id"),
+    run_id: str = typer.Option("weather_market_manual_050", "--run-id"),
+) -> None:
+    from quant_os.data.weather.weather_market_capture_plan import (
+        write_weather_market_capture_plan,
+    )
+
+    payload = write_weather_market_capture_plan(
+        manual_network_ok=manual_network_ok,
+        market_id=market_id,
+        run_id=run_id,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "manual_only": payload["manual_only"],
+            "network_enabled": payload["network_enabled"],
+            "network_fetch_attempted": payload["network_fetch_attempted"],
+            "report": "reports/sequence50/weather_capture_plan/latest_weather_capture_plan.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }
@@ -1568,6 +1603,59 @@ def research_pm_lp_refresh_lag_candidate_pack() -> None:
             "report": "reports/sequence47/candidate_pack/latest_candidate_pack.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("weather-market-candidate")
+def research_weather_market_candidate() -> None:
+    from quant_os.research.replay_candidates.weather_market_mismatch_candidate import (
+        write_weather_market_mismatch_candidate_report,
+    )
+
+    payload = write_weather_market_mismatch_candidate_report()
+    print(
+        {
+            "status": payload["hypothesis_status"],
+            "candidate_id": payload["candidate_id"],
+            "report": "reports/sequence50/weather_candidate/latest_weather_candidate.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("weather-source-policy")
+def research_weather_source_policy() -> None:
+    from quant_os.data.weather.weather_source_policy import write_weather_source_policy_report
+
+    payload = write_weather_source_policy_report()
+    print(
+        {
+            "status": payload["policy_status"],
+            "allowed_source_count": len(payload["allowed_sources"]),
+            "blocked_source_count": len(payload["blocked_sources"]),
+            "report": "reports/sequence50/weather_source_policy/latest_weather_source_policy.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("weather-market-replay-schema")
+def research_weather_market_replay_schema() -> None:
+    from quant_os.research.replay_candidates.weather_market_replay_schema import (
+        build_weather_market_replay_schema,
+    )
+
+    payload = build_weather_market_replay_schema()
+    print(
+        {
+            "status": "WEATHER_REPLAY_SCHEMA_DEFINED",
+            "candidate_id": payload["candidate_id"],
+            "required_field_count": len(payload["required_fields"]),
+            "live_trading_enabled": False,
+            "execution_authority": payload["safety"]["execution_authority"],
         }
     )
 
@@ -3626,6 +3714,29 @@ def proving_profit_claim_guard() -> None:
     )
 
 
+@proving_app.command("weather-market-paper-proving")
+def proving_weather_market_paper_proving(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    from quant_os.proving.weather_market_paper_report import (
+        write_weather_market_paper_proving_report,
+    )
+
+    payload = write_weather_market_paper_proving_report(
+        fixture_path=fixture_path or _repo_default_path(DEFAULT_WEATHER_MARKET_MISMATCH_FIXTURE),
+    )
+    print(
+        {
+            "status": payload["readiness_status"],
+            "lane_id": payload["lane_id"],
+            "profit_claim_guard": payload["profit_claim_guard"]["claim_status"],
+            "report": "reports/sequence50/weather_paper_proving/latest_weather_paper_proving.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @proving_app.command("dry-run-proving")
 def proving_dry_run_proving(periods: int = typer.Option(180, min=60)) -> None:
     payload = run_dry_run_proving_cycle(config=DryRunProvingConfig(periods=periods))
@@ -4181,6 +4292,29 @@ def readiness_pm_lp_refresh_lag_source_readiness(
             "active_blocker": payload["active_blocker"],
             "exact_missing_source_fields": payload["exact_missing_source_fields"],
             "report": "reports/sequence48/source_readiness/latest_source_readiness.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("weather-market-data-readiness")
+def readiness_weather_market_data_readiness(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    from quant_os.readiness.weather_market_data_readiness_report import (
+        write_weather_market_data_readiness_report,
+    )
+
+    payload = write_weather_market_data_readiness_report(
+        fixture_path=fixture_path or _repo_default_path(DEFAULT_WEATHER_MARKET_MISMATCH_FIXTURE),
+    )
+    print(
+        {
+            "status": payload["readiness_status"],
+            "paper_profit_status": payload["paper_profit_status"],
+            "dataset_status": payload["dataset_status"],
+            "report": "reports/sequence50/weather_data_readiness/latest_weather_data_readiness.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }

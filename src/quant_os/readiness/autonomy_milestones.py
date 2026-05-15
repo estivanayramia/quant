@@ -764,6 +764,82 @@ def build_sequence47_autonomy_milestones(
     return payload
 
 
+def build_sequence50_autonomy_milestones(
+    *,
+    weather_readiness: dict[str, Any],
+) -> dict[str, Any]:
+    payload = build_autonomy_milestones()
+    milestones = [dict(item) for item in payload["milestones"]]
+    weather_milestone = _milestone(
+        7,
+        "weather_market_data_acquisition",
+        "Weather market data acquisition",
+        "PARTIAL"
+        if weather_readiness["readiness_status"] == "PAPER_PROFIT_DIAGNOSTIC_ONLY"
+        else "BLOCKED",
+        weather_readiness["blockers"],
+        "sequence50_weather_data_readiness",
+        "capture real public weather, market, orderbook, and resolution rows",
+        "Phase 50",
+    )
+    milestones.insert(6, weather_milestone)
+    for index, milestone in enumerate(milestones, start=1):
+        milestone["milestone_index"] = index
+        if milestone["milestone_id"] == "evidence_acquisition_repeatable":
+            milestone["status"] = "PARTIAL"
+            milestone["current_blockers"] = weather_readiness["blockers"]
+            milestone["evidence_source"] = "sequence50_weather_capture_plan"
+            milestone["required_next_action"] = (
+                "collect source-policy-approved public weather and market snapshots"
+            )
+            milestone["phase_likely_responsible"] = "Phase 50+"
+        if milestone["milestone_id"] == "replay_inputs_sufficient":
+            milestone["status"] = "PARTIAL"
+            milestone["current_blockers"] = ["FIXTURE_ONLY_NOT_PROOF", "REAL_LABELS_REQUIRED"]
+            milestone["evidence_source"] = "sequence50_weather_replay_schema"
+            milestone["required_next_action"] = "replace fixture rows with real public proof rows"
+            milestone["phase_likely_responsible"] = "Phase 50+"
+        if milestone["milestone_id"] == "shadow_proving_threshold_met":
+            milestone["status"] = "BLOCKED"
+            milestone["current_blockers"] = ["NO_PAPER_PROFIT_CANDIDATE"]
+            milestone["evidence_source"] = "sequence50_profit_claim_guard"
+            milestone["required_next_action"] = "do not run bounded shadow until proof qualifies"
+            milestone["phase_likely_responsible"] = "Future phase"
+        if milestone["milestone_id"] == "bounded_shadow_rehearsal_ready":
+            milestone["status"] = "BLOCKED"
+            milestone["current_blockers"] = ["PAPER_PROFIT_DIAGNOSTIC_ONLY"]
+            milestone["evidence_source"] = "sequence50_weather_data_readiness"
+            milestone["required_next_action"] = "keep rehearsal blocked until real evidence passes"
+            milestone["phase_likely_responsible"] = "Future phase"
+        if milestone["milestone_id"] in {
+            "canary_preconditions_met",
+            "manual_arming_protocol_present",
+            "first_tiny_canary_allowed",
+            "real_canary_reconciliation_passed",
+            "expansion_blocked_until_repeated_proof",
+        }:
+            milestone["status"] = "BLOCKED"
+            milestone["current_blockers"] = ["LIVE_AND_CANARY_STILL_DISABLED"]
+            milestone["required_next_action"] = "do not enable live or canary in Phase 50"
+            milestone["phase_likely_responsible"] = "Future phase"
+    next_required = next(item for item in milestones if item["status"] != "MET")
+    payload.update(
+        {
+            "sequence": "50",
+            "ledger_status": "FINITE_AUTONOMY_PATH_UPDATED_WITH_WEATHER_DATA_PROVING",
+            "milestone_count": len(milestones),
+            "milestones": milestones,
+            "next_required_milestone": next_required,
+            "selected_candidate_id": "pm_weather_forecast_market_mismatch",
+            "weather_data_readiness_status": weather_readiness["readiness_status"],
+            "phase50_movement": weather_readiness["autonomy_milestones"],
+            "live_orders_allowed": False,
+            "live_promotion_status": "LIVE_BLOCKED",
+        }
+    )
+    return payload
+
+
 def _milestone(
     index: int,
     milestone_id: str,

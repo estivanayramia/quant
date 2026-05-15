@@ -15,6 +15,7 @@ from quant_os.readiness.autonomy_milestones import (
     build_sequence44_autonomy_milestones,
     build_sequence45_autonomy_milestones,
     build_sequence47_autonomy_milestones,
+    build_sequence50_autonomy_milestones,
 )
 
 REPORT_ROOT = Path("reports/sequence35/autonomy_milestones")
@@ -27,6 +28,7 @@ SEQUENCE43_REPORT_ROOT = Path("reports/sequence43/autonomy_milestones")
 SEQUENCE44_REPORT_ROOT = Path("reports/sequence44/autonomy_milestones")
 SEQUENCE45_REPORT_ROOT = Path("reports/sequence45/autonomy_milestones")
 SEQUENCE47_REPORT_ROOT = Path("reports/sequence47/autonomy_milestones")
+SEQUENCE50_REPORT_ROOT = Path("reports/sequence50/autonomy_milestones")
 
 
 def write_autonomy_milestone_report(*, output_root: str | Path = ".") -> dict[str, Any]:
@@ -175,6 +177,20 @@ def write_sequence47_autonomy_milestone_report(
         payload,
         output_root=output_root,
         report_root=SEQUENCE47_REPORT_ROOT,
+    )
+    return payload
+
+
+def write_sequence50_autonomy_milestone_report(
+    *,
+    weather_readiness: dict[str, Any],
+    output_root: str | Path = ".",
+) -> dict[str, Any]:
+    payload = build_sequence50_autonomy_milestones(weather_readiness=weather_readiness)
+    payload["report_paths"] = _write_report(
+        payload,
+        output_root=output_root,
+        report_root=SEQUENCE50_REPORT_ROOT,
     )
     return payload
 
