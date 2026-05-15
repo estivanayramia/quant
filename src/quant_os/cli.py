@@ -1628,6 +1628,43 @@ def research_pm_lp_refresh_lag_source_feasibility() -> None:
     )
 
 
+@research_app.command("profit-lane-tournament")
+def research_profit_lane_tournament() -> None:
+    from quant_os.research.lane_selection.profit_lane_tournament import (
+        write_profit_lane_tournament_report,
+    )
+
+    payload = write_profit_lane_tournament_report()
+    print(
+        {
+            "status": payload["tournament_status"],
+            "selected_lane_id": payload["selected_lane_id"],
+            "report": "reports/sequence49/profit_lane_tournament/latest_profit_lane_tournament.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("selected-profit-lane")
+def research_selected_profit_lane() -> None:
+    from quant_os.research.lane_selection.selected_profit_lane import (
+        write_selected_profit_lane_report,
+    )
+
+    payload = write_selected_profit_lane_report()
+    print(
+        {
+            "status": payload["selection_status"],
+            "selected_lane_id": payload["selected_lane_id"],
+            "paper_proving_readiness": payload["paper_proving_readiness"],
+            "report": "reports/sequence49/selected_lane/latest_selected_profit_lane.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @research_app.command("prediction-market-quality")
 def research_prediction_market_quality(
     fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
@@ -3549,6 +3586,40 @@ def proving_unblockability(
                 "ready_for_bounded_shadow_rehearsal"
             ],
             "report": "reports/sequence33/unblockability/latest_unblockability.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("paper-proving-report")
+def proving_paper_proving_report() -> None:
+    from quant_os.proving.paper_proving_report import write_paper_proving_report
+
+    payload = write_paper_proving_report()
+    print(
+        {
+            "status": payload["readiness_status"],
+            "lane_id": payload["lane_id"],
+            "net_simulated_pnl_after_costs": payload["net_simulated_pnl_after_costs"],
+            "report": "reports/sequence49/paper_proving/latest_paper_proving_report.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("profit-claim-guard")
+def proving_profit_claim_guard() -> None:
+    from quant_os.proving.profit_claim_guard import write_profit_claim_guard_report
+
+    payload = write_profit_claim_guard_report()
+    print(
+        {
+            "status": payload["claim_status"],
+            "lane_id": payload["lane_id"],
+            "blockers": payload["blockers"],
+            "report": "reports/sequence49/profit_claim_guard/latest_profit_claim_guard.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }

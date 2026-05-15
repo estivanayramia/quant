@@ -1318,6 +1318,26 @@ if "%TARGET%"=="sequence48-smoke" (
   python -m pytest tests/test_sequence48_lp_refresh_lag_public_sources.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="profit-lane-tournament-smoke" (
+  python -m quant_os.cli research profit-lane-tournament
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research selected-profit-lane
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="paper-proving-smoke" (
+  python -m quant_os.cli proving paper-proving-report
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving profit-claim-guard
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence49-smoke" (
+  call "%~f0" profit-lane-tournament-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" paper-proving-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence49_profit_lane_tournament_paper_proving.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
