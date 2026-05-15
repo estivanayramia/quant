@@ -11,6 +11,7 @@ from quant_os.readiness.autonomy_milestones import (
     build_sequence38_autonomy_milestones,
     build_sequence39_autonomy_milestones,
     build_sequence41_autonomy_milestones,
+    build_sequence43_autonomy_milestones,
 )
 
 REPORT_ROOT = Path("reports/sequence35/autonomy_milestones")
@@ -19,6 +20,7 @@ SEQUENCE37_REPORT_ROOT = Path("reports/sequence37/autonomy_milestones")
 SEQUENCE38_REPORT_ROOT = Path("reports/sequence38/autonomy_milestones")
 SEQUENCE39_REPORT_ROOT = Path("reports/sequence39/autonomy_milestones")
 SEQUENCE41_REPORT_ROOT = Path("reports/sequence41/autonomy_milestones")
+SEQUENCE43_REPORT_ROOT = Path("reports/sequence43/autonomy_milestones")
 
 
 def write_autonomy_milestone_report(*, output_root: str | Path = ".") -> dict[str, Any]:
@@ -103,6 +105,22 @@ def write_sequence41_autonomy_milestone_report(
         payload,
         output_root=output_root,
         report_root=SEQUENCE41_REPORT_ROOT,
+    )
+    return payload
+
+
+def write_sequence43_autonomy_milestone_report(
+    *,
+    bounded_shadow_readiness: dict[str, Any],
+    output_root: str | Path = ".",
+) -> dict[str, Any]:
+    payload = build_sequence43_autonomy_milestones(
+        bounded_shadow_readiness=bounded_shadow_readiness,
+    )
+    payload["report_paths"] = _write_report(
+        payload,
+        output_root=output_root,
+        report_root=SEQUENCE43_REPORT_ROOT,
     )
     return payload
 

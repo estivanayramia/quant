@@ -424,6 +424,74 @@ def build_sequence41_autonomy_milestones(
     return payload
 
 
+def build_sequence43_autonomy_milestones(
+    *,
+    bounded_shadow_readiness: dict[str, Any],
+) -> dict[str, Any]:
+    payload = build_autonomy_milestones()
+    milestones = [dict(item) for item in payload["milestones"]]
+    ready = bounded_shadow_readiness["ready_for_bounded_shadow_rehearsal"]
+    readiness_status = bounded_shadow_readiness["readiness_status"]
+    for milestone in milestones:
+        if milestone["milestone_id"] == "evidence_acquisition_repeatable":
+            milestone["status"] = "MET"
+            milestone["current_blockers"] = []
+            milestone["evidence_source"] = "sequence42_real_cached_window_import"
+            milestone["required_next_action"] = (
+                "preserve real-cached evidence and continue with offline-only gates"
+            )
+            milestone["phase_likely_responsible"] = "Phase 42"
+        if milestone["milestone_id"] == "replay_inputs_sufficient":
+            milestone["status"] = "MET"
+            milestone["current_blockers"] = []
+            milestone["evidence_source"] = "sequence43_policy_replay_eval"
+            milestone["required_next_action"] = (
+                "use conservative policy replay output for bounded shadow readiness only"
+            )
+            milestone["phase_likely_responsible"] = "Phase 43"
+        if milestone["milestone_id"] == "shadow_proving_threshold_met":
+            milestone["status"] = "PARTIAL"
+            milestone["current_blockers"] = [] if ready else [readiness_status]
+            milestone["evidence_source"] = "sequence43_fill_realism_shadow_policy"
+            milestone["required_next_action"] = (
+                "continue offline shadow proof only if fill realism survives"
+            )
+            milestone["phase_likely_responsible"] = "Phase 43"
+        if milestone["milestone_id"] == "bounded_shadow_rehearsal_ready":
+            milestone["status"] = "MET" if ready else "BLOCKED"
+            milestone["current_blockers"] = [] if ready else bounded_shadow_readiness["blockers"]
+            milestone["evidence_source"] = "sequence43_bounded_shadow_rehearsal_readiness"
+            milestone["required_next_action"] = (
+                "rehearse bounded shadow only if ready; otherwise do nothing"
+            )
+            milestone["phase_likely_responsible"] = "Phase 43"
+        if milestone["milestone_id"] in {
+            "canary_preconditions_met",
+            "manual_arming_protocol_present",
+            "first_tiny_canary_allowed",
+            "real_canary_reconciliation_passed",
+            "expansion_blocked_until_repeated_proof",
+        }:
+            milestone["status"] = "BLOCKED"
+            milestone["current_blockers"] = ["LIVE_AND_CANARY_STILL_DISABLED"]
+            milestone["required_next_action"] = "do not enable live or canary in Phase 43"
+            milestone["phase_likely_responsible"] = "Future phase"
+    next_required = next(item for item in milestones if item["status"] not in {"MET"})
+    payload.update(
+        {
+            "sequence": "43",
+            "ledger_status": "FINITE_AUTONOMY_PATH_UPDATED_WITH_FILL_REALISM_SHADOW_POLICY",
+            "milestones": milestones,
+            "next_required_milestone": next_required,
+            "bounded_shadow_rehearsal_readiness_status": readiness_status,
+            "phase43_movement": bounded_shadow_readiness["autonomy_milestones"],
+            "live_orders_allowed": False,
+            "live_promotion_status": "LIVE_BLOCKED",
+        }
+    )
+    return payload
+
+
 def _milestone(
     index: int,
     milestone_id: str,
