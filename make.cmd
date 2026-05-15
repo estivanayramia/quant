@@ -1308,6 +1308,16 @@ if "%TARGET%"=="sequence47-smoke" (
   python -m pytest tests/test_sequence47_pm_lp_refresh_lag_candidate_pack.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="sequence48-smoke" (
+  python -m quant_os.cli research pm-lp-refresh-lag-source-feasibility
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli data pm-lp-refresh-lag-capture-plan
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness pm-lp-refresh-lag-source-readiness --fixture-path tests\fixtures\replay_candidates\pm_lp_refresh_lag\public_source_sample\blocked_missing_public_fill_attribution.json
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence48_lp_refresh_lag_public_sources.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
