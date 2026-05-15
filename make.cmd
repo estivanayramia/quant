@@ -1284,6 +1284,18 @@ if "%TARGET%"=="sequence45-smoke" (
   python -m pytest tests/test_sequence45_allowed_intent_evidence_expansion.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="sequence46-smoke" (
+  python -m quant_os.cli data pm-crypto-updown-capture-plan --manual-network-ok --run-id pm_crypto_updown_manual_046
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli data pm-crypto-updown-real-cached-import --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample --real-cached-root data\external\manual_captures\pm_crypto_updown\pm_crypto_updown_manual_046
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-phase46-capture-pass --run-id pm_crypto_updown_manual_046 --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness pm-crypto-updown-phase46-candidate-path --run-id pm_crypto_updown_manual_046 --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence46_allowed_intent_capture_path.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
