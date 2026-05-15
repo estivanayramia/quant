@@ -840,6 +840,87 @@ def build_sequence50_autonomy_milestones(
     return payload
 
 
+def build_sequence51_autonomy_milestones(
+    *,
+    weather_profit_readiness: dict[str, Any],
+) -> dict[str, Any]:
+    payload = build_autonomy_milestones()
+    milestones = [dict(item) for item in payload["milestones"]]
+    status = weather_profit_readiness["readiness_status"]
+    real_rows = int(weather_profit_readiness.get("real_public_row_count", 0))
+    proof_rows = int(weather_profit_readiness.get("proof_row_count", 0))
+    phase51_milestone = _milestone(
+        7,
+        "real_weather_market_capture_paper_proving",
+        "Real weather market capture paper proving",
+        "PARTIAL" if real_rows else "BLOCKED",
+        weather_profit_readiness["blockers"],
+        "sequence51_weather_paper_profit_readiness",
+        (
+            "wait for official NWS resolution labels and expand the sample"
+            if status == "RESOLUTION_LABELS_MISSING"
+            else "capture source-policy-approved public weather markets"
+        ),
+        "Phase 51",
+    )
+    milestones.insert(6, phase51_milestone)
+    for index, milestone in enumerate(milestones, start=1):
+        milestone["milestone_index"] = index
+        if milestone["milestone_id"] == "evidence_acquisition_repeatable":
+            milestone["status"] = "PARTIAL" if real_rows else "BLOCKED"
+            milestone["current_blockers"] = weather_profit_readiness["blockers"]
+            milestone["evidence_source"] = "sequence51_public_capture"
+            milestone["required_next_action"] = (
+                "keep collecting public read-only weather and market snapshots"
+            )
+            milestone["phase_likely_responsible"] = "Phase 51+"
+        if milestone["milestone_id"] == "replay_inputs_sufficient":
+            milestone["status"] = "PARTIAL" if proof_rows else "BLOCKED"
+            milestone["current_blockers"] = weather_profit_readiness["blockers"]
+            milestone["evidence_source"] = "sequence51_weather_dataset"
+            milestone["required_next_action"] = "require resolution labels before proof rows count"
+            milestone["phase_likely_responsible"] = "Phase 51+"
+        if milestone["milestone_id"] == "shadow_proving_threshold_met":
+            milestone["status"] = "BLOCKED"
+            milestone["current_blockers"] = ["NO_PAPER_PROFIT_CANDIDATE"]
+            milestone["evidence_source"] = "sequence51_profit_claim_guard"
+            milestone["required_next_action"] = "do not rehearse until paper profit evidence qualifies"
+            milestone["phase_likely_responsible"] = "Future phase"
+        if milestone["milestone_id"] == "bounded_shadow_rehearsal_ready":
+            milestone["status"] = "BLOCKED"
+            milestone["current_blockers"] = ["PAPER_PROFIT_CANDIDATE_NOT_EARNED"]
+            milestone["evidence_source"] = "sequence51_weather_paper_profit_readiness"
+            milestone["required_next_action"] = "keep bounded shadow blocked"
+            milestone["phase_likely_responsible"] = "Future phase"
+        if milestone["milestone_id"] in {
+            "canary_preconditions_met",
+            "manual_arming_protocol_present",
+            "first_tiny_canary_allowed",
+            "real_canary_reconciliation_passed",
+            "expansion_blocked_until_repeated_proof",
+        }:
+            milestone["status"] = "BLOCKED"
+            milestone["current_blockers"] = ["LIVE_AND_CANARY_STILL_DISABLED"]
+            milestone["required_next_action"] = "do not enable live or canary in Phase 51"
+            milestone["phase_likely_responsible"] = "Future phase"
+    next_required = next(item for item in milestones if item["status"] != "MET")
+    payload.update(
+        {
+            "sequence": "51",
+            "ledger_status": "FINITE_AUTONOMY_PATH_UPDATED_WITH_REAL_WEATHER_MARKET_CAPTURE",
+            "milestone_count": len(milestones),
+            "milestones": milestones,
+            "next_required_milestone": next_required,
+            "selected_candidate_id": "pm_weather_forecast_market_mismatch",
+            "weather_paper_profit_readiness_status": status,
+            "phase51_movement": weather_profit_readiness["autonomy_milestones"],
+            "live_orders_allowed": False,
+            "live_promotion_status": "LIVE_BLOCKED",
+        }
+    )
+    return payload
+
+
 def _milestone(
     index: int,
     milestone_id: str,
