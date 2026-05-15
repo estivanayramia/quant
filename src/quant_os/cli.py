@@ -294,6 +294,14 @@ DEFAULT_PM_LP_REFRESH_LAG_FIXTURE = (
     / "pm_lp_refresh_lag"
     / "refresh_lag_windows.json"
 )
+DEFAULT_PM_LP_REFRESH_LAG_PUBLIC_SOURCE_FIXTURE = (
+    Path("tests")
+    / "fixtures"
+    / "replay_candidates"
+    / "pm_lp_refresh_lag"
+    / "public_source_sample"
+    / "blocked_missing_public_fill_attribution.json"
+)
 
 
 def _repo_default_path(path: Path) -> Path:
@@ -877,6 +885,26 @@ def data_pm_crypto_updown_capture_plan(
             "network_enabled": payload["network_enabled"],
             "network_fetch_attempted": payload["network_fetch_attempted"],
             "report": "reports/sequence39/manual_capture/latest_real_cached_capture_plan.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@data_app.command("pm-lp-refresh-lag-capture-plan")
+def data_pm_lp_refresh_lag_capture_plan() -> None:
+    from quant_os.data.prediction_markets.pm_lp_refresh_lag_capture_plan import (
+        write_pm_lp_refresh_lag_capture_plan,
+    )
+
+    payload = write_pm_lp_refresh_lag_capture_plan()
+    print(
+        {
+            "status": payload["status"],
+            "manual_only": payload["manual_only"],
+            "network_enabled": payload["network_enabled"],
+            "network_fetch_attempted": payload["network_fetch_attempted"],
+            "report": ("reports/sequence48/capture_plan/latest_lp_refresh_lag_capture_plan.json"),
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }
@@ -1575,6 +1603,25 @@ def research_pm_lp_refresh_lag_source_policy() -> None:
             "allowed_source_count": len(payload["allowed_sources"]),
             "blocked_source_count": len(payload["blocked_sources"]),
             "report": "reports/sequence47/source_policy/latest_source_policy.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-lp-refresh-lag-source-feasibility")
+def research_pm_lp_refresh_lag_source_feasibility() -> None:
+    from quant_os.research.replay_candidates.pm_lp_refresh_lag_source_feasibility import (
+        write_pm_lp_refresh_lag_source_feasibility_report,
+    )
+
+    payload = write_pm_lp_refresh_lag_source_feasibility_report()
+    print(
+        {
+            "status": payload["feasibility_status"],
+            "active_blocker": payload["active_blocker"],
+            "public_source_acquisition_ready": payload["public_source_acquisition_ready"],
+            "report": ("reports/sequence48/source_feasibility/latest_source_feasibility.json"),
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }
@@ -4039,6 +4086,30 @@ def readiness_pm_lp_refresh_lag_candidate_readiness(
             "data_availability_status": payload["data_availability_status"],
             "fixture_event_count": payload["fixture_event_count"],
             "report": "reports/sequence47/candidate_readiness/latest_candidate_readiness.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("pm-lp-refresh-lag-source-readiness")
+def readiness_pm_lp_refresh_lag_source_readiness(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    from quant_os.readiness.pm_lp_refresh_lag_source_readiness_report import (
+        write_pm_lp_refresh_lag_source_readiness_report,
+    )
+
+    payload = write_pm_lp_refresh_lag_source_readiness_report(
+        fixture_path=fixture_path
+        or _repo_default_path(DEFAULT_PM_LP_REFRESH_LAG_PUBLIC_SOURCE_FIXTURE),
+    )
+    print(
+        {
+            "status": payload["source_readiness_status"],
+            "active_blocker": payload["active_blocker"],
+            "exact_missing_source_fields": payload["exact_missing_source_fields"],
+            "report": "reports/sequence48/source_readiness/latest_source_readiness.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }

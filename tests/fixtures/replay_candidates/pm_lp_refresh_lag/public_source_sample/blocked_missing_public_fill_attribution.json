@@ -1,0 +1,17 @@
+{
+  "schema_version": "pm_lp_refresh_lag_public_source_sample_v1",
+  "candidate_id": "pm_lp_refresh_lag_arbitrage",
+  "dataset_status": "BLOCKED_MISSING_PUBLIC_FILL_ATTRIBUTION",
+  "events": [],
+  "exact_missing_source_fields": [
+    "maker_taker_role",
+    "maker_wallet_order_attribution"
+  ],
+  "source_quality": "blocked_fixture_no_raw_capture",
+  "block_reason": "Public read-only sources reviewed for Phase 48 do not expose exact maker/taker role plus maker wallet/order attribution needed to prove LP fill attribution.",
+  "provenance": {
+    "fixture": "sequence48_blocked_public_source_sample",
+    "raw_capture_committed": false,
+    "production_capture": false
+  }
+}
