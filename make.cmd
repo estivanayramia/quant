@@ -1234,6 +1234,26 @@ if "%TARGET%"=="sequence43-smoke" (
   python -m pytest tests/test_sequence43_fill_realism_shadow_policy.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="allowed-intent-diagnostics-smoke" (
+  python -m quant_os.cli research pm-crypto-updown-allowed-intent-diagnostics --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-discriminators --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-baseline-placebo-attribution --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="candidate-decision-smoke" (
+  python -m quant_os.cli readiness pm-crypto-updown-candidate-decision --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence44-smoke" (
+  call "%~f0" allowed-intent-diagnostics-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" candidate-decision-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence44_allowed_intent_signal_discrimination.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
