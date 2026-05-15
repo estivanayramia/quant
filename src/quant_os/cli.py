@@ -287,6 +287,13 @@ DEFAULT_RESEARCH_INTAKE_SOURCE_CONFIG = Path("configs") / "research_intake_sourc
 DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT = (
     Path("tests") / "fixtures" / "replay_candidates" / "pm_crypto_updown"
 )
+DEFAULT_PM_LP_REFRESH_LAG_FIXTURE = (
+    Path("tests")
+    / "fixtures"
+    / "replay_candidates"
+    / "pm_lp_refresh_lag"
+    / "refresh_lag_windows.json"
+)
 
 
 def _repo_default_path(path: Path) -> Path:
@@ -1513,6 +1520,61 @@ def research_pm_crypto_updown_phase46_capture_pass(
                 "allowed_real_cached_intents_after"
             ],
             "report": "reports/sequence46/allowed_intent_capture/latest_allowed_intent_capture_pass.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-lp-refresh-lag-candidate-pack")
+def research_pm_lp_refresh_lag_candidate_pack() -> None:
+    from quant_os.research.replay_candidates.pm_lp_refresh_lag_candidate_pack import (
+        write_pm_lp_refresh_lag_candidate_pack_report,
+    )
+
+    payload = write_pm_lp_refresh_lag_candidate_pack_report()
+    print(
+        {
+            "status": payload["candidate_readiness_status"],
+            "candidate_id": payload["candidate_id"],
+            "report": "reports/sequence47/candidate_pack/latest_candidate_pack.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-lp-refresh-lag-replay-schema")
+def research_pm_lp_refresh_lag_replay_schema() -> None:
+    from quant_os.research.replay_candidates.pm_lp_refresh_lag_schema import (
+        build_pm_lp_refresh_lag_replay_schema,
+    )
+
+    payload = build_pm_lp_refresh_lag_replay_schema()
+    print(
+        {
+            "status": "REPLAY_SCHEMA_DEFINED",
+            "candidate_id": payload["candidate_id"],
+            "event_type": payload["event_type"],
+            "live_trading_enabled": False,
+            "execution_authority": payload["safety"]["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-lp-refresh-lag-source-policy")
+def research_pm_lp_refresh_lag_source_policy() -> None:
+    from quant_os.research.replay_candidates.pm_lp_refresh_lag_source_policy import (
+        write_pm_lp_refresh_lag_source_policy_report,
+    )
+
+    payload = write_pm_lp_refresh_lag_source_policy_report()
+    print(
+        {
+            "status": payload["policy_status"],
+            "allowed_source_count": len(payload["allowed_sources"]),
+            "blocked_source_count": len(payload["blocked_sources"]),
+            "report": "reports/sequence47/source_policy/latest_source_policy.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }
@@ -3950,6 +4012,33 @@ def readiness_pm_crypto_updown_phase46_candidate_path(
                 "allowed_real_cached_intents_after"
             ],
             "report": "reports/sequence46/candidate_path/latest_phase46_candidate_path.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("pm-lp-refresh-lag-candidate-readiness")
+def readiness_pm_lp_refresh_lag_candidate_readiness(
+    fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
+) -> None:
+    from quant_os.readiness.autonomy_milestone_report import (
+        write_sequence47_autonomy_milestone_report,
+    )
+    from quant_os.research.replay_candidates.pm_lp_refresh_lag_source_policy import (
+        write_pm_lp_refresh_lag_candidate_readiness_report,
+    )
+
+    payload = write_pm_lp_refresh_lag_candidate_readiness_report(
+        fixture_path=fixture_path or _repo_default_path(DEFAULT_PM_LP_REFRESH_LAG_FIXTURE),
+    )
+    write_sequence47_autonomy_milestone_report(candidate_readiness=payload)
+    print(
+        {
+            "status": payload["candidate_readiness_status"],
+            "data_availability_status": payload["data_availability_status"],
+            "fixture_event_count": payload["fixture_event_count"],
+            "report": "reports/sequence47/candidate_readiness/latest_candidate_readiness.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }
