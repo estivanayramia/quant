@@ -1106,6 +1106,110 @@ def research_pm_crypto_updown_real_cached_replay_eval(
     )
 
 
+@research_app.command("pm-crypto-updown-fill-blockers")
+def research_pm_crypto_updown_fill_blockers(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+    real_cached_root: Annotated[list[Path] | None, typer.Option("--real-cached-root")] = None,
+) -> None:
+    from quant_os.research.replay_candidates.pm_crypto_updown_dataset_builder import (
+        build_pm_crypto_updown_expanded_dataset,
+    )
+    from quant_os.research.replay_candidates.pm_crypto_updown_fill_blocker_report import (
+        write_pm_crypto_updown_fill_blocker_attribution_report,
+    )
+    from quant_os.research.replay_candidates.pm_crypto_updown_signals import (
+        score_pm_crypto_updown_signals,
+    )
+
+    dataset = build_pm_crypto_updown_expanded_dataset(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+        real_cached_artifact_roots=_optional_path_list(real_cached_root),
+    )
+    signals = score_pm_crypto_updown_signals(dataset["rows"])
+    payload = write_pm_crypto_updown_fill_blocker_attribution_report(
+        rows=dataset["rows"],
+        signal_report=signals,
+    )
+    print(
+        {
+            "status": (
+                "FILL_BLOCKERS_ATTRIBUTED"
+                if payload["blocked_row_count"]
+                else "NO_FILL_BLOCKERS_FOUND"
+            ),
+            "blocked_row_count": payload["blocked_row_count"],
+            "potentially_tradeable_row_count": payload["potentially_tradeable_row_count"],
+            "report": "reports/sequence43/fill_blockers/latest_fill_blocker_attribution.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-crypto-updown-shadow-policy")
+def research_pm_crypto_updown_shadow_policy(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+    real_cached_root: Annotated[list[Path] | None, typer.Option("--real-cached-root")] = None,
+) -> None:
+    from quant_os.execution.pm_crypto_updown_shadow_policy import (
+        write_pm_crypto_updown_shadow_policy_report,
+    )
+    from quant_os.research.replay_candidates.pm_crypto_updown_dataset_builder import (
+        build_pm_crypto_updown_expanded_dataset,
+    )
+    from quant_os.research.replay_candidates.pm_crypto_updown_signals import (
+        score_pm_crypto_updown_signals,
+    )
+
+    dataset = build_pm_crypto_updown_expanded_dataset(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+        real_cached_artifact_roots=_optional_path_list(real_cached_root),
+    )
+    signals = score_pm_crypto_updown_signals(dataset["rows"])
+    payload = write_pm_crypto_updown_shadow_policy_report(
+        rows=dataset["rows"],
+        signal_report=signals,
+    )
+    print(
+        {
+            "status": "OFFLINE_SHADOW_POLICY_WRITTEN",
+            "allowed_intent_count": payload["allowed_intent_count"],
+            "blocked_intent_count": payload["blocked_intent_count"],
+            "report": "reports/sequence43/shadow_policy/latest_pm_crypto_updown_shadow_policy.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("pm-crypto-updown-policy-replay-eval")
+def research_pm_crypto_updown_policy_replay_eval(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+    real_cached_root: Annotated[list[Path] | None, typer.Option("--real-cached-root")] = None,
+) -> None:
+    from quant_os.research.replay_candidates.pm_crypto_updown_policy_replay_eval import (
+        write_pm_crypto_updown_policy_replay_eval_report,
+    )
+
+    payload = write_pm_crypto_updown_policy_replay_eval_report(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+        real_cached_artifact_roots=_optional_path_list(real_cached_root),
+    )
+    print(
+        {
+            "status": payload["evaluation_status"],
+            "allowed_intent_count": payload["allowed_intent_count"],
+            "primary_allowed_intent_count": payload["primary_allowed_intent_count"],
+            "cost_fill_realism_still_blocks": payload["policy_answers"][
+                "cost_fill_realism_still_blocks"
+            ],
+            "report": "reports/sequence43/policy_replay_eval/latest_policy_replay_eval.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @research_app.command("prediction-market-quality")
 def research_prediction_market_quality(
     fixture_path: Annotated[Path | None, typer.Option("--fixture-path")] = None,
@@ -3409,6 +3513,41 @@ def readiness_expanded_shadow_replay_readiness(
                 "real_cached_replay_ready_row_count"
             ],
             "report": "reports/sequence41/expanded_shadow_replay_readiness/latest_expanded_shadow_replay_readiness.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("bounded-shadow-rehearsal")
+def readiness_bounded_shadow_rehearsal(
+    fixture_root: Annotated[Path | None, typer.Option("--fixture-root")] = None,
+    real_cached_root: Annotated[list[Path] | None, typer.Option("--real-cached-root")] = None,
+) -> None:
+    from quant_os.readiness.bounded_shadow_rehearsal_readiness_report import (
+        write_bounded_shadow_rehearsal_readiness_report,
+    )
+    from quant_os.research.replay_candidates.pm_crypto_updown_policy_replay_eval import (
+        write_pm_crypto_updown_policy_replay_eval_report,
+    )
+
+    evaluation = write_pm_crypto_updown_policy_replay_eval_report(
+        fixture_root=fixture_root or _repo_default_path(DEFAULT_PM_CRYPTO_UPDOWN_FIXTURE_ROOT),
+        real_cached_artifact_roots=_optional_path_list(real_cached_root),
+    )
+    payload = write_bounded_shadow_rehearsal_readiness_report(
+        policy_replay_eval=evaluation,
+    )
+    print(
+        {
+            "status": payload["readiness_status"],
+            "overall_status": payload["overall_status"],
+            "ready_for_bounded_shadow_rehearsal": payload[
+                "ready_for_bounded_shadow_rehearsal"
+            ],
+            "primary_evidence_row_count": payload["primary_evidence_row_count"],
+            "primary_allowed_intent_count": payload["primary_allowed_intent_count"],
+            "report": "reports/sequence43/bounded_shadow_rehearsal_readiness/latest_bounded_shadow_rehearsal_readiness.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }

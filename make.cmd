@@ -1214,6 +1214,26 @@ if "%TARGET%"=="sequence42-smoke" (
   python -m pytest tests/test_sequence42_real_cached_window_import.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="pm-crypto-updown-fill-policy-smoke" (
+  python -m quant_os.cli research pm-crypto-updown-fill-blockers --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-shadow-policy --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research pm-crypto-updown-policy-replay-eval --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="bounded-shadow-rehearsal-readiness-smoke" (
+  python -m quant_os.cli readiness bounded-shadow-rehearsal --real-cached-root tests\fixtures\replay_candidates\pm_crypto_updown\real_cached_sample
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence43-smoke" (
+  call "%~f0" pm-crypto-updown-fill-policy-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" bounded-shadow-rehearsal-readiness-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence43_fill_realism_shadow_policy.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
