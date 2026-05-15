@@ -1210,6 +1210,10 @@ if "%TARGET%"=="sequence41-smoke" (
   python -m pytest tests/test_sequence41_real_cached_window_acquisition.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="sequence42-smoke" (
+  python -m pytest tests/test_sequence42_real_cached_window_import.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
