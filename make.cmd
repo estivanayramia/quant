@@ -1428,6 +1428,38 @@ if "%TARGET%"=="sequence54-smoke" (
   python -m pytest tests/test_sequence54_crypto_spot_public_paper_proving.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="canary-readiness-smoke" (
+  python -m quant_os.cli readiness paper-candidate-audit
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness weather-lineage-audit
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving weather-replay-recompute
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving weather-robustness
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving weather-cost-fill-stress
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving weather-bounded-shadow-rehearsal
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli execution weather-dry-run-parity
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli risk weather-tiny-canary-risk
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli risk weather-canary-kill-switch
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli execution weather-canary-reconciliation
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness weather-manual-canary-packet
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness tiny-canary-readiness
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence55-smoke" (
+  call "%~f0" canary-readiness-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence55_tiny_canary_readiness.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!

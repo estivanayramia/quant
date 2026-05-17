@@ -223,6 +223,8 @@ historical_app = typer.Typer(help="Historical data ingestion commands.")
 proving_app = typer.Typer(help="Autonomous proving-mode commands.")
 canary_app = typer.Typer(help="Tiny-live canary policy gates and default-off execution lane.")
 readiness_app = typer.Typer(help="Evidence-based readiness reports.")
+execution_app = typer.Typer(help="Offline execution and reconciliation proof commands.")
+risk_app = typer.Typer(help="Risk envelope and kill-switch proof commands.")
 app.add_typer(autonomous_app, name="autonomous")
 app.add_typer(autonomy_app, name="autonomy")
 app.add_typer(data_app, name="data")
@@ -240,6 +242,8 @@ app.add_typer(historical_app, name="historical")
 app.add_typer(proving_app, name="proving")
 app.add_typer(canary_app, name="canary")
 app.add_typer(readiness_app, name="readiness")
+app.add_typer(execution_app, name="execution")
+app.add_typer(risk_app, name="risk")
 
 DEFAULT_POLYMARKET_WALLET_FIXTURE = (
     Path("tests") / "fixtures" / "prediction_markets" / "polymarket_wallet_activity_sample.json"
@@ -5289,6 +5293,200 @@ def readiness_profit_candidate_autonomy_path() -> None:
             "selected_lane": payload["selected_lane"],
             "next_gate": payload["next_gate"],
             "report": "reports/profit_campaign/autonomy_path/latest_autonomy_path.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("paper-candidate-audit")
+def readiness_paper_candidate_audit() -> None:
+    from quant_os.readiness.paper_candidate_audit import write_paper_candidate_audit_report
+
+    payload = write_paper_candidate_audit_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/paper_candidate_audit/latest_paper_candidate_audit.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("weather-lineage-audit")
+def readiness_weather_lineage_audit() -> None:
+    from quant_os.readiness.weather_candidate_lineage_audit import (
+        write_weather_candidate_lineage_audit_report,
+    )
+
+    payload = write_weather_candidate_lineage_audit_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/lineage_audit/latest_lineage_audit.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("weather-replay-recompute")
+def proving_weather_replay_recompute() -> None:
+    from quant_os.proving.weather_candidate_replay_recompute import (
+        write_weather_candidate_replay_recompute_report,
+    )
+
+    payload = write_weather_candidate_replay_recompute_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/replay_recompute/latest_replay_recompute.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("weather-robustness")
+def proving_weather_robustness() -> None:
+    from quant_os.proving.weather_candidate_robustness import (
+        write_weather_candidate_robustness_report,
+    )
+
+    payload = write_weather_candidate_robustness_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/robustness/latest_robustness.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("weather-cost-fill-stress")
+def proving_weather_cost_fill_stress() -> None:
+    from quant_os.proving.weather_candidate_cost_fill_stress import (
+        write_weather_candidate_cost_fill_stress_report,
+    )
+
+    payload = write_weather_candidate_cost_fill_stress_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/cost_fill_stress/latest_cost_fill_stress.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("weather-bounded-shadow-rehearsal")
+def proving_weather_bounded_shadow_rehearsal() -> None:
+    from quant_os.proving.weather_bounded_shadow_rehearsal import (
+        write_weather_bounded_shadow_rehearsal_report,
+    )
+
+    payload = write_weather_bounded_shadow_rehearsal_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/shadow_rehearsal/latest_shadow_rehearsal.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@execution_app.command("weather-dry-run-parity")
+def execution_weather_dry_run_parity() -> None:
+    from quant_os.execution.weather_dry_run_parity import write_weather_dry_run_parity_report
+
+    payload = write_weather_dry_run_parity_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/dry_run_parity/latest_dry_run_parity.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@risk_app.command("weather-tiny-canary-risk")
+def risk_weather_tiny_canary_risk() -> None:
+    from quant_os.risk.weather_tiny_canary_risk import write_weather_tiny_canary_risk_report
+
+    payload = write_weather_tiny_canary_risk_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/risk/latest_tiny_canary_risk.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@risk_app.command("weather-canary-kill-switch")
+def risk_weather_canary_kill_switch() -> None:
+    from quant_os.risk.weather_canary_kill_switch import write_weather_canary_kill_switch_report
+
+    payload = write_weather_canary_kill_switch_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/kill_switch/latest_kill_switch.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@execution_app.command("weather-canary-reconciliation")
+def execution_weather_canary_reconciliation() -> None:
+    from quant_os.execution.weather_canary_reconciliation import (
+        write_weather_canary_reconciliation_report,
+    )
+
+    payload = write_weather_canary_reconciliation_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/reconciliation/latest_reconciliation.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("weather-manual-canary-packet")
+def readiness_weather_manual_canary_packet() -> None:
+    from quant_os.readiness.weather_manual_canary_packet import (
+        write_weather_manual_canary_packet_report,
+    )
+
+    payload = write_weather_manual_canary_packet_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/manual_packet/latest_manual_canary_packet.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("tiny-canary-readiness")
+def readiness_tiny_canary_readiness() -> None:
+    from quant_os.readiness.tiny_canary_readiness import write_tiny_canary_readiness_report
+
+    payload = write_tiny_canary_readiness_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/final/latest_tiny_canary_readiness.json",
             "live_trading_enabled": payload["live_trading_enabled"],
             "execution_authority": payload["execution_authority"],
         }

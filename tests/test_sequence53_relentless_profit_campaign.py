@@ -113,6 +113,31 @@ def test_sequence53_failed_lanes_are_not_repeated_unless_blocker_changes() -> No
     assert selected_changed["lane_id"] == "pm_weather_forecast_market_mismatch"
 
 
+def test_sequence53_public_network_retry_prioritizes_weather_archive_blocker() -> None:
+    from quant_os.proving.relentless_profit_campaign_state import default_campaign_state
+    from quant_os.research.lane_selection.relentless_profit_campaign_engine import (
+        select_next_lane,
+    )
+    from quant_os.research.lane_selection.relentless_profit_campaign_models import (
+        build_initial_lane_universe,
+    )
+
+    state = default_campaign_state()
+    state["lanes_attempted"] = ["pm_weather_forecast_market_mismatch"]
+    state["lane_blocker_signatures"] = {
+        "pm_weather_forecast_market_mismatch": "HISTORICAL_FORECAST_SNAPSHOTS_MISSING"
+    }
+
+    selected = select_next_lane(
+        build_initial_lane_universe(),
+        state,
+        retry_public_data_blockers=True,
+    )
+
+    assert selected is not None
+    assert selected["lane_id"] == "pm_weather_forecast_market_mismatch"
+
+
 def test_sequence53_safe_queue_expansion_works_and_unsafe_expansion_is_rejected() -> None:
     from quant_os.research.lane_selection.relentless_profit_campaign_engine import (
         expand_safe_lane_queue,
@@ -265,6 +290,58 @@ def test_sequence53_no_new_expansion_lanes_preserves_tool_limit_checkpoint(
     assert resumed["state"]["next_action"] == (
         "Research another safe public-data-compatible expansion tranche, then resume."
     )
+
+
+def test_sequence53_resume_after_first_expansion_adds_next_safe_tranche(
+    local_project: Path,
+) -> None:
+    from quant_os.proving.relentless_profit_campaign_runner import run_relentless_profit_campaign
+    from quant_os.proving.relentless_profit_campaign_state import (
+        default_campaign_state,
+        write_campaign_state,
+    )
+    from quant_os.research.lane_selection.relentless_profit_campaign_models import (
+        build_initial_lane_universe,
+        default_expansion_candidates,
+    )
+
+    first_expansion_ids = {
+        "macro_event_etf_reaction_paper_only",
+        "crypto_spot_post_liquidation_reversion_proxy",
+        "pm_public_fact_update_underreaction",
+        "pm_weather_nbm_vs_bucket_forward_capture",
+        "crypto_spot_intraday_seasonality_paper_only",
+        "etf_month_turnaround_effect_paper_only",
+        "public_macro_surprise_etf_drift_paper_only",
+        "pm_cross_platform_resolution_lag_public_only",
+        "crypto_spot_large_move_cooldown_reversion",
+    }
+    first_expansion = [
+        lane
+        for lane in default_expansion_candidates()
+        if lane["lane_id"] in first_expansion_ids
+    ]
+    attempted_lanes = [*build_initial_lane_universe(), *first_expansion]
+    attempted = [lane["lane_id"] for lane in attempted_lanes]
+    state = default_campaign_state()
+    state["lanes_attempted"] = attempted
+    state["lanes_rejected"] = list(attempted)
+    state["lanes_added_during_expansion"] = first_expansion
+    state["lane_blocker_signatures"] = {
+        lane["lane_id"]: lane["blocker_signature"] for lane in attempted_lanes
+    }
+    state["current_paper_status"] = "TOOL_OR_CONTEXT_LIMIT_REACHED"
+    state["next_action"] = "Research another safe public-data-compatible expansion tranche, then resume."
+    write_campaign_state(state, output_root=local_project)
+
+    payload = run_relentless_profit_campaign(output_root=local_project, max_lanes=1)
+
+    assert payload["run_summary"]["lanes_attempted_this_run"] == 1
+    assert payload["attempts"][0]["lane_id"] == "crypto_spot_liquidity_sweep_reversion_paper_only"
+    assert "crypto_spot_liquidity_sweep_reversion_paper_only" in payload["state"]["lanes_attempted"]
+    assert payload["state"]["current_campaign_status"] == "CAMPAIGN_CHECKPOINTED_NOT_COMPLETE"
+    assert payload["live_trading_enabled"] is False
+    assert payload["execution_authority"] == "NONE"
 
 
 def test_sequence53_no_no_edge_status_can_mark_campaign_complete() -> None:

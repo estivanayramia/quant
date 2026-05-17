@@ -81,6 +81,8 @@ def attempt_lane(
     if lane.get("research_only") or not lane.get("promotion_allowed", True):
         blockers.insert(0, "RESEARCH_ONLY_LANE_CANNOT_PROMOTE")
     elif lane_id == "pm_weather_forecast_market_mismatch":
+        if public_network_ok:
+            return _attempt_weather_historical_forecast_lane(lane)
         status = NEEDS_FORWARD_DATA_CAPTURE
         blockers.append("HISTORICAL_FORECAST_SNAPSHOTS_MISSING")
         blockers.append("NO_LOOKAHEAD_FORECAST_ARCHIVE_NOT_AVAILABLE_IN_REPO")
@@ -259,6 +261,121 @@ def _attempt_public_crypto_spot_lane(lane: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _attempt_weather_historical_forecast_lane(lane: dict[str, Any]) -> dict[str, Any]:
+    try:
+        from quant_os.data.weather.weather_market_batch_capture import (
+            run_weather_market_batch_capture,
+        )
+        from quant_os.proving.weather_market_batch_paper_proving import (
+            run_weather_market_batch_paper_proving,
+        )
+        from quant_os.readiness.weather_market_batch_paper_readiness import (
+            evaluate_weather_market_batch_paper_readiness,
+        )
+        from quant_os.research.replay_candidates.weather_market_resolved_dataset_builder import (
+            build_weather_market_resolved_dataset_from_batch_capture,
+        )
+
+        capture = run_weather_market_batch_capture(
+            output_root=".",
+            public_network_ok=True,
+            run_id="weather_historical_forecast_campaign",
+        )
+        if not capture.get("manifest_path"):
+            blockers = capture.get("blockers", []) or ["WEATHER_ARCHIVE_SOURCE_BLOCKED"]
+            return _weather_attempt_payload(
+                lane=lane,
+                status=CONTINUE_TO_NEXT_LANE,
+                paper_status=capture.get("status", "WEATHER_ARCHIVE_SOURCE_BLOCKED"),
+                blockers=blockers,
+                blocker_signature=capture.get("status", "WEATHER_ARCHIVE_SOURCE_BLOCKED"),
+                proof_rows_created=0,
+                capture_status=capture.get("status", "WEATHER_ARCHIVE_SOURCE_BLOCKED"),
+                report_paths=capture.get("report_paths", {}),
+            )
+        dataset = build_weather_market_resolved_dataset_from_batch_capture(
+            capture_manifest_path=capture["manifest_path"],
+            output_root=".",
+        )
+        paper = run_weather_market_batch_paper_proving(
+            dataset.get("rows", []),
+            output_root=".",
+        )
+        readiness = evaluate_weather_market_batch_paper_readiness(
+            dataset_payload=dataset,
+            paper_payload=paper,
+            output_root=".",
+        )
+    except Exception as exc:  # pragma: no cover - external weather archives can fail by environment.
+        return _weather_attempt_payload(
+            lane=lane,
+            status=CONTINUE_TO_NEXT_LANE,
+            paper_status="WEATHER_ARCHIVE_SOURCE_BLOCKED",
+            blockers=["WEATHER_ARCHIVE_CAPTURE_FAILED", type(exc).__name__],
+            blocker_signature="WEATHER_ARCHIVE_SOURCE_BLOCKED",
+            proof_rows_created=0,
+            capture_status="WEATHER_ARCHIVE_CAPTURE_FAILED",
+            report_paths={},
+        )
+    candidate = readiness.get("paper_profit_candidate") is True
+    blockers = readiness.get("blockers", []) or paper.get("blockers", []) or dataset.get("blockers", [])
+    return _weather_attempt_payload(
+        lane=lane,
+        status=PAPER_PROFIT_CANDIDATE_FOUND if candidate else CONTINUE_TO_NEXT_LANE,
+        paper_status=readiness.get("readiness_status", dataset.get("dataset_status")),
+        blockers=blockers,
+        blocker_signature=readiness.get("readiness_status", dataset.get("dataset_status")),
+        proof_rows_created=dataset.get("proof_row_count", 0),
+        capture_status=capture.get("status"),
+        report_paths=readiness.get("report_paths", {}),
+        paper_profit_candidate=candidate,
+        profit_claim_status=readiness.get("paper_profit_status", "NO_PROFIT_CLAIM_ALLOWED"),
+    )
+
+
+def _weather_attempt_payload(
+    *,
+    lane: dict[str, Any],
+    status: str,
+    paper_status: str,
+    blockers: list[str],
+    blocker_signature: str,
+    proof_rows_created: int,
+    capture_status: str,
+    report_paths: dict[str, Any],
+    paper_profit_candidate: bool = False,
+    profit_claim_status: str = "NO_PROFIT_CLAIM_ALLOWED",
+) -> dict[str, Any]:
+    return {
+        "lane_id": lane["lane_id"],
+        "family": lane.get("family"),
+        "status": status,
+        "promotion_allowed": True,
+        "paper_profit_candidate": paper_profit_candidate,
+        "paper_status": paper_status,
+        "profit_claim_status": profit_claim_status,
+        "blockers": blockers,
+        "blocker_signature": blocker_signature,
+        "proof_rows_created": proof_rows_created,
+        "source_policy": lane.get("source_policy"),
+        "capture_status": capture_status,
+        "public_network_ok": True,
+        "report_paths": report_paths,
+        "reproducible_commands": [
+            "python -m quant_os.cli data weather-market-batch-capture --public-network-ok",
+            "python -m quant_os.cli research weather-resolved-dataset",
+            "python -m quant_os.cli proving weather-batch-paper-proving",
+            "python -m quant_os.cli readiness weather-batch-paper-readiness",
+        ],
+        "live_ready": False,
+        "canary_ready": False,
+        **CAMPAIGN_SAFETY,
+        "live_allowed": False,
+        "live_promotion_status": "LIVE_BLOCKED",
+        "evidence_only": True,
+    }
+
+
 def _safety_score(lane: dict[str, Any]) -> int:
     score = 0
     safe_flags = [
@@ -314,7 +431,12 @@ def _unsafe_blockers(lane: dict[str, Any]) -> list[str]:
 
 
 def _is_public_data_retryable(lane: dict[str, Any]) -> bool:
-    return lane.get("family") == "crypto_spot"
+    if lane.get("family") == "crypto_spot":
+        return True
+    return str(lane.get("lane_id")) in {
+        "pm_weather_forecast_market_mismatch",
+        "pm_weather_historical_forecast_archive_mismatch",
+    }
 
 
 def _terminal_replayed_signature(signature: Any) -> bool:

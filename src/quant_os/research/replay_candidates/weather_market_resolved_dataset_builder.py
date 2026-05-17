@@ -80,8 +80,13 @@ def build_weather_market_resolved_dataset_from_batch_capture(
             pending_rows.append(row)
     real_public_rows = rows + pending_rows
     proof_count = len(rows)
+    archive_rows_built = any(
+        row.get("forecast_source") == "iem_mos_historical_forecast" for row in rows
+    )
     status = (
-        "WEATHER_RESOLVED_DATASET_READY"
+        "WEATHER_PROOF_ROWS_BUILT"
+        if proof_count and archive_rows_built
+        else "WEATHER_RESOLVED_DATASET_READY"
         if proof_count
         else "MARKET_DATA_CAPTURE_BLOCKED"
         if blocked_rows
@@ -168,12 +173,15 @@ def _row_from_artifacts(
     market = market_payload["selected_market"]
     discovery = market_payload["discovery"]
     forecast_payload = forecast_artifact["payload"]["forecast"]
+    forecast_archive = forecast_artifact["payload"].get("forecast_archive") or {}
     orderbook_payload = orderbook_artifact["payload"]
     resolution_payload = resolution_artifact["payload"]
     orderbook_stats = _orderbook_stats(orderbook_payload["orderbook"])
     target_date = _target_date(market)
     forecast_ts = _forecast_timestamp(forecast_payload)
-    known_at_ts = normalize_utc_timestamp(override_known_at_ts or forecast_ts)
+    known_at_ts = normalize_utc_timestamp(
+        override_known_at_ts or forecast_archive.get("known_at_ts") or forecast_ts
+    )
     orderbook_ts = normalize_utc_timestamp(
         override_orderbook_ts
         or market.get("close_time")
@@ -202,7 +210,7 @@ def _row_from_artifacts(
             forecast_value,
             discovery["bucket_range"],
         ),
-        "forecast_source": "nws_api",
+        "forecast_source": forecast_archive.get("forecast_source") or "nws_api",
         "forecast_ts": forecast_ts,
         "market_price": orderbook_stats["yes_ask"],
         "market_mid": orderbook_stats["market_mid"],
@@ -226,7 +234,11 @@ def _row_from_artifacts(
         "fixture_only": False,
         "synthetic": False,
         "proof_eligible": proof_eligible,
-        "source_ids": ["kalshi_public_market_data", "nws_api", "nws_climatological_report"],
+        "source_ids": [
+            "kalshi_public_market_data",
+            forecast_archive.get("forecast_source") or "nws_api",
+            "nws_climatological_report",
+        ],
         "data_quality_flags": []
         if proof_eligible
         else [

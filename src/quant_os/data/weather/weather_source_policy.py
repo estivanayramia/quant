@@ -26,6 +26,9 @@ ALLOWED_CLASSIFICATIONS = [
 
 SOURCE_CLASSIFICATIONS = {
     "nws_api": PUBLIC_READ_ONLY_RATE_LIMITED,
+    "iem_mos_historical_forecast": PUBLIC_READ_ONLY_RATE_LIMITED,
+    "iem_nws_text_archive": PUBLIC_READ_ONLY_RATE_LIMITED,
+    "noaa_ncei_noaaport_nwstg_text": PUBLIC_READ_ONLY_ALLOWED,
     "open_meteo_free_forecast": PUBLIC_READ_ONLY_RATE_LIMITED,
     "open_meteo_historical_forecast": PUBLIC_READ_ONLY_RATE_LIMITED,
     "official_noaa_station_public": PUBLIC_READ_ONLY_ALLOWED,

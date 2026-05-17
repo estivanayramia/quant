@@ -16,6 +16,7 @@ ALLOWED_PHASE52_STATUSES = [
     "PAPER_PROFIT_DIAGNOSTIC_ONLY",
     "SELECTED_LANE_NEEDS_MORE_DATA",
     "RESOLVED_WEATHER_BATCH_READY",
+    "WEATHER_PROOF_ROWS_BUILT",
     "RESOLUTION_LABELS_MISSING",
     "WEATHER_MARKET_BACKFILL_BLOCKED",
     "MARKET_DATA_CAPTURE_BLOCKED",
@@ -140,8 +141,12 @@ def _blockers(*, dataset_payload: dict[str, Any], paper_payload: dict[str, Any])
         blockers.add("FILL_MODEL_MISSING")
     if not paper_payload.get("baseline_comparison", {}).get("included"):
         blockers.add("BASELINE_COMPARISON_MISSING")
+    elif paper_payload.get("baseline_comparison", {}).get("paper_beats_comparison") is not True:
+        blockers.add("BASELINE_COMPARISON_NOT_BEATEN")
     if not paper_payload.get("placebo_comparison", {}).get("included"):
         blockers.add("PLACEBO_COMPARISON_MISSING")
+    elif paper_payload.get("placebo_comparison", {}).get("paper_beats_comparison") is not True:
+        blockers.add("PLACEBO_COMPARISON_NOT_BEATEN")
     if paper_payload.get("one_row_dominance", {}).get("detected"):
         blockers.add("ONE_ROW_DOMINANCE")
     if paper_payload.get("synthetic_rows_counted_as_profit_evidence") is True:
@@ -175,7 +180,11 @@ def _readiness_status(
         return "PAPER_PROFIT_BLOCKED_BY_SAMPLE"
     if "BASELINE_COMPARISON_MISSING" in blockers:
         return "PAPER_PROFIT_BLOCKED_BY_BASELINE"
+    if "BASELINE_COMPARISON_NOT_BEATEN" in blockers:
+        return "PAPER_PROFIT_BLOCKED_BY_BASELINE"
     if "PLACEBO_COMPARISON_MISSING" in blockers:
+        return "PAPER_PROFIT_BLOCKED_BY_PLACEBO"
+    if "PLACEBO_COMPARISON_NOT_BEATEN" in blockers:
         return "PAPER_PROFIT_BLOCKED_BY_PLACEBO"
     if "COST_MODEL_MISSING" in blockers:
         return "PAPER_PROFIT_BLOCKED_BY_COSTS"

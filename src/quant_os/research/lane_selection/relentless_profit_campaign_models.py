@@ -189,6 +189,52 @@ def default_expansion_candidates() -> list[dict[str, Any]]:
             49,
             "Spot-only reversion after large public candle moves with cost filters.",
         ),
+        _crypto(
+            "crypto_spot_liquidity_sweep_reversion_paper_only",
+            48,
+            "Spot-only reversion after public candle wick/liquidity-sweep proxies.",
+        ),
+        _crypto(
+            "crypto_spot_volume_climax_reversion_paper_only",
+            47,
+            "Spot-only volume-climax reversion using public candles and conservative costs.",
+        ),
+        _equity(
+            "liquid_etf_opening_range_reversal_paper_only",
+            46,
+            "Public liquid ETF opening-range reversal with benchmark and placebo replay.",
+        ),
+        _equity(
+            "treasury_gold_risk_off_rotation_paper_only",
+            45,
+            "Public TLT/GLD/SPY risk-off rotation paper-only lane.",
+        ),
+        _pm(
+            "pm_public_poll_release_underreaction",
+            44,
+            "Prediction-market underreaction after timestamped public poll releases.",
+        ),
+        _pm(
+            "pm_public_filing_update_underreaction",
+            43,
+            "Prediction-market underreaction after timestamped public regulatory filings.",
+        ),
+        _pm(
+            "pm_binary_bucket_monotonicity_check_public_only",
+            42,
+            "Public binary bucket monotonicity checks requiring deterministic relation mapping.",
+            structural=True,
+        ),
+        _equity(
+            "sector_etf_intraday_reversal_paper_only",
+            41,
+            "Public sector ETF intraday reversal paper-only lane with cost controls.",
+        ),
+        _crypto(
+            "crypto_spot_asia_us_session_handoff_paper_only",
+            40,
+            "Spot-only Asia-to-US session handoff pattern using public candles.",
+        ),
     ]
 
 

@@ -60,6 +60,16 @@ def run_weather_market_paper_proving(
     source_quality_tier = "SYNTHETIC_ONLY" if fixture_only else _source_quality_tier(rows)
     baseline = _baseline_comparison(rows=rows, net=net)
     placebo = _placebo_comparison(rows=rows, net=net)
+    dominance = _one_row_dominance(net_values, net)
+    blockers = []
+    if sample_warnings:
+        blockers.extend(sample_warnings)
+    if baseline.get("paper_beats_comparison") is not True:
+        blockers.append("BASELINE_COMPARISON_NOT_BEATEN")
+    if placebo.get("paper_beats_comparison") is not True:
+        blockers.append("PLACEBO_COMPARISON_NOT_BEATEN")
+    if dominance.get("detected") is True:
+        blockers.append("ONE_ROW_DOMINANCE")
     warnings = _dedupe(
         [
             "PAPER_ONLY_NOT_LIVE",
@@ -68,7 +78,7 @@ def run_weather_market_paper_proving(
             "SIMULATED_FILLS_NOT_REAL_FILLS",
             "NO_LIVE_AUTHORITY",
             "ADVERSE_SELECTION_WARNING",
-            *sample_warnings,
+            *blockers,
             "FIXTURE_ONLY_DATA" if fixture_only else "",
             "OOS_WALK_FORWARD_MISSING",
         ]
@@ -82,7 +92,9 @@ def run_weather_market_paper_proving(
         "source_quality": source_quality_tier.lower(),
         "source_quality_tier": source_quality_tier,
         "readiness_status": PAPER_PROFIT_DIAGNOSTIC_ONLY
-        if fixture_only or sample_warnings
+        if fixture_only
+        else "PAPER_PROFIT_CANDIDATE"
+        if not blockers and net > 0
         else "PAPER_PROFIT_BLOCKED",
         "gross_simulated_pnl": render_decimal(gross),
         "net_simulated_pnl_after_costs": render_decimal(net),
@@ -97,6 +109,8 @@ def run_weather_market_paper_proving(
         "max_drawdown": max_drawdown(equity),
         "trade_count": len([item for item in intents if item["intent"] != "NO_TRADE"]),
         "row_count": len(rows),
+        "minimum_sample_size": MINIMUM_SAMPLE_SIZE,
+        "labels_valid": True,
         "cost_model": cost_model,
         "costs_included": True,
         "fill_model": fill_model,
@@ -108,13 +122,18 @@ def run_weather_market_paper_proving(
         "warnings": warnings,
         "paper_intents": intents,
         "simulated_trades": intents,
-        "one_row_dominance": _one_row_dominance(net_values, net),
+        "one_row_dominance": dominance,
         "no_lookahead": True,
         "baseline_rows_count": baseline["baseline_count"],
         "placebo_rows_count": placebo["placebo_count"],
         "profit_claim_made": False,
         "synthetic_rows_counted_as_profit_evidence": False,
         "requires_private_or_authenticated_data": False,
+        "blockers": _dedupe(blockers),
+        "reproducible_commands": [
+            "python -m quant_os.cli data weather-market-batch-capture --public-network-ok --run-id weather_historical_forecast_campaign",
+            "python -m quant_os.cli readiness weather-batch-paper-readiness",
+        ],
         **PAPER_PROVING_SAFETY,
         "live_allowed": False,
         "live_promotion_status": "LIVE_BLOCKED",
