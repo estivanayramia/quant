@@ -1015,6 +1015,99 @@ def data_weather_market_public_capture(
     )
 
 
+@data_app.command("weather-resolved-market-discovery")
+def data_weather_resolved_market_discovery(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+    series_ticker: str = typer.Option("KXHIGHNY", "--series-ticker"),
+) -> None:
+    from quant_os.data.weather.weather_resolved_market_discovery import (
+        write_weather_resolved_discovery_report,
+    )
+
+    payload = write_weather_resolved_discovery_report(
+        public_network_ok=public_network_ok,
+        series_ticker=series_ticker,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "resolved_market_count": payload["resolved_market_count"],
+            "pending_market_count": payload["pending_market_count"],
+            "report": "reports/sequence52/weather_resolved_discovery/latest_weather_resolved_discovery.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@data_app.command("weather-resolution-labels")
+def data_weather_resolution_labels(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    from quant_os.data.weather.weather_resolution_label_fetcher import (
+        write_weather_resolution_labels_report,
+    )
+
+    payload = write_weather_resolution_labels_report(public_network_ok=public_network_ok)
+    print(
+        {
+            "status": payload["status"],
+            "available_label_count": payload["available_label_count"],
+            "missing_label_count": payload["missing_label_count"],
+            "report": "reports/sequence52/weather_resolution_labels/latest_weather_resolution_labels.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@data_app.command("weather-market-batch-capture")
+def data_weather_market_batch_capture(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+    run_id: str = typer.Option("weather_market_batch_052", "--run-id"),
+    series_ticker: str = typer.Option("KXHIGHNY", "--series-ticker"),
+) -> None:
+    from quant_os.data.weather.weather_market_batch_capture import (
+        run_weather_market_batch_capture,
+    )
+
+    payload = run_weather_market_batch_capture(
+        public_network_ok=public_network_ok,
+        run_id=run_id,
+        series_ticker=series_ticker,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "run_id": payload["run_id"],
+            "markets_captured": payload["markets_captured"],
+            "proof_rows_created": payload["proof_rows_created"],
+            "rows_pending_labels": payload["rows_pending_labels"],
+            "report": "reports/sequence52/weather_batch_capture/latest_weather_batch_capture.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@data_app.command("weather-pending-resolution-monitor")
+def data_weather_pending_resolution_monitor() -> None:
+    from quant_os.data.weather.weather_pending_resolution_monitor import (
+        write_weather_pending_resolution_monitor_report,
+    )
+
+    payload = write_weather_pending_resolution_monitor_report()
+    print(
+        {
+            "status": payload["status"],
+            "pending_count": payload["pending_count"],
+            "report": "reports/sequence52/weather_pending_resolution/latest_weather_pending_resolution.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @data_app.command("pm-crypto-updown-real-cached-import")
 def data_pm_crypto_updown_real_cached_import(
     import_root: Annotated[
@@ -1742,6 +1835,26 @@ def research_weather_market_dataset() -> None:
             "real_public_row_count": payload["real_public_row_count"],
             "proof_row_count": payload["proof_row_count"],
             "report": "reports/sequence51/weather_dataset/latest_weather_dataset.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("weather-resolved-dataset")
+def research_weather_resolved_dataset() -> None:
+    from quant_os.research.replay_candidates.weather_market_resolved_dataset_builder import (
+        write_weather_market_resolved_dataset_report,
+    )
+
+    payload = write_weather_market_resolved_dataset_report()
+    print(
+        {
+            "status": payload["dataset_status"],
+            "real_public_row_count": payload["real_public_row_count"],
+            "proof_row_count": payload["proof_row_count"],
+            "pending_row_count": len(payload["pending_rows"]),
+            "report": "reports/sequence52/weather_resolved_dataset/latest_weather_resolved_dataset.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }
@@ -3844,6 +3957,25 @@ def proving_weather_market_real_paper_proving() -> None:
     )
 
 
+@proving_app.command("weather-batch-paper-proving")
+def proving_weather_batch_paper_proving() -> None:
+    from quant_os.proving.weather_market_batch_paper_proving import (
+        write_weather_market_batch_paper_proving_report,
+    )
+
+    payload = write_weather_market_batch_paper_proving_report()
+    print(
+        {
+            "status": payload["readiness_status"],
+            "lane_id": payload["lane_id"],
+            "proof_row_count": payload["proof_row_count"],
+            "report": "reports/sequence52/weather_batch_paper_proving/latest_weather_batch_paper_proving.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @proving_app.command("dry-run-proving")
 def proving_dry_run_proving(periods: int = typer.Option(180, min=60)) -> None:
     payload = run_dry_run_proving_cycle(config=DryRunProvingConfig(periods=periods))
@@ -4441,6 +4573,25 @@ def readiness_weather_market_paper_profit_readiness() -> None:
             "paper_profit_status": payload["paper_profit_status"],
             "proof_row_count": payload["proof_row_count"],
             "report": "reports/sequence51/weather_paper_profit_readiness/latest_weather_paper_profit_readiness.json",
+            "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("weather-batch-paper-readiness")
+def readiness_weather_batch_paper_readiness() -> None:
+    from quant_os.readiness.weather_market_batch_paper_readiness import (
+        write_weather_market_batch_paper_readiness_report,
+    )
+
+    payload = write_weather_market_batch_paper_readiness_report()
+    print(
+        {
+            "status": payload["readiness_status"],
+            "paper_profit_status": payload["paper_profit_status"],
+            "proof_row_count": payload["proof_row_count"],
+            "report": "reports/sequence52/weather_batch_readiness/latest_weather_batch_readiness.json",
             "live_trading_enabled": False,
             "execution_authority": payload["execution_authority"],
         }

@@ -1382,6 +1382,24 @@ if "%TARGET%"=="sequence51-smoke" (
   python -m pytest tests/test_sequence51_real_weather_market_capture_paper_proving.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="sequence52-smoke" (
+  python -m quant_os.cli data weather-resolved-market-discovery
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli data weather-resolution-labels
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli data weather-market-batch-capture
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research weather-resolved-dataset
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving weather-batch-paper-proving
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness weather-batch-paper-readiness
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli data weather-pending-resolution-monitor
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence52_weather_resolved_batch_paper_proving.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
