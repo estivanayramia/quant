@@ -5469,6 +5469,170 @@ def autonomy_live_market_paper_rehearsal_schedule() -> None:
     )
 
 
+@autonomy_app.command("autonomous-market-watcher")
+def autonomy_autonomous_market_watcher() -> None:
+    from quant_os.autonomy.autonomous_market_watcher import write_autonomous_market_watcher_report
+
+    payload = write_autonomous_market_watcher_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "market_state": payload["market_state"],
+            "report": "reports/autonomous_live_fire_drill/watcher/latest_watcher.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("autonomous-decision-engine")
+def autonomy_autonomous_decision_engine() -> None:
+    from quant_os.autonomy.autonomous_decision_engine import write_autonomous_decision_report
+
+    payload = write_autonomous_decision_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "decision": payload["decision"],
+            "report": "reports/autonomous_live_fire_drill/decision/latest_decision.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("autonomous-no-transmit-intent")
+def autonomy_autonomous_no_transmit_intent() -> None:
+    from quant_os.autonomy.autonomous_no_transmit_intent import write_no_transmit_intent_report
+
+    payload = write_no_transmit_intent_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_money": payload["fake_money"],
+            "report": "reports/autonomous_live_fire_drill/no_transmit_intent/latest_intent.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@execution_app.command("mock-order-lifecycle")
+def execution_mock_order_lifecycle() -> None:
+    from quant_os.execution.mock_order_lifecycle import write_mock_order_lifecycle_report
+
+    payload = write_mock_order_lifecycle_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/autonomous_live_fire_drill/mock_lifecycle/latest_mock_lifecycle.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@execution_app.command("autonomous-fake-execution")
+def execution_autonomous_fake_execution() -> None:
+    from quant_os.execution.autonomous_fake_execution_runner import write_fake_execution_report
+
+    payload = write_fake_execution_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_order_state": payload["fake_order_state"],
+            "report": "reports/autonomous_live_fire_drill/fake_execution/latest_fake_execution.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@risk_app.command("autonomous-fire-drill-risk")
+def risk_autonomous_fire_drill_risk() -> None:
+    from quant_os.risk.autonomous_fire_drill_risk import write_fire_drill_risk_report
+
+    payload = write_fire_drill_risk_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "kill_switch_status": payload["kill_switch_status"],
+            "report": "reports/autonomous_live_fire_drill/risk/latest_risk.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@execution_app.command("autonomous-fake-reconciliation")
+def execution_autonomous_fake_reconciliation() -> None:
+    from quant_os.execution.autonomous_fake_reconciliation import write_fake_reconciliation_report
+    from quant_os.execution.autonomous_post_trade_report import write_post_trade_report
+
+    payload = write_fake_reconciliation_report(output_root=Path("."))
+    write_post_trade_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/autonomous_live_fire_drill/reconciliation/latest_reconciliation.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@validation_app.command("autonomous-fire-drill-scenarios")
+def validation_autonomous_fire_drill_scenarios() -> None:
+    from quant_os.validation.autonomous_fire_drill_scenarios import (
+        write_fire_drill_scenarios_report,
+    )
+
+    payload = write_fire_drill_scenarios_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "scenario_count": payload["scenario_count"],
+            "report": "reports/autonomous_live_fire_drill/scenarios/latest_scenarios.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("autonomous-live-fire-drill")
+def readiness_autonomous_live_fire_drill() -> None:
+    from quant_os.readiness.autonomous_live_fire_drill_readiness import (
+        write_fire_drill_readiness_report,
+    )
+
+    payload = write_fire_drill_readiness_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/autonomous_live_fire_drill/final/latest_fire_drill_readiness.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("human-live-boundary-packet")
+def readiness_human_live_boundary_packet() -> None:
+    from quant_os.readiness.human_live_boundary_packet import (
+        write_human_live_boundary_packet_report,
+    )
+
+    payload = write_human_live_boundary_packet_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/autonomous_live_fire_drill/human_boundary/latest_human_boundary_packet.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @readiness_app.command("profit-candidate-autonomy-path")
 def readiness_profit_candidate_autonomy_path() -> None:
     payload = write_profit_candidate_autonomy_path(output_root=Path("."))

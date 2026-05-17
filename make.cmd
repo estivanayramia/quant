@@ -1536,6 +1536,36 @@ if "%TARGET%"=="sequence58-smoke" (
   python -m pytest tests/test_sequence58_live_market_paper_rehearsal.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="autonomous-live-fire-drill-smoke" (
+  python -m quant_os.cli autonomy autonomous-market-watcher
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy autonomous-decision-engine
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy autonomous-no-transmit-intent
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli execution mock-order-lifecycle
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli execution autonomous-fake-execution
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli risk autonomous-fire-drill-risk
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli execution autonomous-fake-reconciliation
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli validation autonomous-fire-drill-scenarios
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness autonomous-live-fire-drill
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness human-live-boundary-packet
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence59_autonomous_live_fire_drill.py
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence59-smoke" (
+  call "%~f0" sequence58-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" autonomous-live-fire-drill-smoke
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
