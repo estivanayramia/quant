@@ -5253,6 +5253,25 @@ def proving_crypto_spot_public_paper_proving(
     )
 
 
+@proving_app.command("regenerate-profit-candidate-artifacts")
+def proving_regenerate_profit_candidate_artifacts() -> None:
+    from quant_os.proving.profit_candidate_artifacts import (
+        regenerate_profit_candidate_artifacts,
+    )
+
+    payload = regenerate_profit_candidate_artifacts(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "strategy": payload["strategy"],
+            "proof_row_count": payload["proof_row_count"],
+            "report": "reports/profit_campaign/latest_profit_campaign.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @proving_app.command("relentless-profit-campaign-state")
 def proving_relentless_profit_campaign_state() -> None:
     payload = write_campaign_state(load_campaign_state(output_root=Path(".")), output_root=Path("."))
@@ -5487,6 +5506,125 @@ def readiness_tiny_canary_readiness() -> None:
         {
             "status": payload["status"],
             "report": "reports/canary_readiness/final/latest_tiny_canary_readiness.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("first-dollar-provenance-audit")
+def readiness_first_dollar_provenance_audit() -> None:
+    from quant_os.readiness.first_dollar_provenance_audit import (
+        write_first_dollar_provenance_audit_report,
+    )
+
+    payload = write_first_dollar_provenance_audit_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/first_dollar_preflight/provenance/latest_provenance_audit.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("first-dollar-provenance-repair")
+def readiness_first_dollar_provenance_repair() -> None:
+    from quant_os.readiness.first_dollar_provenance_repair import (
+        write_first_dollar_provenance_repair_report,
+    )
+
+    payload = write_first_dollar_provenance_repair_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/first_dollar_preflight/provenance_repair/latest_provenance_repair.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("first-dollar-security-scan")
+def readiness_first_dollar_security_scan() -> None:
+    from quant_os.readiness.first_dollar_security_scan import (
+        write_first_dollar_security_scan_report,
+    )
+
+    payload = write_first_dollar_security_scan_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/first_dollar_preflight/security/latest_first_dollar_security_scan.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("current-market-eligibility")
+def readiness_current_market_eligibility() -> None:
+    from quant_os.readiness.current_market_eligibility import (
+        write_current_market_eligibility_report,
+    )
+
+    payload = write_current_market_eligibility_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/first_dollar_preflight/current_market/latest_current_market_eligibility.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("first-dollar-order-preview")
+def readiness_first_dollar_order_preview() -> None:
+    from quant_os.readiness.first_dollar_order_preview import (
+        write_first_dollar_order_preview_report,
+    )
+
+    payload = write_first_dollar_order_preview_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/first_dollar_preflight/order_preview/latest_order_preview.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("first-dollar-human-review")
+def readiness_first_dollar_human_review() -> None:
+    from quant_os.readiness.first_dollar_human_review import (
+        write_first_dollar_human_review_report,
+    )
+
+    payload = write_first_dollar_human_review_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/first_dollar_preflight/human_review/latest_human_review.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("first-dollar-preflight")
+def readiness_first_dollar_preflight() -> None:
+    from quant_os.readiness.first_dollar_preflight import (
+        write_first_dollar_preflight_report,
+    )
+
+    payload = write_first_dollar_preflight_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/first_dollar_preflight/final/latest_first_dollar_preflight.json",
             "live_trading_enabled": payload["live_trading_enabled"],
             "execution_authority": payload["execution_authority"],
         }

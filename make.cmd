@@ -1460,6 +1460,36 @@ if "%TARGET%"=="sequence55-smoke" (
   python -m pytest tests/test_sequence55_tiny_canary_readiness.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="profit-candidate-artifacts-smoke" (
+  python -m quant_os.cli proving regenerate-profit-candidate-artifacts
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="first-dollar-preflight-smoke" (
+  call "%~f0" profit-candidate-artifacts-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness first-dollar-provenance-audit
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness first-dollar-provenance-repair
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" canary-readiness-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness first-dollar-security-scan
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness current-market-eligibility
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness first-dollar-order-preview
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness first-dollar-human-review
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness first-dollar-preflight
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence56-smoke" (
+  call "%~f0" first-dollar-preflight-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence56_first_dollar_preflight.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
