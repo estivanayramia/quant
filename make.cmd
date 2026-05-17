@@ -1418,6 +1418,16 @@ if "%TARGET%"=="sequence53-smoke" (
   python -m pytest tests/test_sequence53_relentless_profit_campaign.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="crypto-spot-public-paper-proving-smoke" (
+  python -m quant_os.cli proving crypto-spot-public-paper-proving
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence54-smoke" (
+  call "%~f0" crypto-spot-public-paper-proving-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence54_crypto_spot_public_paper_proving.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!

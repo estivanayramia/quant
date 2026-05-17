@@ -55,7 +55,11 @@ def run_relentless_profit_campaign(
 
     for _ in range(max(0, max_lanes)):
         queue = build_campaign_queue(state, lanes=lanes)
-        selected = select_next_lane(queue, state)
+        selected = select_next_lane(
+            queue,
+            state,
+            retry_public_data_blockers=public_network_ok,
+        )
         if selected is None:
             if should_expand_queue(queue, state):
                 expansion = expand_safe_lane_queue()
@@ -65,7 +69,11 @@ def run_relentless_profit_campaign(
                     rejected=expansion["rejected"],
                 )
                 queue = build_campaign_queue(state, lanes=lanes)
-                selected = select_next_lane(queue, state)
+                selected = select_next_lane(
+                    queue,
+                    state,
+                    retry_public_data_blockers=public_network_ok,
+                )
             if selected is None:
                 break
         attempt = attempt_lane(selected, public_network_ok=public_network_ok)
@@ -89,6 +97,11 @@ def run_relentless_profit_campaign(
         campaign_status = CAMPAIGN_CHECKPOINTED_NOT_COMPLETE
     state["current_campaign_status"] = campaign_status
     state["validation_status"] = "NOT_RUN"
+    if public_network_ok and campaign_status != PAPER_PROFIT_CANDIDATE_FOUND:
+        state["exact_resume_command"] = (
+            "python -m quant_os.cli proving relentless-profit-campaign-run "
+            "--public-network-ok --max-lanes 1"
+        )
     if campaign_status == PAPER_PROFIT_CANDIDATE_FOUND:
         state["current_paper_status"] = PAPER_PROFIT_CANDIDATE_FOUND
         state["next_action"] = "Write autonomy path report and run bounded shadow rehearsal gate."

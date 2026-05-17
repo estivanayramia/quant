@@ -84,6 +84,9 @@ from quant_os.ops.freqtrade_reporting import (
 )
 from quant_os.ops.reporting import generate_daily_report
 from quant_os.projections.rebuild import rebuild_read_models as rebuild_read_models_projection
+from quant_os.proving.crypto_spot_public_paper_proving import (
+    write_crypto_spot_public_paper_proving_report,
+)
 from quant_os.proving.incident_log import summarize_incidents
 from quant_os.proving.proving_report import write_proving_report
 from quant_os.proving.readiness import evaluate_proving_readiness
@@ -5215,6 +5218,31 @@ def proving_relentless_profit_campaign_run(
             "lanes_attempted_this_run": payload["run_summary"]["lanes_attempted_this_run"],
             "report": "reports/profit_campaign/latest_profit_campaign.json",
             "state": "reports/profit_campaign/state/latest_state.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("crypto-spot-public-paper-proving")
+def proving_crypto_spot_public_paper_proving(
+    public_network_ok: bool = typer.Option(False),
+) -> None:
+    payload = write_crypto_spot_public_paper_proving_report(
+        output_root=Path("."),
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["readiness_status"],
+            "paper_profit_candidate": payload["paper_profit_candidate"],
+            "capture_status": payload["capture_status"],
+            "proof_rows": payload["proof_row_count"],
+            "profit_claim_guard_status": payload["profit_claim_guard"]["claim_status"],
+            "report": (
+                "reports/profit_campaign/crypto_spot_public_paper_proving/"
+                "latest_crypto_spot_public_paper_proving.json"
+            ),
             "live_trading_enabled": payload["live_trading_enabled"],
             "execution_authority": payload["execution_authority"],
         }
