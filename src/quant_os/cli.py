@@ -10,6 +10,7 @@ from quant_os.adapters.event_store_jsonl import JsonlEventStore
 from quant_os.adapters.market_data_parquet import LocalParquetMarketData
 from quant_os.autonomy.daemon import daemon_status, run_daemon, stop_daemon
 from quant_os.autonomy.dry_run_proving import DryRunProvingConfig, run_dry_run_proving_cycle
+from quant_os.autonomy.forward_capture_plan import write_forward_capture_plan
 from quant_os.autonomy.proving_cycle import run_proving_once
 from quant_os.autonomy.supervisor import Supervisor
 from quant_os.autonomy.tasks import run_drift_checks
@@ -86,7 +87,15 @@ from quant_os.projections.rebuild import rebuild_read_models as rebuild_read_mod
 from quant_os.proving.incident_log import summarize_incidents
 from quant_os.proving.proving_report import write_proving_report
 from quant_os.proving.readiness import evaluate_proving_readiness
+from quant_os.proving.relentless_profit_campaign_runner import run_relentless_profit_campaign
+from quant_os.proving.relentless_profit_campaign_state import (
+    load_campaign_state,
+    write_campaign_state,
+)
 from quant_os.proving.run_history import load_proving_history, write_proving_status
+from quant_os.readiness.profit_candidate_autonomy_path import (
+    write_profit_candidate_autonomy_path,
+)
 from quant_os.readiness.sequence2 import write_sequence2_readiness_report
 from quant_os.replay.engine import ReplayEngine, ReplayOrderIntent
 from quant_os.replay.realism_report import write_replay_realism_report
@@ -195,6 +204,7 @@ from quant_os.watchdog.health_checks import run_watchdog
 
 app = typer.Typer(help="Local deterministic QuantOps simulation foundation.")
 autonomous_app = typer.Typer(help="Autonomous safe-mode runbooks.")
+autonomy_app = typer.Typer(help="Data-only autonomy planning commands.")
 data_app = typer.Typer(help="Market-agnostic data spine commands.")
 features_app = typer.Typer(help="Deterministic feature-building commands.")
 research_app = typer.Typer(help="Research lane commands.")
@@ -211,6 +221,7 @@ proving_app = typer.Typer(help="Autonomous proving-mode commands.")
 canary_app = typer.Typer(help="Tiny-live canary policy gates and default-off execution lane.")
 readiness_app = typer.Typer(help="Evidence-based readiness reports.")
 app.add_typer(autonomous_app, name="autonomous")
+app.add_typer(autonomy_app, name="autonomy")
 app.add_typer(data_app, name="data")
 app.add_typer(features_app, name="features")
 app.add_typer(research_app, name="research")
@@ -5158,6 +5169,100 @@ def research_external_benchmark_report() -> None:
             "prediction_market_execution_authority_added": payload[
                 "prediction_market_execution_authority_added"
             ],
+        }
+    )
+
+
+@research_app.command("relentless-profit-campaign")
+def research_relentless_profit_campaign(
+    max_lanes: int = typer.Option(1, min=1),
+    public_network_ok: bool = typer.Option(False),
+) -> None:
+    payload = run_relentless_profit_campaign(
+        output_root=Path("."),
+        max_lanes=max_lanes,
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["campaign_status"],
+            "paper_profit_status": payload["paper_profit_status"],
+            "profit_claim_guard_status": payload["profit_claim_guard_status"],
+            "lanes_attempted_this_run": payload["run_summary"]["lanes_attempted_this_run"],
+            "report": "reports/profit_campaign/latest_profit_campaign.json",
+            "state": "reports/profit_campaign/state/latest_state.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("relentless-profit-campaign-run")
+def proving_relentless_profit_campaign_run(
+    max_lanes: int = typer.Option(6, min=1),
+    public_network_ok: bool = typer.Option(False),
+) -> None:
+    payload = run_relentless_profit_campaign(
+        output_root=Path("."),
+        max_lanes=max_lanes,
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["campaign_status"],
+            "paper_profit_status": payload["paper_profit_status"],
+            "profit_claim_guard_status": payload["profit_claim_guard_status"],
+            "lanes_attempted_this_run": payload["run_summary"]["lanes_attempted_this_run"],
+            "report": "reports/profit_campaign/latest_profit_campaign.json",
+            "state": "reports/profit_campaign/state/latest_state.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("relentless-profit-campaign-state")
+def proving_relentless_profit_campaign_state() -> None:
+    payload = write_campaign_state(load_campaign_state(output_root=Path(".")), output_root=Path("."))
+    print(
+        {
+            "status": payload["current_campaign_status"],
+            "paper_profit_status": payload["current_paper_status"],
+            "profit_claim_guard_status": payload["profit_claim_status"],
+            "state": "reports/profit_campaign/state/latest_state.json",
+            "resume": payload["exact_resume_command"],
+            "live_trading_enabled": payload["safety_constraints"]["live_trading_enabled"],
+            "execution_authority": payload["safety_constraints"]["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("forward-capture-plan")
+def autonomy_forward_capture_plan() -> None:
+    payload = write_forward_capture_plan(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "lane_id": payload["lane_id"],
+            "data_only": payload["data_only"],
+            "report": "reports/profit_campaign/forward_capture/latest_forward_capture_plan.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("profit-candidate-autonomy-path")
+def readiness_profit_candidate_autonomy_path() -> None:
+    payload = write_profit_candidate_autonomy_path(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "selected_lane": payload["selected_lane"],
+            "next_gate": payload["next_gate"],
+            "report": "reports/profit_campaign/autonomy_path/latest_autonomy_path.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
         }
     )
 
