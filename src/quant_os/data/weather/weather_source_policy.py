@@ -29,6 +29,7 @@ SOURCE_CLASSIFICATIONS = {
     "open_meteo_free_forecast": PUBLIC_READ_ONLY_RATE_LIMITED,
     "open_meteo_historical_forecast": PUBLIC_READ_ONLY_RATE_LIMITED,
     "official_noaa_station_public": PUBLIC_READ_ONLY_ALLOWED,
+    "kalshi_public_market_data": PUBLIC_READ_ONLY_ALLOWED,
     "polymarket_gamma_public": PUBLIC_READ_ONLY_ALLOWED,
     "polymarket_clob_public_market_data": PUBLIC_READ_ONLY_ALLOWED,
     "manual_local_capture": MANUAL_CAPTURE_ALLOWED,
