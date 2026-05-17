@@ -1514,6 +1514,28 @@ if "%TARGET%"=="sequence57-smoke" (
   python -m pytest tests/test_sequence57_current_market_preflight.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="live-market-paper-rehearsal-smoke" (
+  python -m quant_os.cli autonomy live-market-paper-observer
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-paper-intents
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-fake-fill
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-paper-ledger
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-paper-reconciliation
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness live-market-paper-rehearsal
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-paper-rehearsal-schedule
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence58-smoke" (
+  call "%~f0" live-market-paper-rehearsal-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence58_live_market_paper_rehearsal.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!

@@ -5363,6 +5363,112 @@ def autonomy_current_market_watch_plan() -> None:
     )
 
 
+@autonomy_app.command("live-market-paper-observer")
+def autonomy_live_market_paper_observer(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    from quant_os.autonomy.live_market_paper_observer import (
+        write_live_market_paper_observer_report,
+    )
+
+    payload = write_live_market_paper_observer_report(
+        output_root=Path("."),
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "observation_id": payload["observation_id"],
+            "report": "reports/live_market_paper_rehearsal/observer/latest_observer.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-paper-intents")
+def autonomy_live_market_paper_intents() -> None:
+    from quant_os.autonomy.live_market_paper_intents import write_live_market_paper_intents_report
+
+    payload = write_live_market_paper_intents_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_money": payload["fake_money"],
+            "report": "reports/live_market_paper_rehearsal/intents/latest_intents.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-fake-fill")
+def autonomy_live_market_fake_fill() -> None:
+    from quant_os.autonomy.live_market_fake_fill_model import write_live_market_fake_fill_report
+
+    payload = write_live_market_fake_fill_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "guaranteed_fill": payload["guaranteed_fill"],
+            "report": "reports/live_market_paper_rehearsal/fills/latest_fake_fills.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-paper-ledger")
+def autonomy_live_market_paper_ledger() -> None:
+    from quant_os.autonomy.live_market_paper_ledger import write_live_market_paper_ledger_report
+
+    payload = write_live_market_paper_ledger_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "position_state": payload["fake_position"]["state"],
+            "report": "reports/live_market_paper_rehearsal/ledger/latest_paper_ledger.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-paper-reconciliation")
+def autonomy_live_market_paper_reconciliation() -> None:
+    from quant_os.autonomy.live_market_paper_reconciliation import (
+        write_live_market_paper_reconciliation_report,
+    )
+
+    payload = write_live_market_paper_reconciliation_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/live_market_paper_rehearsal/reconciliation/latest_reconciliation.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-paper-rehearsal-schedule")
+def autonomy_live_market_paper_rehearsal_schedule() -> None:
+    from quant_os.autonomy.live_market_paper_rehearsal_schedule import (
+        write_live_market_paper_rehearsal_schedule_report,
+    )
+
+    payload = write_live_market_paper_rehearsal_schedule_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "data_only": payload["data_only"],
+            "report": "reports/live_market_paper_rehearsal/schedule/latest_schedule.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @readiness_app.command("profit-candidate-autonomy-path")
 def readiness_profit_candidate_autonomy_path() -> None:
     payload = write_profit_candidate_autonomy_path(output_root=Path("."))
@@ -5685,6 +5791,24 @@ def readiness_first_dollar_preflight() -> None:
         {
             "status": payload["status"],
             "report": "reports/first_dollar_preflight/final/latest_first_dollar_preflight.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("live-market-paper-rehearsal")
+def readiness_live_market_paper_rehearsal() -> None:
+    from quant_os.readiness.live_market_paper_rehearsal_readiness import (
+        write_live_market_paper_rehearsal_readiness_report,
+    )
+
+    payload = write_live_market_paper_rehearsal_readiness_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "observation_count": payload["observation_count"],
+            "report": "reports/live_market_paper_rehearsal/final/latest_live_market_paper_rehearsal.json",
             "live_trading_enabled": payload["live_trading_enabled"],
             "execution_authority": payload["execution_authority"],
         }
