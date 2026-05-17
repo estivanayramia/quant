@@ -1006,6 +1006,50 @@ def data_weather_source_match() -> None:
     )
 
 
+@data_app.command("current-weather-market-discovery")
+def data_current_weather_market_discovery(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    from quant_os.data.weather.current_weather_market_discovery import (
+        write_current_weather_market_discovery_report,
+    )
+
+    payload = write_current_weather_market_discovery_report(
+        output_root=Path("."),
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/first_dollar_preflight/current_market_discovery/latest_current_market_discovery.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@data_app.command("current-weather-forecast-match")
+def data_current_weather_forecast_match(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    from quant_os.data.weather.current_weather_forecast_match import (
+        write_current_forecast_match_report,
+    )
+
+    payload = write_current_forecast_match_report(
+        output_root=Path("."),
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/first_dollar_preflight/current_forecast/latest_current_forecast.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @data_app.command("weather-market-public-capture")
 def data_weather_market_public_capture(
     public_network_ok: bool = typer.Option(False, "--public-network-ok"),
@@ -5297,6 +5341,22 @@ def autonomy_forward_capture_plan() -> None:
             "lane_id": payload["lane_id"],
             "data_only": payload["data_only"],
             "report": "reports/profit_campaign/forward_capture/latest_forward_capture_plan.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("current-market-watch-plan")
+def autonomy_current_market_watch_plan() -> None:
+    from quant_os.autonomy.current_market_watch_plan import write_current_market_watch_plan
+
+    payload = write_current_market_watch_plan(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "data_only": payload["data_only"],
+            "report": "reports/first_dollar_preflight/current_market_watch/latest_current_market_watch.json",
             "live_trading_enabled": payload["live_trading_enabled"],
             "execution_authority": payload["execution_authority"],
         }

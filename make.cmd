@@ -1490,6 +1490,30 @@ if "%TARGET%"=="sequence56-smoke" (
   python -m pytest tests/test_sequence56_first_dollar_preflight.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="current-market-preflight-smoke" (
+  python -m quant_os.cli data current-weather-market-discovery
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli data current-weather-forecast-match
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness current-market-eligibility
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness first-dollar-order-preview
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness first-dollar-human-review
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness first-dollar-preflight
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy current-market-watch-plan
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence57-smoke" (
+  call "%~f0" sequence56-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" current-market-preflight-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence57_current_market_preflight.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!

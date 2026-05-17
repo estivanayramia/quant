@@ -40,6 +40,11 @@ def evaluate_first_dollar_preflight(
             output_root=output_root,
         )
         or {},
+        "current_forecast": load_gate_payload(
+            "reports/first_dollar_preflight/current_forecast/latest_current_forecast.json",
+            output_root=output_root,
+        )
+        or {},
         "order_preview": load_gate_payload(
             "reports/first_dollar_preflight/order_preview/latest_order_preview.json",
             output_root=output_root,
@@ -81,18 +86,21 @@ def evaluate_first_dollar_preflight(
     elif reports["manual_packet"].get("status") != "MANUAL_CANARY_PACKET_READY":
         status = "FIRST_DOLLAR_PREFLIGHT_BLOCKED_BY_HUMAN_REVIEW"
         blockers.append("MANUAL_CANARY_PACKET_READY_MISSING")
-    elif reports["order_preview"].get("status") != "NO_TRANSMIT_ORDER_PREVIEW_READY":
-        status = "FIRST_DOLLAR_PREFLIGHT_BLOCKED_BY_ORDER_PREVIEW"
-        blockers.append("NO_TRANSMIT_ORDER_PREVIEW_READY_MISSING")
-    elif reports["human_review"].get("status") != "HUMAN_REVIEW_PACKET_READY":
-        status = "FIRST_DOLLAR_PREFLIGHT_BLOCKED_BY_HUMAN_REVIEW"
-        blockers.append("HUMAN_REVIEW_PACKET_READY_MISSING")
     elif reports["current_market"].get("status") == "CURRENT_MARKET_ELIGIBILITY_NO_CURRENT_MARKET":
         status = "FIRST_DOLLAR_PREFLIGHT_STRUCTURALLY_READY_NO_CURRENT_MARKET"
         blockers.append("NO_CURRENT_ELIGIBLE_MARKET")
     elif reports["current_market"].get("status") != "CURRENT_MARKET_ELIGIBILITY_PASSED":
         status = "FIRST_DOLLAR_PREFLIGHT_BLOCKED_BY_CURRENT_MARKET"
         blockers.append("CURRENT_MARKET_ELIGIBILITY_PASSED_MISSING")
+    elif reports["current_forecast"].get("status") != "CURRENT_FORECAST_MATCHED":
+        status = "FIRST_DOLLAR_PREFLIGHT_BLOCKED_BY_FORECAST"
+        blockers.append("CURRENT_FORECAST_MATCHED_MISSING")
+    elif reports["order_preview"].get("status") != "NO_TRANSMIT_ORDER_PREVIEW_READY":
+        status = "FIRST_DOLLAR_PREFLIGHT_BLOCKED_BY_ORDER_PREVIEW"
+        blockers.append("NO_TRANSMIT_ORDER_PREVIEW_READY_MISSING")
+    elif reports["human_review"].get("status") != "HUMAN_REVIEW_PACKET_READY":
+        status = "FIRST_DOLLAR_PREFLIGHT_BLOCKED_BY_HUMAN_REVIEW"
+        blockers.append("HUMAN_REVIEW_PACKET_READY_MISSING")
     payload = safety_payload(
         schema_version="first_dollar_preflight_v1",
         status=status,
@@ -102,6 +110,7 @@ def evaluate_first_dollar_preflight(
             "FIRST_DOLLAR_PREFLIGHT_BLOCKED_BY_PROVENANCE",
             "FIRST_DOLLAR_PREFLIGHT_BLOCKED_BY_SECURITY",
             "FIRST_DOLLAR_PREFLIGHT_BLOCKED_BY_CURRENT_MARKET",
+            "FIRST_DOLLAR_PREFLIGHT_BLOCKED_BY_FORECAST",
             "FIRST_DOLLAR_PREFLIGHT_BLOCKED_BY_ORDER_PREVIEW",
             "FIRST_DOLLAR_PREFLIGHT_BLOCKED_BY_HUMAN_REVIEW",
             "FIRST_DOLLAR_PREFLIGHT_STRUCTURALLY_READY_NO_CURRENT_MARKET",
