@@ -17,7 +17,7 @@ from quant_os.research.strategy_factory.campaign_common import (
     write_json_md,
 )
 from quant_os.research.strategy_factory.strategy_tournament import run_strategy_tournament
-from quant_os.risk.strategy_conflict_detector import build_strategy_conflict_detector
+from quant_os.risk.strategy_conflict_detector import write_strategy_conflict_detector_report
 
 
 def write_money_worthy_strategy_readiness_report(
@@ -32,7 +32,10 @@ def write_money_worthy_strategy_readiness_report(
     batch_index = int(state.get("last_completed_batch_index", 1) or 1)
     tournament = run_strategy_tournament(batch_index=batch_index)
     overfit = build_thousand_strategy_overfit_guard()
-    conflict = build_strategy_conflict_detector()
+    conflict = write_strategy_conflict_detector_report(
+        output_root=output_root,
+        candidate=_candidate_conflict_profile(tournament.get("current_best_candidate") or {}),
+    )
     repeatability = write_thousand_strategy_repeatability_report(
         output_root=output_root,
         candidate=tournament.get("current_best_candidate"),
@@ -72,3 +75,19 @@ def write_money_worthy_strategy_readiness_report(
         title="Money-Worthy Strategy Readiness",
         lines=[f"Status: {payload['status']}", f"Blockers: {', '.join(payload['blockers'])}"],
     )
+
+
+def _candidate_conflict_profile(candidate: dict[str, Any]) -> dict[str, Any]:
+    configuration = candidate.get("variant_configuration") or {}
+    thresholds = configuration.get("thresholds") or {}
+    spread_cap_bps = float(configuration.get("spread_cap_bps", 10.0))
+    fake_net_pnl = float(candidate.get("fake_net_pnl", 0.0))
+    return {
+        "selected_strategy_id": candidate.get("id"),
+        "strategy_signal": "buy" if fake_net_pnl > 0 else "none",
+        "regime_signal": "buy" if candidate.get("baseline_beaten") else "none",
+        "liquidity_filter": "pass" if spread_cap_bps <= 10.0 else "fail",
+        "edge_bps": max(fake_net_pnl, float(thresholds.get("no_trade_edge_bps", 0.0))),
+        "execution_uncertainty_bps": spread_cap_bps,
+        "source_fresh": bool(candidate.get("completed_marks", 0) and candidate.get("observations", 0)),
+    }

@@ -242,6 +242,41 @@ def test_sequence64_readiness_refreshes_repeatability_report_for_selected_candid
     assert "PLACEBO_NOT_BEATEN_IN_ALL_WINDOWS" not in repeatability["blockers"]
 
 
+def test_sequence64_readiness_refreshes_conflict_report_for_selected_candidate(
+    local_project: Path,
+) -> None:
+    from quant_os.readiness.money_worthy_strategy_readiness_report import (
+        write_money_worthy_strategy_readiness_report,
+    )
+    from quant_os.readiness.thousand_strategy_fresh_repro import (
+        write_thousand_strategy_fresh_repro_report,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    best = tournament["current_best_candidate"]
+    assert best["baseline_beaten"] is True
+    assert best["placebo_beaten"] is True
+    write_thousand_strategy_fresh_repro_report(
+        output_root=local_project,
+        proof_command_passed=True,
+    )
+    readiness = write_money_worthy_strategy_readiness_report(output_root=local_project)
+    conflict = json.loads(
+        (
+            local_project
+            / "reports/thousand_strategy_campaign/conflict_detector/latest_conflict_detector.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert conflict["candidate"]["selected_strategy_id"] == best["id"]
+    assert conflict["status"] == "CONFLICT_DETECTOR_PASSED"
+    assert conflict["veto_reasons"] == []
+    assert "CONFLICT_DETECTOR_NOT_PASSED" not in readiness["blockers"]
+
+
 def test_sequence64_readiness_replaces_stale_candidate_blockers_after_fresh_repro_passes(
     local_project: Path,
 ) -> None:
