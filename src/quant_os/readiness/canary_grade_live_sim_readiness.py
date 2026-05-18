@@ -170,6 +170,7 @@ def write_canary_grade_live_sim_readiness_report(*, output_root: str | Path = ".
         walk_forward_windows=payload["walk_forward_windows"],
         blockers=payload["blockers"],
         next_action=payload["next_action"],
+        exact_resume_command=payload["exact_resume_command"],
     )
     return payload
 
