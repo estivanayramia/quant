@@ -6724,6 +6724,27 @@ def proving_thousand_strategy_overfit_guard() -> None:
     )
 
 
+@proving_app.command("thousand-strategy-public-forward-evidence")
+def proving_thousand_strategy_public_forward_evidence() -> None:
+    from quant_os.proving.thousand_strategy_public_forward_evidence import (
+        write_thousand_strategy_public_forward_evidence_report,
+    )
+
+    payload = write_thousand_strategy_public_forward_evidence_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "blockers": payload["blockers"],
+            "report": (
+                "reports/thousand_strategy_campaign/public_forward_evidence/"
+                "latest_public_forward_evidence.json"
+            ),
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @risk_app.command("strategy-conflict-detector")
 def risk_strategy_conflict_detector() -> None:
     from quant_os.risk.strategy_conflict_detector import write_strategy_conflict_detector_report

@@ -468,6 +468,162 @@ def test_sequence64_readiness_requires_public_forward_evidence_for_success() -> 
     assert "PUBLIC_FORWARD_EVIDENCE_NOT_PROVEN" in synthetic_readiness["blockers"]
 
 
+def test_sequence64_public_forward_evidence_blocks_fixture_or_unmatched_data(
+    local_project: Path,
+) -> None:
+    from quant_os.proving.thousand_strategy_public_forward_evidence import (
+        build_thousand_strategy_public_forward_evidence,
+    )
+
+    candidate = {"id": "tsv_real_candidate", "fake_net_pnl": 10.0}
+    fixture_evidence = build_thousand_strategy_public_forward_evidence(
+        candidate=candidate,
+        live_sim_summary={
+            "selected_strategy_id": "tsv_real_candidate",
+            "status": "VARIANT_LIVE_SIM_SUMMARY_READY",
+            "data_sources": ["public_fixture_safe_market_data"],
+            "observation_count": 5000,
+            "eligible_intent_count": 500,
+            "completed_mark_count": 300,
+            "fake_net_pnl": 10.0,
+            "public_forward_evidence_proven": True,
+            "evidence_source": "public_forward_live_sim",
+        },
+        reconciliation={"status": "VARIANT_LIVE_SIM_RECONCILIATION_PASSED"},
+    )
+    mismatch_evidence = build_thousand_strategy_public_forward_evidence(
+        candidate=candidate,
+        live_sim_summary={
+            "selected_strategy_id": "other_candidate",
+            "status": "VARIANT_LIVE_SIM_SUMMARY_READY",
+            "data_sources": ["kraken_public_rest_unauthenticated_forward"],
+            "observation_count": 5000,
+            "eligible_intent_count": 500,
+            "completed_mark_count": 300,
+            "fake_net_pnl": 10.0,
+            "public_forward_evidence_proven": True,
+            "evidence_source": "public_forward_live_sim",
+        },
+        reconciliation={"status": "VARIANT_LIVE_SIM_RECONCILIATION_PASSED"},
+    )
+
+    assert fixture_evidence["status"] == "PUBLIC_FORWARD_EVIDENCE_BLOCKED"
+    assert "FIXTURE_DATA_NOT_PUBLIC_FORWARD_EVIDENCE" in fixture_evidence["blockers"]
+    assert mismatch_evidence["status"] == "PUBLIC_FORWARD_EVIDENCE_BLOCKED"
+    assert "SELECTED_STRATEGY_ID_MISMATCH" in mismatch_evidence["blockers"]
+
+
+def test_sequence64_public_forward_evidence_can_pass_with_strict_public_candidate_match() -> None:
+    from quant_os.proving.thousand_strategy_public_forward_evidence import (
+        build_thousand_strategy_public_forward_evidence,
+    )
+
+    evidence = build_thousand_strategy_public_forward_evidence(
+        candidate={"id": "tsv_real_candidate", "fake_net_pnl": 10.0},
+        live_sim_summary={
+            "selected_strategy_id": "tsv_real_candidate",
+            "status": "VARIANT_LIVE_SIM_SUMMARY_READY",
+            "data_sources": ["kraken_public_rest_unauthenticated_forward"],
+            "observation_count": 5000,
+            "eligible_intent_count": 500,
+            "completed_mark_count": 300,
+            "fake_net_pnl": 10.0,
+            "public_forward_evidence_proven": True,
+            "evidence_source": "public_forward_live_sim",
+        },
+        reconciliation={"status": "VARIANT_LIVE_SIM_RECONCILIATION_PASSED"},
+    )
+
+    assert evidence["status"] == "PUBLIC_FORWARD_EVIDENCE_PASSED"
+    assert evidence["blockers"] == []
+    assert evidence["candidate_evidence"]["public_forward_evidence_proven"] is True
+    assert evidence["candidate_evidence"]["evidence_source"] == "public_forward_live_sim"
+
+
+def test_sequence64_readiness_uses_public_forward_evidence_report_for_provenance(
+    local_project: Path,
+) -> None:
+    from quant_os.readiness.money_worthy_strategy_readiness import SUCCESS
+    from quant_os.readiness.money_worthy_strategy_readiness_report import (
+        write_money_worthy_strategy_readiness_report,
+    )
+    from quant_os.readiness.thousand_strategy_fresh_repro import (
+        write_thousand_strategy_fresh_repro_report,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    candidate = tournament["current_best_candidate"]
+    candidate.update(
+        {
+            "multiple_testing_adjusted": True,
+            "holdout_passed": True,
+            "purged_validation_passed": True,
+            "neighbor_parameter_pass_rate": 0.72,
+            "placebo_survives_similarly": False,
+            "adjusted_performance_significant": True,
+            "one_trade_dominance": 0.12,
+            "one_window_dominance": 0.21,
+            "one_asset_dominance": 0.3,
+            "stress_tests": {
+                "exclude_top_trade": "PASSED",
+                "exclude_top_5_trades": "PASSED",
+                "delayed_entry": "PASSED",
+                "worse_fill": "PASSED",
+                "higher_fee": "PASSED",
+            },
+        },
+    )
+    tournament["current_best_candidate"] = candidate
+    tournament["cumulative_top_candidates"] = [candidate]
+    tournament["cumulative_leaderboard_top_50"][0] = candidate
+    tournament_path = (
+        local_project
+        / "reports/thousand_strategy_campaign/tournament/latest_tournament.json"
+    )
+    tournament_path.write_text(json.dumps(tournament, indent=2, sort_keys=True), encoding="utf-8")
+    live_sim_dir = local_project / "reports/thousand_strategy_campaign/live_sim"
+    live_sim_dir.mkdir(parents=True, exist_ok=True)
+    (live_sim_dir / "latest_live_sim_summary.json").write_text(
+        json.dumps(
+            {
+                "selected_strategy_id": candidate["id"],
+                "status": "VARIANT_LIVE_SIM_SUMMARY_READY",
+                "data_sources": ["kraken_public_rest_unauthenticated_forward"],
+                "observation_count": 5000,
+                "eligible_intent_count": 500,
+                "completed_mark_count": 300,
+                "fake_net_pnl": 10.0,
+                "public_forward_evidence_proven": True,
+                "evidence_source": "public_forward_live_sim",
+            },
+            indent=2,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    (live_sim_dir / "latest_reconciliation.json").write_text(
+        json.dumps(
+            {"status": "VARIANT_LIVE_SIM_RECONCILIATION_PASSED"},
+            indent=2,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    write_thousand_strategy_fresh_repro_report(
+        output_root=local_project,
+        proof_command_passed=True,
+    )
+
+    readiness = write_money_worthy_strategy_readiness_report(output_root=local_project)
+
+    assert readiness["public_forward_evidence_status"] == "PUBLIC_FORWARD_EVIDENCE_PASSED"
+    assert readiness["status"] == SUCCESS
+    assert readiness["current_best_candidate"]["public_forward_evidence_proven"] is True
+
+
 def test_sequence64_readiness_replaces_stale_candidate_blockers_after_fresh_repro_passes(
     local_project: Path,
 ) -> None:

@@ -5,6 +5,9 @@ from typing import Any
 
 from quant_os.proving.thousand_strategy_capacity import build_thousand_strategy_capacity
 from quant_os.proving.thousand_strategy_overfit_guard import build_thousand_strategy_overfit_guard
+from quant_os.proving.thousand_strategy_public_forward_evidence import (
+    write_thousand_strategy_public_forward_evidence_report,
+)
 from quant_os.proving.thousand_strategy_repeatability import (
     write_thousand_strategy_repeatability_report,
 )
@@ -42,6 +45,15 @@ def write_money_worthy_strategy_readiness_report(
         tournament = persisted_tournament
     else:
         tournament = run_strategy_tournament(batch_index=batch_index)
+    public_forward_evidence = write_thousand_strategy_public_forward_evidence_report(
+        output_root=output_root,
+        candidate=tournament.get("current_best_candidate"),
+    )
+    if public_forward_evidence.get("status") == "PUBLIC_FORWARD_EVIDENCE_PASSED":
+        tournament = dict(tournament)
+        candidate = dict(tournament.get("current_best_candidate") or {})
+        candidate.update(public_forward_evidence.get("candidate_evidence") or {})
+        tournament["current_best_candidate"] = candidate
     overfit = build_thousand_strategy_overfit_guard(
         attempted_variants=int(
             tournament.get("cumulative_variants_generated")
@@ -72,6 +84,8 @@ def write_money_worthy_strategy_readiness_report(
         capacity=capacity,
         fresh_repro=fresh_repro,
     )
+    payload["public_forward_evidence_status"] = public_forward_evidence.get("status")
+    payload["public_forward_evidence_blockers"] = public_forward_evidence.get("blockers", [])
     write_campaign_state(
         output_root=output_root,
         campaign_status="THOUSAND_STRATEGY_CAMPAIGN_CHECKPOINTED_NOT_COMPLETE",
