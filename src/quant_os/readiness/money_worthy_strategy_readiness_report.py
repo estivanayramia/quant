@@ -30,7 +30,18 @@ def write_money_worthy_strategy_readiness_report(
         json_name="latest_state.json",
     )
     batch_index = int(state.get("last_completed_batch_index", 1) or 1)
-    tournament = run_strategy_tournament(batch_index=batch_index)
+    persisted_tournament = load_report(
+        output_root=output_root,
+        report_dir="tournament",
+        json_name="latest_tournament.json",
+    )
+    if (
+        int(persisted_tournament.get("batch_index", 0) or 0) == batch_index
+        and persisted_tournament.get("current_best_candidate")
+    ):
+        tournament = persisted_tournament
+    else:
+        tournament = run_strategy_tournament(batch_index=batch_index)
     overfit = build_thousand_strategy_overfit_guard()
     conflict = write_strategy_conflict_detector_report(
         output_root=output_root,

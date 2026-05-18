@@ -288,6 +288,41 @@ def test_sequence64_readiness_refreshes_conflict_report_for_selected_candidate(
     assert "CONFLICT_DETECTOR_NOT_PASSED" not in readiness["blockers"]
 
 
+def test_sequence64_readiness_uses_persisted_cumulative_tournament_candidate(
+    local_project: Path,
+) -> None:
+    from quant_os.readiness.money_worthy_strategy_readiness_report import (
+        write_money_worthy_strategy_readiness_report,
+    )
+    from quant_os.readiness.thousand_strategy_fresh_repro import (
+        write_thousand_strategy_fresh_repro_report,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_next_strategy_tranche_report,
+        write_strategy_tournament_report,
+    )
+
+    write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    persisted_tournament = write_next_strategy_tranche_report(output_root=local_project)
+    persisted_best = persisted_tournament["current_best_candidate"]
+    latest_batch_best = persisted_tournament["latest_batch_best_candidate"]
+    assert persisted_best["id"] != latest_batch_best["id"]
+
+    write_thousand_strategy_fresh_repro_report(
+        output_root=local_project,
+        proof_command_passed=True,
+    )
+    readiness = write_money_worthy_strategy_readiness_report(output_root=local_project)
+    state = json.loads(
+        (
+            local_project / "reports/thousand_strategy_campaign/state/latest_state.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert readiness["current_best_candidate"]["id"] == persisted_best["id"]
+    assert state["current_best_candidate"]["id"] == persisted_best["id"]
+
+
 def test_sequence64_readiness_replaces_stale_candidate_blockers_after_fresh_repro_passes(
     local_project: Path,
 ) -> None:
