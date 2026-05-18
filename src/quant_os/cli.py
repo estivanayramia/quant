@@ -6735,23 +6735,31 @@ def autonomy_variant_public_forward_observe(
         "--source",
     ),
     timestamp: str = typer.Option("pending", "--timestamp"),
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
 ) -> None:
     from quant_os.autonomy.variant_public_forward_live_sim import (
         append_variant_public_forward_observations,
+        append_variant_public_forward_public_snapshot,
     )
 
-    payload = append_variant_public_forward_observations(
-        output_root=Path("."),
-        observations=[
-            {
-                "asset": asset,
-                "bid": bid,
-                "ask": ask,
-                "source": source,
-                "timestamp": timestamp,
-            }
-        ],
-    )
+    if public_network_ok:
+        payload = append_variant_public_forward_public_snapshot(
+            output_root=Path("."),
+            public_network_ok=True,
+        )
+    else:
+        payload = append_variant_public_forward_observations(
+            output_root=Path("."),
+            observations=[
+                {
+                    "asset": asset,
+                    "bid": bid,
+                    "ask": ask,
+                    "source": source,
+                    "timestamp": timestamp,
+                }
+            ],
+        )
     print(
         {
             "status": payload["status"],

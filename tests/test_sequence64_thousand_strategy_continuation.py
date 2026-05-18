@@ -617,6 +617,101 @@ def test_sequence64_candidate_public_forward_observations_accumulate_without_pro
     assert second["actual_cancel_count"] == 0
 
 
+def test_sequence64_candidate_public_forward_snapshot_appends_selected_assets_only(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        append_variant_public_forward_snapshot,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    candidate = tournament["current_best_candidate"]
+    assert candidate["assets"] == ["BTC/USD", "ETH/USD"]
+
+    summary = append_variant_public_forward_snapshot(
+        output_root=local_project,
+        public_snapshot={
+            "source": "kraken_public_rest_unauthenticated_forward",
+            "fetched_at": "2026-05-18T11:00:00Z",
+            "symbols": {
+                "BTC/USD": {"book": {"bid": 100.0, "ask": 100.1}},
+                "ETH/USD": {"book": {"bid": 50.0, "ask": 50.1}},
+                "SOL/USD": {"book": {"bid": 20.0, "ask": 20.1}},
+            },
+        },
+    )
+
+    assert summary["selected_strategy_id"] == candidate["id"]
+    assert summary["observation_count"] == 2
+    assert {row["asset"] for row in summary["public_forward_observations"]} == {
+        "BTC/USD",
+        "ETH/USD",
+    }
+    assert summary["data_sources"] == ["kraken_public_rest_unauthenticated_forward"]
+    assert summary["public_forward_evidence_proven"] is False
+    assert summary["actual_order_count"] == 0
+    assert summary["actual_cancel_count"] == 0
+
+
+def test_sequence64_candidate_public_forward_fetch_defaults_to_no_network(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        append_variant_public_forward_public_snapshot,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    write_strategy_tournament_report(output_root=local_project, batch_index=1)
+
+    summary = append_variant_public_forward_public_snapshot(
+        output_root=local_project,
+        public_network_ok=False,
+    )
+
+    assert summary["observation_count"] == 0
+    assert summary["public_forward_evidence_proven"] is False
+    assert "PUBLIC_NETWORK_NOT_ENABLED" in summary["collection_blockers"]
+    assert summary["authenticated_requests_enabled"] is False
+    assert summary["request_signing_enabled"] is False
+
+
+def test_sequence64_candidate_public_forward_fetch_appends_public_snapshot_when_enabled(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        append_variant_public_forward_public_snapshot,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    write_strategy_tournament_report(output_root=local_project, batch_index=1)
+
+    summary = append_variant_public_forward_public_snapshot(
+        output_root=local_project,
+        public_network_ok=True,
+        public_snapshot={
+            "source": "kraken_public_rest_unauthenticated_forward",
+            "fetched_at": "2026-05-18T11:00:00Z",
+            "symbols": {
+                "BTC/USD": {"book": {"bid": 100.0, "ask": 100.1}},
+                "ETH/USD": {"book": {"bid": 50.0, "ask": 50.1}},
+            },
+        },
+    )
+
+    assert summary["observation_count"] == 2
+    assert summary["data_sources"] == ["kraken_public_rest_unauthenticated_forward"]
+    assert summary["collection_blockers"] == []
+    assert summary["api_keys_loaded"] is False
+    assert summary["private_keys_loaded"] is False
+
+
 def test_sequence64_readiness_uses_public_forward_evidence_report_for_provenance(
     local_project: Path,
 ) -> None:
