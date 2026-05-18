@@ -28,6 +28,11 @@ def build_money_worthy_strategy_readiness(
         blockers.append("NO_TOP_CANDIDATE")
     if float(candidate.get("fake_net_pnl", 0.0)) <= 0:
         blockers.append("FAKE_NET_PNL_NOT_POSITIVE")
+    if not (
+        candidate.get("public_forward_evidence_proven") is True
+        and candidate.get("evidence_source") == "public_forward_live_sim"
+    ):
+        blockers.append("PUBLIC_FORWARD_EVIDENCE_NOT_PROVEN")
     if overfit.get("status") != "OVERFIT_GUARD_PASSED":
         blockers.append("OVERFIT_GUARD_NOT_PASSED")
     if conflict.get("status") != "CONFLICT_DETECTOR_PASSED":

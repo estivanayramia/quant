@@ -424,6 +424,48 @@ def test_sequence64_readiness_feeds_candidate_evidence_to_overfit_and_repeatabil
     assert readiness["repeatability_status"] == "REPEATABILITY_PASSED"
     assert "OVERFIT_GUARD_NOT_PASSED" not in readiness["blockers"]
     assert "REPEATABILITY_NOT_PASSED" not in readiness["blockers"]
+    assert readiness["status"] == "MONEY_WORTHY_NOT_PROVEN"
+    assert "PUBLIC_FORWARD_EVIDENCE_NOT_PROVEN" in readiness["blockers"]
+
+
+def test_sequence64_readiness_requires_public_forward_evidence_for_success() -> None:
+    from quant_os.readiness.money_worthy_strategy_readiness import (
+        SUCCESS,
+        build_money_worthy_strategy_readiness,
+    )
+
+    base_candidate = {
+        "id": "tsv_public_candidate",
+        "fake_net_pnl": 10.0,
+        "public_forward_evidence_proven": True,
+        "evidence_source": "public_forward_live_sim",
+    }
+    common_gates = {
+        "overfit": {"status": "OVERFIT_GUARD_PASSED"},
+        "conflict": {"status": "CONFLICT_DETECTOR_PASSED"},
+        "repeatability": {"status": "REPEATABILITY_PASSED"},
+        "capacity": {"status": "CAPACITY_TINY_CANARY_PASSED"},
+        "fresh_repro": {"status": "FRESH_REPRO_PASSED"},
+    }
+
+    public_readiness = build_money_worthy_strategy_readiness(
+        tournament={"current_best_candidate": base_candidate},
+        **common_gates,
+    )
+    synthetic_readiness = build_money_worthy_strategy_readiness(
+        tournament={
+            "current_best_candidate": {
+                **base_candidate,
+                "public_forward_evidence_proven": False,
+                "evidence_source": "synthetic_strategy_factory_fixture",
+            },
+        },
+        **common_gates,
+    )
+
+    assert public_readiness["status"] == SUCCESS
+    assert synthetic_readiness["status"] == "MONEY_WORTHY_NOT_PROVEN"
+    assert "PUBLIC_FORWARD_EVIDENCE_NOT_PROVEN" in synthetic_readiness["blockers"]
 
 
 def test_sequence64_readiness_replaces_stale_candidate_blockers_after_fresh_repro_passes(
