@@ -8,6 +8,7 @@ from quant_os.research.strategy_factory.campaign_common import (
     RESUME_COMMAND,
     load_report,
     safe_payload,
+    stable_id,
     write_campaign_state,
     write_json_md,
 )
@@ -182,9 +183,10 @@ def _add_cumulative_leaderboard(
 def _dedup_ranked(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     by_id: dict[str, dict[str, Any]] = {}
     for item in items:
-        existing = by_id.get(item["id"])
+        key = item.get("structural_signature") or item["id"]
+        existing = by_id.get(key)
         if existing is None or _rank_key(item) > _rank_key(existing):
-            by_id[item["id"]] = item
+            by_id[key] = item
     return sorted(by_id.values(), key=_rank_key, reverse=True)
 
 
@@ -222,8 +224,19 @@ def write_next_strategy_tranche_report(
 def _score_variant(variant: dict[str, Any], index: int, *, stage: int) -> dict[str, Any]:
     base = ((variant["deterministic_seed"] * 17) % 1000) / 1000
     pnl = round((base - 0.48) * 40 - (variant["spread_cap_bps"] * 0.12), 6)
+    variant_configuration = {
+        "family": variant["family"],
+        "assets": variant["assets"],
+        "lookback": variant["lookback"],
+        "holding_window": variant["holding_window"],
+        "thresholds": variant["thresholds"],
+        "spread_cap_bps": variant["spread_cap_bps"],
+        "liquidity_cap_usd": variant["liquidity_cap_usd"],
+    }
     return {
         "id": variant["id"],
+        "structural_signature": stable_id("tss", variant_configuration, length=14),
+        "variant_configuration": variant_configuration,
         "family": variant["family"],
         "assets": variant["assets"],
         "stage": stage,

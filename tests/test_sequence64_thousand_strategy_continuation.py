@@ -98,18 +98,45 @@ def test_sequence64_tournament_preserves_cumulative_leaderboard_across_tranches(
         ).read_text(encoding="utf-8")
     )
 
-    cumulative_ids = {
-        candidate["id"] for candidate in second["cumulative_leaderboard_top_50"]
+    cumulative_signatures = {
+        candidate["structural_signature"] for candidate in second["cumulative_leaderboard_top_50"]
     }
-    first_batch_ids = {candidate["id"] for candidate in first["leaderboard_top_50"]}
-    second_batch_ids = {candidate["id"] for candidate in second["leaderboard_top_50"]}
+    first_batch_signatures = {
+        candidate["structural_signature"] for candidate in first["leaderboard_top_50"]
+    }
+    second_batch_signatures = {
+        candidate["structural_signature"] for candidate in second["leaderboard_top_50"]
+    }
 
     assert second["batch_index"] == 2
-    assert first_batch_ids & cumulative_ids
-    assert second_batch_ids & cumulative_ids
+    assert first_batch_signatures & cumulative_signatures
+    assert second_batch_signatures & cumulative_signatures
     assert len(second["cumulative_leaderboard_top_50"]) == 50
     assert second["cumulative_top_candidates"][0]["id"] == state["current_best_candidate"]["id"]
     assert state["cumulative_leaderboard_top_50"][0]["id"] == state["current_best_candidate"]["id"]
+
+
+def test_sequence64_cumulative_leaderboard_dedupes_repeated_strategy_shapes(
+    local_project: Path,
+) -> None:
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_next_strategy_tranche_report,
+        write_strategy_tournament_report,
+    )
+
+    first = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    second = write_next_strategy_tranche_report(output_root=local_project)
+
+    first_signature = first["current_best_candidate"]["structural_signature"]
+    second_signature = second["latest_batch_best_candidate"]["structural_signature"]
+    cumulative_signatures = [
+        candidate["structural_signature"]
+        for candidate in second["cumulative_leaderboard_top_50"]
+    ]
+
+    assert first_signature == second_signature
+    assert len(cumulative_signatures) == len(set(cumulative_signatures))
+    assert cumulative_signatures.count(first_signature) == 1
 
 
 def test_sequence64_readiness_replaces_stale_candidate_blockers_after_fresh_repro_passes(
