@@ -6,11 +6,19 @@ from typing import Any
 from quant_os.research.strategy_factory.campaign_common import safe_payload, write_json_md
 
 
-def write_thousand_strategy_fresh_repro_report(*, output_root: str | Path = ".") -> dict[str, Any]:
+def write_thousand_strategy_fresh_repro_report(
+    *,
+    output_root: str | Path = ".",
+    proof_command_passed: bool = False,
+    audit_worktree: str = "C:/Users/estiv/quant-thousand-strategy-audit",
+) -> dict[str, Any]:
+    blockers = [] if proof_command_passed else ["FRESH_WORKTREE_REPRO_NOT_RUN"]
     payload = safe_payload(
-        status="FRESH_REPRO_BLOCKED",
-        audit_worktree="C:/Users/estiv/quant-thousand-strategy-audit",
-        blockers=["FRESH_WORKTREE_REPRO_NOT_RUN"],
+        status="FRESH_REPRO_PASSED" if proof_command_passed else "FRESH_REPRO_BLOCKED",
+        audit_worktree=audit_worktree,
+        proof_command=".\make.cmd sequence63-smoke",
+        proof_command_passed=proof_command_passed,
+        blockers=blockers,
         required_reports=[
             "social_hypotheses",
             "research",
@@ -31,5 +39,9 @@ def write_thousand_strategy_fresh_repro_report(*, output_root: str | Path = ".")
         json_name="latest_fresh_repro.json",
         md_name="latest_fresh_repro.md",
         title="Fresh Worktree Reproducibility",
-        lines=[f"Status: {payload['status']}", "Fresh worktree audit has not passed."],
+        lines=[
+            f"Status: {payload['status']}",
+            f"Audit worktree: {payload['audit_worktree']}",
+            f"Blockers: {', '.join(blockers or ['None'])}",
+        ],
     )

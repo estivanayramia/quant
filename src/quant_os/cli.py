@@ -6734,12 +6734,22 @@ def proving_thousand_strategy_capacity() -> None:
 
 
 @readiness_app.command("thousand-strategy-fresh-repro")
-def readiness_thousand_strategy_fresh_repro() -> None:
+def readiness_thousand_strategy_fresh_repro(
+    proof_command_passed: bool = typer.Option(False, "--proof-command-passed"),
+    audit_worktree: str = typer.Option(
+        "C:/Users/estiv/quant-thousand-strategy-audit",
+        "--audit-worktree",
+    ),
+) -> None:
     from quant_os.readiness.thousand_strategy_fresh_repro import (
         write_thousand_strategy_fresh_repro_report,
     )
 
-    payload = write_thousand_strategy_fresh_repro_report(output_root=Path("."))
+    payload = write_thousand_strategy_fresh_repro_report(
+        output_root=Path("."),
+        proof_command_passed=proof_command_passed,
+        audit_worktree=audit_worktree,
+    )
     print(
         {
             "status": payload["status"],

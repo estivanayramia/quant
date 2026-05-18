@@ -10,6 +10,7 @@ from quant_os.readiness.money_worthy_strategy_readiness import (
     build_money_worthy_strategy_readiness,
 )
 from quant_os.research.strategy_factory.campaign_common import (
+    load_report,
     write_campaign_state,
     write_json_md,
 )
@@ -26,7 +27,11 @@ def write_money_worthy_strategy_readiness_report(
     conflict = build_strategy_conflict_detector()
     repeatability = build_thousand_strategy_repeatability()
     capacity = build_thousand_strategy_capacity()
-    fresh_repro = {"status": "FRESH_REPRO_BLOCKED"}
+    fresh_repro = load_report(
+        output_root=output_root,
+        report_dir="fresh_repro",
+        json_name="latest_fresh_repro.json",
+    ) or {"status": "FRESH_REPRO_BLOCKED"}
     payload = build_money_worthy_strategy_readiness(
         tournament=tournament,
         overfit=overfit,
