@@ -5,6 +5,7 @@ from statistics import mean
 from typing import Any
 
 from quant_os.research.strategy_factory.campaign_common import (
+    RESUME_COMMAND,
     safe_payload,
     write_campaign_state,
     write_json_md,
@@ -14,8 +15,12 @@ from quant_os.research.strategy_factory.strategy_variant_generator import (
 )
 
 
-def run_strategy_tournament(*, target_count: int = 1000) -> dict[str, Any]:
-    variants = generate_strategy_variants(target_count=target_count)
+def run_strategy_tournament(
+    *,
+    target_count: int = 1000,
+    batch_index: int = 1,
+) -> dict[str, Any]:
+    variants = generate_strategy_variants(target_count=target_count, batch_index=batch_index)
     stage1 = [_score_variant(variant, index, stage=1) for index, variant in enumerate(variants[:250])]
     stage1_survivors = sorted(stage1, key=lambda item: item["score"], reverse=True)[:50]
     stage2 = [_harden(item, stage=2) for item in stage1_survivors]
@@ -42,9 +47,13 @@ def run_strategy_tournament(*, target_count: int = 1000) -> dict[str, Any]:
     ][:20]
     return safe_payload(
         status="THOUSAND_STRATEGY_CAMPAIGN_CHECKPOINTED_NOT_COMPLETE",
+        batch_index=batch_index,
         variants_generated=len(variants),
+        cumulative_variants_generated=batch_index * len(variants),
         variants_tested=250,
+        cumulative_variants_tested=batch_index * 250,
         variants_rejected=249,
+        cumulative_variants_rejected=batch_index * 249,
         variants_promoted=0,
         stage_counts={
             "stage1_tested": len(stage1),
@@ -73,7 +82,7 @@ def run_strategy_tournament(*, target_count: int = 1000) -> dict[str, Any]:
         placebo_beaten=best["placebo_beaten"],
         campaign_complete=False,
         next_action="Run overfit, conflict, repeatability, capacity, and fresh-repro gates; expand next tranche if blocked.",
-        exact_resume_command=".\\make.cmd thousand-strategy-public-run",
+        exact_resume_command=RESUME_COMMAND,
     )
 
 
@@ -81,22 +90,29 @@ def write_strategy_tournament_report(
     *,
     output_root: str | Path = ".",
     target_count: int = 1000,
+    batch_index: int = 1,
 ) -> dict[str, Any]:
-    payload = run_strategy_tournament(target_count=target_count)
+    payload = run_strategy_tournament(target_count=target_count, batch_index=batch_index)
     write_campaign_state(
         output_root=output_root,
         campaign_status=payload["status"],
-        variants_generated=payload["variants_generated"],
-        variants_tested=payload["variants_tested"],
-        variants_rejected=payload["variants_rejected"],
+        variants_generated=payload["cumulative_variants_generated"],
+        variants_tested=payload["cumulative_variants_tested"],
+        variants_rejected=payload["cumulative_variants_rejected"],
         variants_promoted=payload["variants_promoted"],
+        last_completed_batch_index=batch_index,
         current_best_candidate=payload["current_best_candidate"],
         blockers=payload["current_best_candidate"]["blockers"],
+        manual_canary_packet_status="FIRST_TINY_MANUAL_CANARY_PACKET_BLOCKED",
+        exact_resume_command=payload["exact_resume_command"],
     )
     lines = [
         f"Status: {payload['status']}",
+        f"Batch: {payload['batch_index']}",
         f"Variants generated: {payload['variants_generated']}",
+        f"Cumulative variants generated: {payload['cumulative_variants_generated']}",
         f"Variants tested: {payload['variants_tested']}",
+        f"Cumulative variants tested: {payload['cumulative_variants_tested']}",
         f"Stage counts: {payload['stage_counts']}",
         f"Best candidate: {payload['current_best_candidate']['id']}",
         f"Best fake PnL: {payload['best_fake_pnl']}",

@@ -8,7 +8,7 @@ from typing import Any
 
 ROOT = Path("reports/thousand_strategy_campaign")
 PREREG_TS = "2026-05-18T00:00:00Z"
-RESUME_COMMAND = ".\\make.cmd thousand-strategy-public-run"
+RESUME_COMMAND = ".\\make.cmd thousand-strategy-next-tranche"
 
 SAFETY_STATE: dict[str, Any] = {
     "live_trading_enabled": False,

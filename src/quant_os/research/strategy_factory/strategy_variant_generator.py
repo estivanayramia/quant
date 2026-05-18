@@ -62,9 +62,13 @@ SPREAD_CAPS = [5.0, 10.0, 20.0]
 LIQUIDITY_CAPS = [1.0, 5.0, 25.0]
 
 
-def generate_strategy_variants(*, target_count: int = 1000) -> list[StrategyVariant]:
+def generate_strategy_variants(
+    *,
+    target_count: int = 1000,
+    batch_index: int = 1,
+) -> list[StrategyVariant]:
     variants: list[StrategyVariant] = []
-    seed = 630000
+    seed = 630000 + ((batch_index - 1) * 1_000_000)
     combinations = product(LOOKBACKS, HOLDS, THRESHOLDS, SPREAD_CAPS, LIQUIDITY_CAPS, FAMILIES)
     for lookback, hold, threshold, spread_cap, liquidity_cap, family in combinations:
         market_assets = _assets_for_family(family)
@@ -78,9 +82,11 @@ def generate_strategy_variants(*, target_count: int = 1000) -> list[StrategyVari
             "spread_cap": spread_cap,
             "liquidity_cap": liquidity_cap,
             "seed": seed,
+            "batch_index": batch_index,
         }
         variant: StrategyVariant = {
             "id": stable_id("tsv", payload, length=14),
+            "batch_index": batch_index,
             "family": family,
             "assets": market_assets,
             "source": "pre_registered_public_strategy_factory_v1",
@@ -118,11 +124,15 @@ def write_strategy_variants_report(
     *,
     output_root: str | Path = ".",
     target_count: int = 1000,
+    batch_index: int = 1,
 ) -> dict[str, Any]:
-    variants = generate_strategy_variants(target_count=target_count)
+    variants = generate_strategy_variants(target_count=target_count, batch_index=batch_index)
+    cumulative_variant_count = batch_index * len(variants)
     payload = safe_payload(
         status="STRATEGY_VARIANTS_PREREGISTERED",
+        batch_index=batch_index,
         variant_count=len(variants),
+        cumulative_variant_count=cumulative_variant_count,
         variants=variants,
         top_k_preview=variants[:25],
         pre_registered_before_testing=True,
@@ -132,12 +142,15 @@ def write_strategy_variants_report(
     )
     write_campaign_state(
         output_root=output_root,
-        variants_generated=len(variants),
+        variants_generated=cumulative_variant_count,
+        last_completed_batch_index=batch_index,
         strategy_families_queued=sorted({variant["family"] for variant in variants}),
     )
     lines = [
         f"Status: {payload['status']}",
+        f"Batch: {payload['batch_index']}",
         f"Variants: {payload['variant_count']}",
+        f"Cumulative variants: {payload['cumulative_variant_count']}",
         f"Families: {payload['family_count']}",
         f"Assets: {payload['asset_count']}",
         "Pre-registered before testing: True",

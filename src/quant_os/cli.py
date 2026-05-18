@@ -6598,16 +6598,23 @@ def research_thousand_strategy_research() -> None:
 @research_app.command("generate-strategy-variants")
 def research_generate_strategy_variants(
     target_count: int = typer.Option(1000, "--target-count", min=1000),
+    batch_index: int = typer.Option(1, "--batch-index", min=1),
 ) -> None:
     from quant_os.research.strategy_factory.strategy_variant_generator import (
         write_strategy_variants_report,
     )
 
-    payload = write_strategy_variants_report(output_root=Path("."), target_count=target_count)
+    payload = write_strategy_variants_report(
+        output_root=Path("."),
+        target_count=target_count,
+        batch_index=batch_index,
+    )
     print(
         {
             "status": payload["status"],
+            "batch_index": payload["batch_index"],
             "variant_count": payload["variant_count"],
+            "cumulative_variant_count": payload["cumulative_variant_count"],
             "report": "reports/thousand_strategy_campaign/variants/latest_strategy_variants.json",
             "live_trading_enabled": payload["live_trading_enabled"],
             "execution_authority": payload["execution_authority"],
@@ -6616,17 +6623,22 @@ def research_generate_strategy_variants(
 
 
 @research_app.command("strategy-tournament")
-def research_strategy_tournament() -> None:
+def research_strategy_tournament(
+    batch_index: int = typer.Option(1, "--batch-index", min=1),
+) -> None:
     from quant_os.research.strategy_factory.strategy_tournament import (
         write_strategy_tournament_report,
     )
 
-    payload = write_strategy_tournament_report(output_root=Path("."))
+    payload = write_strategy_tournament_report(output_root=Path("."), batch_index=batch_index)
     print(
         {
             "status": payload["status"],
+            "batch_index": payload["batch_index"],
             "variants_generated": payload["variants_generated"],
+            "cumulative_variants_generated": payload["cumulative_variants_generated"],
             "variants_tested": payload["variants_tested"],
+            "cumulative_variants_tested": payload["cumulative_variants_tested"],
             "report": "reports/thousand_strategy_campaign/tournament/latest_tournament.json",
             "live_trading_enabled": payload["live_trading_enabled"],
             "execution_authority": payload["execution_authority"],

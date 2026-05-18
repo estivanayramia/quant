@@ -22,7 +22,13 @@ def write_money_worthy_strategy_readiness_report(
     *,
     output_root: str | Path = ".",
 ) -> dict[str, Any]:
-    tournament = run_strategy_tournament()
+    state = load_report(
+        output_root=output_root,
+        report_dir="state",
+        json_name="latest_state.json",
+    )
+    batch_index = int(state.get("last_completed_batch_index", 1) or 1)
+    tournament = run_strategy_tournament(batch_index=batch_index)
     overfit = build_thousand_strategy_overfit_guard()
     conflict = build_strategy_conflict_detector()
     repeatability = build_thousand_strategy_repeatability()
@@ -45,9 +51,9 @@ def write_money_worthy_strategy_readiness_report(
         campaign_status="THOUSAND_STRATEGY_CAMPAIGN_CHECKPOINTED_NOT_COMPLETE",
         money_worthy_readiness_status=payload["status"],
         manual_canary_packet_status="FIRST_TINY_MANUAL_CANARY_PACKET_BLOCKED",
-        variants_generated=tournament["variants_generated"],
-        variants_tested=tournament["variants_tested"],
-        variants_rejected=tournament["variants_rejected"],
+        variants_generated=tournament.get("cumulative_variants_generated", tournament["variants_generated"]),
+        variants_tested=tournament.get("cumulative_variants_tested", tournament["variants_tested"]),
+        variants_rejected=tournament.get("cumulative_variants_rejected", tournament["variants_rejected"]),
         variants_promoted=0,
         current_best_candidate=tournament["current_best_candidate"],
         blockers=payload["blockers"],
