@@ -6646,6 +6646,35 @@ def research_strategy_tournament(
     )
 
 
+@research_app.command("strategy-next-tranche")
+def research_strategy_next_tranche(
+    target_count: int = typer.Option(1000, "--target-count", min=1000),
+) -> None:
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_next_strategy_tranche_report,
+    )
+
+    payload = write_next_strategy_tranche_report(
+        output_root=Path("."),
+        target_count=target_count,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "batch_index": payload["batch_index"],
+            "variants_generated": payload["variants_generated"],
+            "cumulative_variants_generated": payload["cumulative_variants_generated"],
+            "variants_tested": payload["variants_tested"],
+            "cumulative_variants_tested": payload["cumulative_variants_tested"],
+            "campaign_complete": payload["campaign_complete"],
+            "resume": payload["exact_resume_command"],
+            "report": "reports/thousand_strategy_campaign/tournament/latest_tournament.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @autonomy_app.command("variant-live-sim-run")
 def autonomy_variant_live_sim_run() -> None:
     from quant_os.autonomy.variant_live_sim_common import write_live_sim_summary

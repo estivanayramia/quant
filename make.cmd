@@ -1717,9 +1717,7 @@ if "%TARGET%"=="thousand-strategy-public-run" (
   exit /b !ERRORLEVEL!
 )
 if "%TARGET%"=="thousand-strategy-next-tranche" (
-  python -m quant_os.cli research generate-strategy-variants --batch-index 2
-  if errorlevel 1 exit /b !ERRORLEVEL!
-  python -m quant_os.cli research strategy-tournament --batch-index 2
+  python -m quant_os.cli research strategy-next-tranche
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomy variant-live-sim-run
   if errorlevel 1 exit /b !ERRORLEVEL!
@@ -1745,7 +1743,25 @@ if "%TARGET%"=="sequence63-smoke" (
   exit /b !ERRORLEVEL!
 )
 if "%TARGET%"=="sequence64-smoke" (
-  call "%~f0" thousand-strategy-next-tranche
+  python -m quant_os.cli research generate-strategy-variants --batch-index 2
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research strategy-tournament --batch-index 2
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-live-sim-run
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-overfit-guard
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli risk strategy-conflict-detector
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-repeatability
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-capacity
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness money-worthy-strategy
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness thousand-strategy-manual-canary-packet
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy thousand-strategy-schedule
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m pytest tests/test_sequence64_thousand_strategy_continuation.py
   exit /b !ERRORLEVEL!

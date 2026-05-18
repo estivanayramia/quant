@@ -44,6 +44,7 @@ def test_sequence64_next_tranche_tournament_updates_cumulative_checkpoint(
     local_project: Path,
 ) -> None:
     from quant_os.research.strategy_factory.strategy_tournament import (
+        write_next_strategy_tranche_report,
         write_strategy_tournament_report,
     )
 
@@ -68,6 +69,18 @@ def test_sequence64_next_tranche_tournament_updates_cumulative_checkpoint(
     assert state["last_completed_batch_index"] == 2
     assert state["manual_canary_packet_status"] == "FIRST_TINY_MANUAL_CANARY_PACKET_BLOCKED"
 
+    dynamic_third = write_next_strategy_tranche_report(output_root=local_project)
+    state_after_dynamic = json.loads(
+        (
+            local_project / "reports/thousand_strategy_campaign/state/latest_state.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert dynamic_third["batch_index"] == 3
+    assert dynamic_third["cumulative_variants_generated"] == 3000
+    assert dynamic_third["cumulative_variants_tested"] == 750
+    assert state_after_dynamic["last_completed_batch_index"] == 3
+    assert state_after_dynamic["exact_resume_command"] == ".\\make.cmd thousand-strategy-next-tranche"
+
 
 def test_sequence64_next_tranche_cli_and_make_target_are_data_only(local_project: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
@@ -91,6 +104,7 @@ def test_sequence64_next_tranche_cli_and_make_target_are_data_only(local_project
             "--batch-index",
             "2",
         ],
+        [sys.executable, "-m", "quant_os.cli", "research", "strategy-next-tranche"],
     ]
 
     for command in commands:

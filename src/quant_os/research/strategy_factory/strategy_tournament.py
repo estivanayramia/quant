@@ -6,12 +6,14 @@ from typing import Any
 
 from quant_os.research.strategy_factory.campaign_common import (
     RESUME_COMMAND,
+    load_report,
     safe_payload,
     write_campaign_state,
     write_json_md,
 )
 from quant_os.research.strategy_factory.strategy_variant_generator import (
     generate_strategy_variants,
+    write_strategy_variants_report,
 )
 
 
@@ -126,6 +128,29 @@ def write_strategy_tournament_report(
         md_name="latest_tournament.md",
         title="Strategy Tournament",
         lines=lines,
+    )
+
+
+def write_next_strategy_tranche_report(
+    *,
+    output_root: str | Path = ".",
+    target_count: int = 1000,
+) -> dict[str, Any]:
+    state = load_report(
+        output_root=output_root,
+        report_dir="state",
+        json_name="latest_state.json",
+    )
+    next_batch_index = int(state.get("last_completed_batch_index", 0) or 0) + 1
+    write_strategy_variants_report(
+        output_root=output_root,
+        target_count=target_count,
+        batch_index=next_batch_index,
+    )
+    return write_strategy_tournament_report(
+        output_root=output_root,
+        target_count=target_count,
+        batch_index=next_batch_index,
     )
 
 
