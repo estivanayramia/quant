@@ -37,7 +37,7 @@ def run_strategy_tournament(
         "FRESH_WORKTREE_REPRO_NOT_PASSED",
         "MANUAL_CANARY_PACKET_BLOCKED",
     ]
-    leaderboard = sorted([*stage1, *stage2, *stage3], key=lambda item: item["score"], reverse=True)[:50]
+    leaderboard = _dedup_ranked([*stage1, *stage2, *stage3])[:50]
     retired = [
         {
             "family": family,
@@ -94,7 +94,13 @@ def write_strategy_tournament_report(
     target_count: int = 1000,
     batch_index: int = 1,
 ) -> dict[str, Any]:
+    previous = load_report(
+        output_root=output_root,
+        report_dir="tournament",
+        json_name="latest_tournament.json",
+    )
     payload = run_strategy_tournament(target_count=target_count, batch_index=batch_index)
+    payload = _add_cumulative_leaderboard(payload, previous=previous)
     write_campaign_state(
         output_root=output_root,
         campaign_status=payload["status"],
@@ -104,6 +110,9 @@ def write_strategy_tournament_report(
         variants_promoted=payload["variants_promoted"],
         last_completed_batch_index=batch_index,
         current_best_candidate=payload["current_best_candidate"],
+        latest_batch_best_candidate=payload["latest_batch_best_candidate"],
+        cumulative_leaderboard_top_50=payload["cumulative_leaderboard_top_50"],
+        cumulative_top_candidates=payload["cumulative_top_candidates"],
         blockers=payload["current_best_candidate"]["blockers"],
         manual_canary_packet_status="FIRST_TINY_MANUAL_CANARY_PACKET_BLOCKED",
         exact_resume_command=payload["exact_resume_command"],
@@ -128,6 +137,62 @@ def write_strategy_tournament_report(
         md_name="latest_tournament.md",
         title="Strategy Tournament",
         lines=lines,
+    )
+
+
+def _add_cumulative_leaderboard(
+    payload: dict[str, Any],
+    *,
+    previous: dict[str, Any],
+) -> dict[str, Any]:
+    payload = dict(payload)
+    latest_best = dict(payload["current_best_candidate"])
+    prior_leaderboard: list[dict[str, Any]] = []
+    prior_candidates: list[dict[str, Any]] = []
+    if int(previous.get("batch_index", 0) or 0) == int(payload["batch_index"]) - 1:
+        prior_leaderboard = list(
+            previous.get("cumulative_leaderboard_top_50")
+            or previous.get("leaderboard_top_50")
+            or []
+        )
+        prior_candidates = list(
+            previous.get("cumulative_top_candidates")
+            or previous.get("top_candidates")
+            or []
+        )
+
+    cumulative_leaderboard = _dedup_ranked(
+        [*prior_leaderboard, *payload["leaderboard_top_50"]],
+    )[:50]
+    cumulative_candidates = _dedup_ranked(
+        [*prior_candidates, *payload["top_candidates"]],
+    )[:10]
+    cumulative_best = cumulative_candidates[0] if cumulative_candidates else latest_best
+
+    payload["latest_batch_best_candidate"] = latest_best
+    payload["cumulative_leaderboard_top_50"] = cumulative_leaderboard
+    payload["cumulative_top_candidates"] = cumulative_candidates
+    payload["current_best_candidate"] = cumulative_best
+    payload["best_fake_pnl"] = cumulative_best["fake_net_pnl"]
+    payload["baseline_beaten"] = cumulative_best["baseline_beaten"]
+    payload["placebo_beaten"] = cumulative_best["placebo_beaten"]
+    return payload
+
+
+def _dedup_ranked(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    by_id: dict[str, dict[str, Any]] = {}
+    for item in items:
+        existing = by_id.get(item["id"])
+        if existing is None or _rank_key(item) > _rank_key(existing):
+            by_id[item["id"]] = item
+    return sorted(by_id.values(), key=_rank_key, reverse=True)
+
+
+def _rank_key(item: dict[str, Any]) -> tuple[float, float, int]:
+    return (
+        float(item.get("score", 0.0)),
+        float(item.get("fake_net_pnl", 0.0)),
+        int(item.get("observations", 0)),
     )
 
 

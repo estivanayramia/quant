@@ -82,6 +82,36 @@ def test_sequence64_next_tranche_tournament_updates_cumulative_checkpoint(
     assert state_after_dynamic["exact_resume_command"] == ".\\make.cmd thousand-strategy-next-tranche"
 
 
+def test_sequence64_tournament_preserves_cumulative_leaderboard_across_tranches(
+    local_project: Path,
+) -> None:
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_next_strategy_tranche_report,
+        write_strategy_tournament_report,
+    )
+
+    first = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    second = write_next_strategy_tranche_report(output_root=local_project)
+    state = json.loads(
+        (
+            local_project / "reports/thousand_strategy_campaign/state/latest_state.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    cumulative_ids = {
+        candidate["id"] for candidate in second["cumulative_leaderboard_top_50"]
+    }
+    first_batch_ids = {candidate["id"] for candidate in first["leaderboard_top_50"]}
+    second_batch_ids = {candidate["id"] for candidate in second["leaderboard_top_50"]}
+
+    assert second["batch_index"] == 2
+    assert first_batch_ids & cumulative_ids
+    assert second_batch_ids & cumulative_ids
+    assert len(second["cumulative_leaderboard_top_50"]) == 50
+    assert second["cumulative_top_candidates"][0]["id"] == state["current_best_candidate"]["id"]
+    assert state["cumulative_leaderboard_top_50"][0]["id"] == state["current_best_candidate"]["id"]
+
+
 def test_sequence64_next_tranche_cli_and_make_target_are_data_only(local_project: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
     env = {**os.environ, "PYTHONPATH": str(repo_root / "src")}
