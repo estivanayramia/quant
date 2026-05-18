@@ -25,11 +25,11 @@ def run_strategy_tournament(
 ) -> dict[str, Any]:
     variants = generate_strategy_variants(target_count=target_count, batch_index=batch_index)
     stage1 = [_score_variant(variant, index, stage=1) for index, variant in enumerate(variants[:250])]
-    stage1_survivors = sorted(stage1, key=lambda item: item["score"], reverse=True)[:50]
+    stage1_survivors = _dedup_ranked(stage1)[:50]
     stage2 = [_harden(item, stage=2) for item in stage1_survivors]
-    stage2_survivors = sorted(stage2, key=lambda item: item["score"], reverse=True)[:10]
+    stage2_survivors = _dedup_ranked(stage2)[:10]
     stage3 = [_harden(item, stage=3) for item in stage2_survivors]
-    stage3_survivors = sorted(stage3, key=lambda item: item["score"], reverse=True)[:1]
+    stage3_survivors = _dedup_ranked(stage3)[:1]
     best = stage3_survivors[0]
     best["status"] = "MONEY_WORTHY_NOT_PROVEN"
     best["blockers"] = [
@@ -192,6 +192,9 @@ def _dedup_ranked(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def _rank_key(item: dict[str, Any]) -> tuple[float, float, int]:
     return (
+        float(bool(item.get("baseline_beaten")) and bool(item.get("placebo_beaten"))),
+        float(bool(item.get("baseline_beaten"))),
+        float(bool(item.get("placebo_beaten"))),
         float(item.get("score", 0.0)),
         float(item.get("fake_net_pnl", 0.0)),
         int(item.get("observations", 0)),

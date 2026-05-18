@@ -164,6 +164,21 @@ def test_sequence64_cumulative_leaderboard_dedupes_repeated_strategy_shapes(
     assert cumulative_signatures.count(second_signature) == 1
 
 
+def test_sequence64_tournament_prefers_baseline_and_placebo_survivors() -> None:
+    from quant_os.research.strategy_factory.strategy_tournament import run_strategy_tournament
+
+    payload = run_strategy_tournament(batch_index=1)
+    best = payload["current_best_candidate"]
+
+    assert any(
+        candidate["baseline_beaten"] and candidate["placebo_beaten"]
+        for candidate in payload["leaderboard_top_50"]
+    )
+    assert best["baseline_beaten"] is True
+    assert best["placebo_beaten"] is True
+    assert best["fake_net_pnl"] > 0
+
+
 def test_sequence64_readiness_replaces_stale_candidate_blockers_after_fresh_repro_passes(
     local_project: Path,
 ) -> None:
