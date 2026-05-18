@@ -22,7 +22,7 @@ def build_money_worthy_strategy_readiness(
     repeatability = repeatability or {"status": "REPEATABILITY_BLOCKED"}
     capacity = capacity or {"status": "CAPACITY_BLOCKED"}
     fresh_repro = fresh_repro or {"status": "FRESH_REPRO_BLOCKED"}
-    candidate = tournament.get("current_best_candidate") or {}
+    candidate = dict(tournament.get("current_best_candidate") or {})
     blockers = []
     if not candidate:
         blockers.append("NO_TOP_CANDIDATE")
@@ -39,6 +39,9 @@ def build_money_worthy_strategy_readiness(
     if fresh_repro.get("status") != "FRESH_REPRO_PASSED":
         blockers.append("FRESH_WORKTREE_REPRO_NOT_PASSED")
     status = SUCCESS if not blockers else _blocked_status(blockers)
+    if candidate:
+        candidate["blockers"] = list(blockers)
+        candidate["status"] = "MONEY_WORTHY_NOT_PROVEN" if blockers else SUCCESS
     return safe_payload(
         status=status,
         campaign_complete=status == SUCCESS,

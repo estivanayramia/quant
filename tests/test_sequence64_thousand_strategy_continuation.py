@@ -112,6 +112,38 @@ def test_sequence64_tournament_preserves_cumulative_leaderboard_across_tranches(
     assert state["cumulative_leaderboard_top_50"][0]["id"] == state["current_best_candidate"]["id"]
 
 
+def test_sequence64_readiness_replaces_stale_candidate_blockers_after_fresh_repro_passes(
+    local_project: Path,
+) -> None:
+    from quant_os.readiness.money_worthy_strategy_readiness_report import (
+        write_money_worthy_strategy_readiness_report,
+    )
+    from quant_os.readiness.thousand_strategy_fresh_repro import (
+        write_thousand_strategy_fresh_repro_report,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    write_thousand_strategy_fresh_repro_report(
+        output_root=local_project,
+        proof_command_passed=True,
+    )
+    readiness = write_money_worthy_strategy_readiness_report(output_root=local_project)
+    state = json.loads(
+        (
+            local_project / "reports/thousand_strategy_campaign/state/latest_state.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert readiness["fresh_repro_status"] == "FRESH_REPRO_PASSED"
+    assert "FRESH_WORKTREE_REPRO_NOT_PASSED" not in readiness["blockers"]
+    assert "FRESH_WORKTREE_REPRO_NOT_PASSED" not in readiness["current_best_candidate"]["blockers"]
+    assert "FRESH_WORKTREE_REPRO_NOT_PASSED" not in state["current_best_candidate"]["blockers"]
+    assert state["current_best_candidate"]["blockers"] == readiness["blockers"]
+
+
 def test_sequence64_next_tranche_cli_and_make_target_are_data_only(local_project: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
     env = {**os.environ, "PYTHONPATH": str(repo_root / "src")}

@@ -55,7 +55,7 @@ def write_money_worthy_strategy_readiness_report(
         variants_tested=tournament.get("cumulative_variants_tested", tournament["variants_tested"]),
         variants_rejected=tournament.get("cumulative_variants_rejected", tournament["variants_rejected"]),
         variants_promoted=0,
-        current_best_candidate=tournament["current_best_candidate"],
+        current_best_candidate=payload["current_best_candidate"],
         blockers=payload["blockers"],
     )
     return write_json_md(
