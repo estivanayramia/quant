@@ -1695,6 +1695,14 @@ if "%TARGET%"=="thousand-strategy-campaign-smoke" (
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomy variant-live-sim-run
   if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-live-sim
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-observe
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-intents
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-public-forward-evidence
+  if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli proving thousand-strategy-overfit-guard
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli risk strategy-conflict-detector
@@ -1720,6 +1728,14 @@ if "%TARGET%"=="thousand-strategy-next-tranche" (
   python -m quant_os.cli research strategy-next-tranche
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomy variant-live-sim-run
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-live-sim
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-observe
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-intents
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-public-forward-evidence
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli proving thousand-strategy-overfit-guard
   if errorlevel 1 exit /b !ERRORLEVEL!
@@ -1748,6 +1764,14 @@ if "%TARGET%"=="sequence64-smoke" (
   python -m quant_os.cli research strategy-tournament --batch-index 2
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomy variant-live-sim-run
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-live-sim
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-observe
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-intents
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-public-forward-evidence
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli proving thousand-strategy-overfit-guard
   if errorlevel 1 exit /b !ERRORLEVEL!

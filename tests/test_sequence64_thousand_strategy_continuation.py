@@ -712,6 +712,66 @@ def test_sequence64_candidate_public_forward_fetch_appends_public_snapshot_when_
     assert summary["private_keys_loaded"] is False
 
 
+def test_sequence64_candidate_public_forward_intents_are_candidate_matched_no_transmit(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        append_variant_public_forward_observations,
+        write_variant_public_forward_intents_report,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    candidate = tournament["current_best_candidate"]
+    append_variant_public_forward_observations(
+        output_root=local_project,
+        observations=[
+            {
+                "asset": "BTC/USD",
+                "bid": 100.0,
+                "ask": 100.1,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-18T12:00:00Z",
+            },
+            {
+                "asset": "ETH/USD",
+                "bid": 50.0,
+                "ask": 50.1,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-18T12:01:00Z",
+            },
+        ],
+    )
+
+    intents = write_variant_public_forward_intents_report(output_root=local_project)
+    summary = json.loads(
+        (
+            local_project
+            / "reports/thousand_strategy_campaign/live_sim/latest_live_sim_summary.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert intents["status"] == "VARIANT_PUBLIC_FORWARD_INTENTS_READY"
+    assert intents["selected_strategy_id"] == candidate["id"]
+    assert intents["eligible_intent_count"] == 2
+    assert summary["eligible_intent_count"] == 2
+    assert summary["public_forward_evidence_proven"] is False
+    assert summary["evidence_source"] == "public_forward_live_sim_pending"
+    assert all(intent["variant_id"] == candidate["id"] for intent in intents["intents"])
+    assert all(intent["fake_money"] is True for intent in intents["intents"])
+    assert all(intent["no_transmit"] is True for intent in intents["intents"])
+    assert all("signed_headers" not in intent for intent in intents["intents"])
+    assert all(intent["contains_signed_headers"] is False for intent in intents["intents"])
+    assert all("order" not in intent["endpoint"].lower() for intent in intents["intents"])
+    assert intents["order_transmission_enabled"] is False
+    assert intents["authenticated_requests_enabled"] is False
+    assert intents["request_signing_enabled"] is False
+    assert intents["actual_order_count"] == 0
+    assert intents["actual_cancel_count"] == 0
+
+
 def test_sequence64_readiness_uses_public_forward_evidence_report_for_provenance(
     local_project: Path,
 ) -> None:

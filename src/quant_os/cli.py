@@ -6773,6 +6773,26 @@ def autonomy_variant_public_forward_observe(
     )
 
 
+@autonomy_app.command("variant-public-forward-intents")
+def autonomy_variant_public_forward_intents() -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_intents_report,
+    )
+
+    payload = write_variant_public_forward_intents_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "selected_strategy_id": payload["selected_strategy_id"],
+            "eligible_intent_count": payload["eligible_intent_count"],
+            "public_forward_evidence_proven": payload["public_forward_evidence_proven"],
+            "report": "reports/thousand_strategy_campaign/live_sim/latest_public_forward_intents.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @proving_app.command("thousand-strategy-overfit-guard")
 def proving_thousand_strategy_overfit_guard() -> None:
     from quant_os.proving.thousand_strategy_overfit_guard import (

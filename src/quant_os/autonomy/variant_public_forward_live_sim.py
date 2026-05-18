@@ -205,6 +205,92 @@ def append_variant_public_forward_public_snapshot(
     )
 
 
+def write_variant_public_forward_intents_report(
+    *,
+    output_root: str | Path = ".",
+    candidate: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    tournament = load_report(
+        output_root=output_root,
+        report_dir="tournament",
+        json_name="latest_tournament.json",
+    )
+    selected_candidate = candidate or tournament.get("current_best_candidate") or {}
+    previous = load_report(
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_live_sim_summary.json",
+    )
+    observations = list(previous.get("public_forward_observations") or [])
+    intents = [
+        _build_public_forward_intent(
+            index=index,
+            candidate=selected_candidate,
+            observation=observation,
+        )
+        for index, observation in enumerate(observations)
+        if observation.get("asset") in set(selected_candidate.get("assets") or [observation.get("asset")])
+    ]
+    payload = safe_payload(
+        status="VARIANT_PUBLIC_FORWARD_INTENTS_READY",
+        selected_strategy_id=selected_candidate.get("id"),
+        selected_strategy_family=selected_candidate.get("family"),
+        selected_strategy_assets=selected_candidate.get("assets", []),
+        eligible_intent_count=len(intents),
+        intents=intents,
+        fake_money=True,
+        no_transmit=True,
+        public_forward_evidence_proven=False,
+        evidence_source="public_forward_live_sim_pending",
+        data_sources=previous.get("data_sources", []),
+        no_credentials=True,
+        no_orders=True,
+    )
+    write_json_md(
+        payload,
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_public_forward_intents.json",
+        md_name="latest_public_forward_intents.md",
+        title="Variant Public Forward Intents",
+        lines=[
+            f"Status: {payload['status']}",
+            f"Selected strategy: {payload['selected_strategy_id']}",
+            f"Eligible intents: {payload['eligible_intent_count']}",
+            "Fake-money, no-transmit, unsigned intent previews only.",
+        ],
+    )
+    summary = build_variant_public_forward_live_sim_summary(
+        candidate=selected_candidate,
+        observation_count=len(observations),
+        eligible_intent_count=len(intents),
+        completed_mark_count=int(previous.get("completed_mark_count") or 0),
+        fake_net_pnl=float(previous.get("fake_net_pnl") or 0.0),
+    )
+    summary.update(
+        public_forward_observations=observations,
+        data_sources=previous.get("data_sources", []),
+        source_sample_hashes=previous.get("source_sample_hashes", []),
+        public_forward_intent_hashes=[intent["intent_id"] for intent in intents[:25]],
+    )
+    write_json_md(
+        summary,
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_live_sim_summary.json",
+        md_name="latest_live_sim_summary.md",
+        title="Variant Public Forward Live Sim Summary",
+        lines=[
+            f"Status: {summary['status']}",
+            f"Selected strategy: {summary['selected_strategy_id']}",
+            f"Observations: {summary['observation_count']}",
+            f"Eligible intents: {summary['eligible_intent_count']}",
+            "No live orders, auth, credentials, or signing.",
+        ],
+    )
+    return payload
+
+
 def fetch_kraken_public_forward_snapshot(
     *,
     candidate: dict[str, Any] | None = None,
@@ -235,6 +321,36 @@ def _normalize_observation(row: dict[str, Any]) -> dict[str, Any]:
         "timestamp": str(row.get("timestamp") or ""),
     }
     payload["evidence_hash"] = _stable_hash(payload)
+    return payload
+
+
+def _build_public_forward_intent(
+    *,
+    index: int,
+    candidate: dict[str, Any],
+    observation: dict[str, Any],
+) -> dict[str, Any]:
+    side = "buy" if index % 2 == 0 else "sell"
+    price = float(observation.get("ask") if side == "buy" else observation.get("bid") or 0.0)
+    payload = {
+        "variant_id": candidate.get("id"),
+        "family": candidate.get("family"),
+        "timestamp": str(observation.get("timestamp") or ""),
+        "asset": str(observation.get("asset") or ""),
+        "side": side,
+        "reference_price": round(price, 8),
+        "notional_usd": 1.0,
+        "source_observation_hash": observation.get("evidence_hash"),
+        "fake_money": True,
+        "no_transmit": True,
+        "contains_signed_headers": False,
+        "endpoint": "/public/market-data/forward-intent-preview",
+    }
+    payload["intent_id"] = _stable_hash({"intent": payload, "index": index}).replace(
+        "pfobs_",
+        "pfint_",
+        1,
+    )
     return payload
 
 
