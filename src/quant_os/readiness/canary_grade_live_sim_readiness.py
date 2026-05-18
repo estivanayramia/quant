@@ -149,7 +149,27 @@ def write_canary_grade_live_sim_readiness_report(*, output_root: str | Path = ".
         title="Canary-Grade Live Sim Readiness",
         summary="Final large-sample fake-money canary-grade live simulation readiness gate.",
     )
-    write_canary_state(output_root=output_root, validation_status=payload["status"], blockers=payload["blockers"])
+    write_canary_state(
+        output_root=output_root,
+        validation_status=payload["status"],
+        assets_tested=payload["assets_tested"],
+        venues_tested=payload["venues_tested"],
+        observations_count=payload["observations_count"],
+        eligible_intent_count=payload["eligible_intent_count"],
+        fake_fill_count=payload["fake_fill_count"],
+        fake_no_fill_count=payload["fake_no_fill_count"],
+        completed_mark_count=payload["completed_mark_count"],
+        fake_gross_pnl=payload["fake_gross_pnl"],
+        fake_net_pnl=payload["fake_net_pnl"],
+        baseline_pnl=payload["baseline_pnl"],
+        placebo_pnl=payload["placebo_pnl"],
+        one_trade_dominance=payload["one_trade_dominance"],
+        one_window_dominance=payload["one_window_dominance"],
+        regime_buckets=payload["regime_buckets"],
+        walk_forward_windows=payload["walk_forward_windows"],
+        blockers=payload["blockers"],
+        next_action=payload["next_action"],
+    )
     return payload
 
 
