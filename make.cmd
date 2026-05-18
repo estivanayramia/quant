@@ -1628,6 +1628,38 @@ if "%TARGET%"=="sequence61-smoke" (
   python -m pytest tests/test_sequence61_multi_market_live_sim.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="canary-grade-live-sim-smoke" (
+  python -m quant_os.cli autonomy crypto-canary-grade-observer
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-canary-grade-intents
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-canary-grade-fill
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-canary-grade-ledger
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-canary-grade-pnl
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-canary-grade-reconciliation
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving crypto-live-sim-repeatability
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving crypto-live-sim-capacity
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness canary-grade-live-sim
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness canary-grade-manual-packet
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy canary-grade-live-sim-schedule
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence62-smoke" (
+  call "%~f0" sequence61-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" canary-grade-live-sim-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence62_canary_grade_live_sim.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!

@@ -5755,6 +5755,41 @@ def proving_crypto_spot_live_sim_comparison() -> None:
     )
 
 
+@proving_app.command("crypto-live-sim-repeatability")
+def proving_crypto_live_sim_repeatability() -> None:
+    from quant_os.proving.crypto_live_sim_repeatability import (
+        write_crypto_live_sim_repeatability_report,
+    )
+
+    payload = write_crypto_live_sim_repeatability_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "baseline_beaten": payload["baseline_beaten"],
+            "placebo_beaten": payload["placebo_beaten"],
+            "report": "reports/canary_grade_live_sim/repeatability/latest_repeatability.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("crypto-live-sim-capacity")
+def proving_crypto_live_sim_capacity() -> None:
+    from quant_os.proving.crypto_live_sim_capacity import write_crypto_live_sim_capacity_report
+
+    payload = write_crypto_live_sim_capacity_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "max_safe_notional": payload["max_safe_notional"],
+            "report": "reports/canary_grade_live_sim/capacity/latest_capacity.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @autonomy_app.command("crypto-spot-live-sim-reconciliation")
 def autonomy_crypto_spot_live_sim_reconciliation() -> None:
     from quant_os.autonomy.crypto_spot_live_sim_reconciliation import (
@@ -5784,6 +5819,132 @@ def autonomy_multi_market_live_sim_schedule() -> None:
             "status": payload["status"],
             "data_only": payload["data_only"],
             "report": "reports/multi_market_live_sim/schedule/latest_schedule.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-canary-grade-observer")
+def autonomy_crypto_canary_grade_observer(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    from quant_os.autonomy.crypto_canary_grade_observer import (
+        write_crypto_canary_grade_observer_report,
+    )
+
+    payload = write_crypto_canary_grade_observer_report(
+        output_root=Path("."),
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "observation_count": payload["observation_count"],
+            "report": "reports/canary_grade_live_sim/crypto/latest_observer.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-canary-grade-intents")
+def autonomy_crypto_canary_grade_intents() -> None:
+    from quant_os.autonomy.crypto_canary_grade_intents import (
+        write_crypto_canary_grade_intents_report,
+    )
+
+    payload = write_crypto_canary_grade_intents_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "eligible_intent_count": payload["eligible_intent_count"],
+            "report": "reports/canary_grade_live_sim/crypto/latest_intents.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-canary-grade-fill")
+def autonomy_crypto_canary_grade_fill() -> None:
+    from quant_os.autonomy.crypto_canary_grade_fill import write_crypto_canary_grade_fill_report
+
+    payload = write_crypto_canary_grade_fill_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_fill_count": payload["fake_fill_count"],
+            "report": "reports/canary_grade_live_sim/crypto/latest_fills.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-canary-grade-ledger")
+def autonomy_crypto_canary_grade_ledger() -> None:
+    from quant_os.autonomy.crypto_canary_grade_ledger import write_crypto_canary_grade_ledger_report
+
+    payload = write_crypto_canary_grade_ledger_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_fill_count": payload["fake_fill_count"],
+            "report": "reports/canary_grade_live_sim/crypto/latest_ledger.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-canary-grade-pnl")
+def autonomy_crypto_canary_grade_pnl() -> None:
+    from quant_os.autonomy.crypto_canary_grade_pnl import write_crypto_canary_grade_pnl_report
+
+    payload = write_crypto_canary_grade_pnl_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "completed_mark_count": payload["completed_mark_count"],
+            "fake_net_pnl": payload["fake_net_pnl"],
+            "report": "reports/canary_grade_live_sim/crypto/latest_pnl.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-canary-grade-reconciliation")
+def autonomy_crypto_canary_grade_reconciliation() -> None:
+    from quant_os.autonomy.crypto_canary_grade_reconciliation import (
+        write_crypto_canary_grade_reconciliation_report,
+    )
+
+    payload = write_crypto_canary_grade_reconciliation_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "reconciliation_failures": payload["reconciliation_failures"],
+            "report": "reports/canary_grade_live_sim/crypto/latest_reconciliation.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("canary-grade-live-sim-schedule")
+def autonomy_canary_grade_live_sim_schedule() -> None:
+    from quant_os.autonomy.canary_grade_live_sim_schedule import (
+        write_canary_grade_live_sim_schedule_report,
+    )
+
+    payload = write_canary_grade_live_sim_schedule_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "data_only": payload["data_only"],
+            "report": "reports/canary_grade_live_sim/schedule/latest_schedule.json",
             "live_trading_enabled": payload["live_trading_enabled"],
             "execution_authority": payload["execution_authority"],
         }
@@ -6352,6 +6513,43 @@ def readiness_multi_market_live_sim_profitability() -> None:
             "status": payload["status"],
             "proven_market_families": payload["proven_market_families"],
             "report": "reports/multi_market_live_sim/final/latest_multi_market_live_sim_profitability.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("canary-grade-live-sim")
+def readiness_canary_grade_live_sim() -> None:
+    from quant_os.readiness.canary_grade_live_sim_readiness import (
+        write_canary_grade_live_sim_readiness_report,
+    )
+
+    payload = write_canary_grade_live_sim_readiness_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "observations_count": payload["observations_count"],
+            "eligible_intent_count": payload["eligible_intent_count"],
+            "fake_net_pnl": payload["fake_net_pnl"],
+            "report": "reports/canary_grade_live_sim/final/latest_canary_grade_live_sim_readiness.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("canary-grade-manual-packet")
+def readiness_canary_grade_manual_packet() -> None:
+    from quant_os.readiness.canary_grade_manual_packet import (
+        write_canary_grade_manual_packet_report,
+    )
+
+    payload = write_canary_grade_manual_packet_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_grade_live_sim/manual_canary_packet/latest_manual_canary_packet.json",
             "live_trading_enabled": payload["live_trading_enabled"],
             "execution_authority": payload["execution_authority"],
         }
