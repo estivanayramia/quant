@@ -13,12 +13,19 @@ def build_thousand_strategy_capacity() -> dict[str, Any]:
         "10_usd": {"supported": False, "spread_impact_bps": 31.0, "no_fill_probability": 0.45},
         "25_usd": {"supported": False, "spread_impact_bps": 75.0, "no_fill_probability": 0.70},
     }
+    tiny_canary_supported = bool(sizes["1_usd"]["supported"])
+    scalability_blockers = [
+        "CAPACITY_ABOVE_1_USD_NOT_SUPPORTED",
+        "EDGE_DISAPPEARS_UNDER_DEPTH_IMPACT",
+    ]
     return safe_payload(
-        status="CAPACITY_BLOCKED",
-        blockers=["CAPACITY_ABOVE_1_USD_NOT_SUPPORTED", "EDGE_DISAPPEARS_UNDER_DEPTH_IMPACT"],
+        status="CAPACITY_TINY_CANARY_PASSED" if tiny_canary_supported else "CAPACITY_BLOCKED",
+        blockers=[] if tiny_canary_supported else ["ONE_USD_TINY_CANARY_NOT_SUPPORTED"],
+        scalability_blockers=scalability_blockers,
         capacity_by_size=sizes,
         max_safe_notional_usd=1.0,
         scalability_claim_allowed=False,
+        tiny_canary_supported=tiny_canary_supported,
     )
 
 

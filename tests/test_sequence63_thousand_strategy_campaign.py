@@ -167,7 +167,9 @@ def test_sequence63_conflict_repeatability_capacity_and_readiness_block_promotio
     assert "ONE_TRADE_DOMINANCE_TOO_HIGH" in repeatability["blockers"]
     assert "ONE_WINDOW_DOMINANCE_TOO_HIGH" in repeatability["blockers"]
     assert "ONE_ASSET_DOMINANCE_TOO_HIGH" in repeatability["blockers"]
-    assert capacity["status"] == "CAPACITY_BLOCKED"
+    assert capacity["status"] == "CAPACITY_TINY_CANARY_PASSED"
+    assert capacity["scalability_claim_allowed"] is False
+    assert "CAPACITY_ABOVE_1_USD_NOT_SUPPORTED" in capacity["scalability_blockers"]
     assert readiness["status"] == "MONEY_WORTHY_BLOCKED_BY_OVERFIT"
     assert readiness["campaign_complete"] is False
 

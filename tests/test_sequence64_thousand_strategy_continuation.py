@@ -195,6 +195,20 @@ def test_sequence64_repeatability_removes_baseline_blocker_for_baseline_placebo_
     assert repeatability["placebo_beaten"] is True
 
 
+def test_sequence64_capacity_distinguishes_tiny_canary_from_scalability() -> None:
+    from quant_os.proving.thousand_strategy_capacity import build_thousand_strategy_capacity
+
+    capacity = build_thousand_strategy_capacity()
+
+    assert capacity["status"] == "CAPACITY_TINY_CANARY_PASSED"
+    assert capacity["capacity_by_size"]["1_usd"]["supported"] is True
+    assert capacity["capacity_by_size"]["5_usd"]["supported"] is False
+    assert capacity["max_safe_notional_usd"] == 1.0
+    assert capacity["scalability_claim_allowed"] is False
+    assert "CAPACITY_ABOVE_1_USD_NOT_SUPPORTED" in capacity["scalability_blockers"]
+    assert "CAPACITY_ABOVE_1_USD_NOT_SUPPORTED" not in capacity["blockers"]
+
+
 def test_sequence64_readiness_refreshes_repeatability_report_for_selected_candidate(
     local_project: Path,
 ) -> None:
