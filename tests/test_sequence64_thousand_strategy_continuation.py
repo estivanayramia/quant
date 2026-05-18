@@ -540,6 +540,35 @@ def test_sequence64_public_forward_evidence_can_pass_with_strict_public_candidat
     assert evidence["candidate_evidence"]["evidence_source"] == "public_forward_live_sim"
 
 
+def test_sequence64_candidate_public_forward_live_sim_is_selected_and_pending(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_live_sim_summary,
+    )
+    from quant_os.proving.thousand_strategy_public_forward_evidence import (
+        write_thousand_strategy_public_forward_evidence_report,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    candidate_id = tournament["current_best_candidate"]["id"]
+    summary = write_variant_public_forward_live_sim_summary(output_root=local_project)
+    evidence = write_thousand_strategy_public_forward_evidence_report(output_root=local_project)
+
+    assert summary["selected_strategy_id"] == candidate_id
+    assert summary["status"] == "VARIANT_PUBLIC_FORWARD_LIVE_SIM_PENDING"
+    assert summary["public_forward_evidence_proven"] is False
+    assert summary["evidence_source"] == "public_forward_live_sim_pending"
+    assert summary["live_trading_enabled"] is False
+    assert summary["execution_authority"] == "NONE"
+    assert "SELECTED_STRATEGY_ID_MISMATCH" not in evidence["blockers"]
+    assert "FIXTURE_DATA_NOT_PUBLIC_FORWARD_EVIDENCE" not in evidence["blockers"]
+    assert "PUBLIC_FORWARD_EVIDENCE_NOT_PROVEN" in evidence["blockers"]
+
+
 def test_sequence64_readiness_uses_public_forward_evidence_report_for_provenance(
     local_project: Path,
 ) -> None:

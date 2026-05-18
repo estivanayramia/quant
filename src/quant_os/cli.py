@@ -6706,6 +6706,25 @@ def autonomy_variant_live_sim_run() -> None:
     )
 
 
+@autonomy_app.command("variant-public-forward-live-sim")
+def autonomy_variant_public_forward_live_sim() -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_live_sim_summary,
+    )
+
+    payload = write_variant_public_forward_live_sim_summary(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "selected_strategy_id": payload["selected_strategy_id"],
+            "public_forward_evidence_proven": payload["public_forward_evidence_proven"],
+            "report": "reports/thousand_strategy_campaign/live_sim/latest_live_sim_summary.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @proving_app.command("thousand-strategy-overfit-guard")
 def proving_thousand_strategy_overfit_guard() -> None:
     from quant_os.proving.thousand_strategy_overfit_guard import (
