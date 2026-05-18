@@ -16,7 +16,7 @@ def write_thousand_strategy_fresh_repro_report(
     payload = safe_payload(
         status="FRESH_REPRO_PASSED" if proof_command_passed else "FRESH_REPRO_BLOCKED",
         audit_worktree=audit_worktree,
-        proof_command=".\make.cmd sequence63-smoke",
+        proof_command=".\\make.cmd sequence63-smoke",
         proof_command_passed=proof_command_passed,
         blockers=blockers,
         required_reports=[
