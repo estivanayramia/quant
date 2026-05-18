@@ -6,15 +6,21 @@ from typing import Any
 from quant_os.research.strategy_factory.campaign_common import safe_payload, write_json_md
 
 
-def build_thousand_strategy_repeatability() -> dict[str, Any]:
+def build_thousand_strategy_repeatability(candidate: dict[str, Any] | None = None) -> dict[str, Any]:
+    candidate = candidate or {}
+    baseline_beaten = bool(candidate.get("baseline_beaten", False))
+    placebo_beaten = bool(candidate.get("placebo_beaten", False))
     blockers = [
         "ONE_TRADE_DOMINANCE_TOO_HIGH",
         "ONE_WINDOW_DOMINANCE_TOO_HIGH",
         "ONE_ASSET_DOMINANCE_TOO_HIGH",
         "DELAYED_ENTRY_STRESS_FAILED",
         "WORSE_FILL_STRESS_FAILED",
-        "BASELINE_NOT_BEATEN_IN_ALL_WINDOWS",
     ]
+    if not baseline_beaten:
+        blockers.append("BASELINE_NOT_BEATEN_IN_ALL_WINDOWS")
+    if not placebo_beaten:
+        blockers.append("PLACEBO_NOT_BEATEN_IN_ALL_WINDOWS")
     return safe_payload(
         status="REPEATABILITY_BLOCKED",
         blockers=blockers,
@@ -24,8 +30,8 @@ def build_thousand_strategy_repeatability() -> dict[str, Any]:
         one_window_dominance_cap=0.35,
         one_asset_dominance=0.61,
         one_asset_dominance_cap=0.45,
-        baseline_beaten=False,
-        placebo_beaten=False,
+        baseline_beaten=baseline_beaten,
+        placebo_beaten=placebo_beaten,
         stress_tests={
             "exclude_top_trade": "FAILED",
             "exclude_top_5_trades": "FAILED",
@@ -39,8 +45,9 @@ def build_thousand_strategy_repeatability() -> dict[str, Any]:
 def write_thousand_strategy_repeatability_report(
     *,
     output_root: str | Path = ".",
+    candidate: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    payload = build_thousand_strategy_repeatability()
+    payload = build_thousand_strategy_repeatability(candidate)
     return write_json_md(
         payload,
         output_root=output_root,

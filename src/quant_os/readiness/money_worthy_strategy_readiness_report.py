@@ -31,7 +31,7 @@ def write_money_worthy_strategy_readiness_report(
     tournament = run_strategy_tournament(batch_index=batch_index)
     overfit = build_thousand_strategy_overfit_guard()
     conflict = build_strategy_conflict_detector()
-    repeatability = build_thousand_strategy_repeatability()
+    repeatability = build_thousand_strategy_repeatability(tournament.get("current_best_candidate"))
     capacity = build_thousand_strategy_capacity()
     fresh_repro = load_report(
         output_root=output_root,

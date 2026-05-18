@@ -179,6 +179,22 @@ def test_sequence64_tournament_prefers_baseline_and_placebo_survivors() -> None:
     assert best["fake_net_pnl"] > 0
 
 
+def test_sequence64_repeatability_removes_baseline_blocker_for_baseline_placebo_survivor() -> None:
+    from quant_os.proving.thousand_strategy_repeatability import (
+        build_thousand_strategy_repeatability,
+    )
+
+    repeatability = build_thousand_strategy_repeatability(
+        candidate={"baseline_beaten": True, "placebo_beaten": True},
+    )
+
+    assert repeatability["status"] == "REPEATABILITY_BLOCKED"
+    assert "BASELINE_NOT_BEATEN_IN_ALL_WINDOWS" not in repeatability["blockers"]
+    assert "ONE_TRADE_DOMINANCE_TOO_HIGH" in repeatability["blockers"]
+    assert repeatability["baseline_beaten"] is True
+    assert repeatability["placebo_beaten"] is True
+
+
 def test_sequence64_readiness_replaces_stale_candidate_blockers_after_fresh_repro_passes(
     local_project: Path,
 ) -> None:
