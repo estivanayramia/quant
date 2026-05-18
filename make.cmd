@@ -1566,6 +1566,36 @@ if "%TARGET%"=="sequence59-smoke" (
   call "%~f0" autonomous-live-fire-drill-smoke
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="live-market-sim-profitability-smoke" (
+  python -m quant_os.cli autonomy live-market-profit-observer
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-intents
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-fill
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-ledger
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-outcomes
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-pnl
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving live-market-sim-comparison
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-reconciliation
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness live-market-sim-profitability
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-profitability-schedule
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence60-smoke" (
+  call "%~f0" sequence59-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" live-market-sim-profitability-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence60_live_market_sim_profitability.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
