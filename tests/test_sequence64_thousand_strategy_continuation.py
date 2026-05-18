@@ -179,6 +179,17 @@ def test_sequence64_tournament_prefers_baseline_and_placebo_survivors() -> None:
     assert best["fake_net_pnl"] > 0
 
 
+def test_sequence64_tournament_scores_do_not_plateau_across_tranches() -> None:
+    from quant_os.research.strategy_factory.strategy_tournament import run_strategy_tournament
+
+    best_candidates = [
+        run_strategy_tournament(batch_index=batch_index)["current_best_candidate"]
+        for batch_index in (1, 2, 42, 100)
+    ]
+
+    assert len({(candidate["fake_net_pnl"], candidate["score"]) for candidate in best_candidates}) > 1
+
+
 def test_sequence64_repeatability_removes_baseline_blocker_for_baseline_placebo_survivor() -> None:
     from quant_os.proving.thousand_strategy_repeatability import (
         build_thousand_strategy_repeatability,

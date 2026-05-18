@@ -225,8 +225,6 @@ def write_next_strategy_tranche_report(
 
 
 def _score_variant(variant: dict[str, Any], index: int, *, stage: int) -> dict[str, Any]:
-    base = ((variant["deterministic_seed"] * 17) % 1000) / 1000
-    pnl = round((base - 0.48) * 40 - (variant["spread_cap_bps"] * 0.12), 6)
     variant_configuration = {
         "family": variant["family"],
         "assets": variant["assets"],
@@ -236,6 +234,17 @@ def _score_variant(variant: dict[str, Any], index: int, *, stage: int) -> dict[s
         "spread_cap_bps": variant["spread_cap_bps"],
         "liquidity_cap_usd": variant["liquidity_cap_usd"],
     }
+    evidence_hash = stable_id(
+        "score",
+        {
+            "variant_id": variant["id"],
+            "batch_index": variant.get("batch_index"),
+            "configuration": variant_configuration,
+        },
+        length=12,
+    ).split("_", maxsplit=1)[1]
+    base = int(evidence_hash, 16) / float(16**12 - 1)
+    pnl = round((base - 0.48) * 40 - (variant["spread_cap_bps"] * 0.12), 6)
     return {
         "id": variant["id"],
         "structural_signature": stable_id("tss", variant_configuration, length=14),
