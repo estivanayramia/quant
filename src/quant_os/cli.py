@@ -6725,6 +6725,46 @@ def autonomy_variant_public_forward_live_sim() -> None:
     )
 
 
+@autonomy_app.command("variant-public-forward-observe")
+def autonomy_variant_public_forward_observe(
+    asset: str = typer.Option("BTC/USD", "--asset"),
+    bid: float = typer.Option(0.0, "--bid"),
+    ask: float = typer.Option(0.0, "--ask"),
+    source: str = typer.Option(
+        "kraken_public_rest_unauthenticated_forward_pending",
+        "--source",
+    ),
+    timestamp: str = typer.Option("pending", "--timestamp"),
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        append_variant_public_forward_observations,
+    )
+
+    payload = append_variant_public_forward_observations(
+        output_root=Path("."),
+        observations=[
+            {
+                "asset": asset,
+                "bid": bid,
+                "ask": ask,
+                "source": source,
+                "timestamp": timestamp,
+            }
+        ],
+    )
+    print(
+        {
+            "status": payload["status"],
+            "selected_strategy_id": payload["selected_strategy_id"],
+            "observation_count": payload["observation_count"],
+            "public_forward_evidence_proven": payload["public_forward_evidence_proven"],
+            "report": "reports/thousand_strategy_campaign/live_sim/latest_live_sim_summary.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @proving_app.command("thousand-strategy-overfit-guard")
 def proving_thousand_strategy_overfit_guard() -> None:
     from quant_os.proving.thousand_strategy_overfit_guard import (

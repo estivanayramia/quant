@@ -569,6 +569,54 @@ def test_sequence64_candidate_public_forward_live_sim_is_selected_and_pending(
     assert "PUBLIC_FORWARD_EVIDENCE_NOT_PROVEN" in evidence["blockers"]
 
 
+def test_sequence64_candidate_public_forward_observations_accumulate_without_proof(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        append_variant_public_forward_observations,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    candidate_id = tournament["current_best_candidate"]["id"]
+    first = append_variant_public_forward_observations(
+        output_root=local_project,
+        observations=[
+            {
+                "asset": "BTC/USD",
+                "bid": 100.0,
+                "ask": 100.1,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-18T10:00:00Z",
+            }
+        ],
+    )
+    second = append_variant_public_forward_observations(
+        output_root=local_project,
+        observations=[
+            {
+                "asset": "ETH/USD",
+                "bid": 50.0,
+                "ask": 50.1,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-18T10:01:00Z",
+            }
+        ],
+    )
+
+    assert first["selected_strategy_id"] == candidate_id
+    assert second["selected_strategy_id"] == candidate_id
+    assert first["observation_count"] == 1
+    assert second["observation_count"] == 2
+    assert second["public_forward_evidence_proven"] is False
+    assert second["status"] == "VARIANT_PUBLIC_FORWARD_LIVE_SIM_PENDING"
+    assert second["data_sources"] == ["kraken_public_rest_unauthenticated_forward"]
+    assert second["actual_order_count"] == 0
+    assert second["actual_cancel_count"] == 0
+
+
 def test_sequence64_readiness_uses_public_forward_evidence_report_for_provenance(
     local_project: Path,
 ) -> None:
