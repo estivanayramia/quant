@@ -5627,6 +5627,169 @@ def autonomy_live_market_sim_profitability_schedule() -> None:
     )
 
 
+@autonomy_app.command("multi-market-live-sim-router")
+def autonomy_multi_market_live_sim_router() -> None:
+    from quant_os.autonomy.multi_market_live_sim_router import (
+        write_multi_market_live_sim_router_report,
+    )
+
+    payload = write_multi_market_live_sim_router_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "selected_market_family": payload["selected_market_family"],
+            "report": "reports/multi_market_live_sim/router/latest_router.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-spot-live-sim-observer")
+def autonomy_crypto_spot_live_sim_observer(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    from quant_os.autonomy.crypto_spot_live_sim_observer import (
+        write_crypto_spot_live_sim_observer_report,
+    )
+
+    payload = write_crypto_spot_live_sim_observer_report(
+        output_root=Path("."),
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "observation_count": payload["observation_count"],
+            "report": "reports/multi_market_live_sim/crypto_spot/latest_crypto_observer.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-spot-live-sim-intents")
+def autonomy_crypto_spot_live_sim_intents() -> None:
+    from quant_os.autonomy.crypto_spot_live_sim_intents import (
+        write_crypto_spot_live_sim_intents_report,
+    )
+
+    payload = write_crypto_spot_live_sim_intents_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "eligible_intent_count": payload["eligible_intent_count"],
+            "report": "reports/multi_market_live_sim/crypto_spot/latest_crypto_intents.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-spot-live-sim-fill")
+def autonomy_crypto_spot_live_sim_fill() -> None:
+    from quant_os.autonomy.crypto_spot_live_sim_fill import write_crypto_spot_live_sim_fill_report
+
+    payload = write_crypto_spot_live_sim_fill_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_fill_count": payload["fake_fill_count"],
+            "report": "reports/multi_market_live_sim/crypto_spot/latest_crypto_fills.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-spot-live-sim-ledger")
+def autonomy_crypto_spot_live_sim_ledger() -> None:
+    from quant_os.autonomy.crypto_spot_live_sim_ledger import (
+        write_crypto_spot_live_sim_ledger_report,
+    )
+
+    payload = write_crypto_spot_live_sim_ledger_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "position_state": payload["position_state"],
+            "report": "reports/multi_market_live_sim/crypto_spot/latest_crypto_ledger.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-spot-live-sim-pnl")
+def autonomy_crypto_spot_live_sim_pnl() -> None:
+    from quant_os.autonomy.crypto_spot_live_sim_pnl import write_crypto_spot_live_sim_pnl_report
+
+    payload = write_crypto_spot_live_sim_pnl_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_net_pnl": payload["fake_net_pnl"],
+            "report": "reports/multi_market_live_sim/crypto_spot/latest_crypto_pnl.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("crypto-spot-live-sim-comparison")
+def proving_crypto_spot_live_sim_comparison() -> None:
+    from quant_os.proving.crypto_spot_live_sim_comparison import (
+        write_crypto_spot_live_sim_comparison_report,
+    )
+
+    payload = write_crypto_spot_live_sim_comparison_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "baseline_beaten": payload["baseline_beaten"],
+            "placebo_beaten": payload["placebo_beaten"],
+            "report": "reports/multi_market_live_sim/crypto_spot/latest_crypto_comparison.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-spot-live-sim-reconciliation")
+def autonomy_crypto_spot_live_sim_reconciliation() -> None:
+    from quant_os.autonomy.crypto_spot_live_sim_reconciliation import (
+        write_crypto_spot_live_sim_reconciliation_report,
+    )
+
+    payload = write_crypto_spot_live_sim_reconciliation_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/multi_market_live_sim/crypto_spot/latest_crypto_reconciliation.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("multi-market-live-sim-schedule")
+def autonomy_multi_market_live_sim_schedule() -> None:
+    from quant_os.autonomy.multi_market_live_sim_schedule import (
+        write_multi_market_live_sim_schedule_report,
+    )
+
+    payload = write_multi_market_live_sim_schedule_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "data_only": payload["data_only"],
+            "report": "reports/multi_market_live_sim/schedule/latest_schedule.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @autonomy_app.command("autonomous-market-watcher")
 def autonomy_autonomous_market_watcher() -> None:
     from quant_os.autonomy.autonomous_market_watcher import write_autonomous_market_watcher_report
@@ -6151,6 +6314,44 @@ def readiness_live_market_sim_profitability() -> None:
             "eligible_intent_count": payload["eligible_intent_count"],
             "fake_net_pnl": payload["fake_net_pnl"],
             "report": "reports/live_market_sim_profitability/final/latest_live_market_sim_profitability.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("crypto-spot-live-sim-profitability")
+def readiness_crypto_spot_live_sim_profitability() -> None:
+    from quant_os.readiness.crypto_spot_live_sim_profitability import (
+        write_crypto_spot_live_sim_profitability_report,
+    )
+
+    payload = write_crypto_spot_live_sim_profitability_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "observation_count": payload["observation_count"],
+            "eligible_intent_count": payload["eligible_intent_count"],
+            "fake_net_pnl": payload["fake_net_pnl"],
+            "report": "reports/multi_market_live_sim/crypto_spot/latest_crypto_profitability.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("multi-market-live-sim-profitability")
+def readiness_multi_market_live_sim_profitability() -> None:
+    from quant_os.readiness.multi_market_live_sim_profitability import (
+        write_multi_market_live_sim_profitability_report,
+    )
+
+    payload = write_multi_market_live_sim_profitability_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "proven_market_families": payload["proven_market_families"],
+            "report": "reports/multi_market_live_sim/final/latest_multi_market_live_sim_profitability.json",
             "live_trading_enabled": payload["live_trading_enabled"],
             "execution_authority": payload["execution_authority"],
         }
