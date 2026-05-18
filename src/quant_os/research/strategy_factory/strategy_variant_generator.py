@@ -69,8 +69,12 @@ def generate_strategy_variants(
 ) -> list[StrategyVariant]:
     variants: list[StrategyVariant] = []
     seed = 630000 + ((batch_index - 1) * 1_000_000)
-    combinations = product(LOOKBACKS, HOLDS, THRESHOLDS, SPREAD_CAPS, LIQUIDITY_CAPS, FAMILIES)
-    for lookback, hold, threshold, spread_cap, liquidity_cap, family in combinations:
+    combinations = list(product(LOOKBACKS, HOLDS, THRESHOLDS, SPREAD_CAPS, LIQUIDITY_CAPS, FAMILIES))
+    start = ((batch_index - 1) * target_count) % len(combinations)
+    for index in range(target_count):
+        lookback, hold, threshold, spread_cap, liquidity_cap, family = combinations[
+            (start + index) % len(combinations)
+        ]
         market_assets = _assets_for_family(family)
         seed += 1
         payload = {
@@ -115,8 +119,6 @@ def generate_strategy_variants(
             "no_live_metadata": dict(SAFETY_STATE),
         }
         variants.append(variant)
-        if len(variants) >= target_count:
-            return variants
     return variants
 
 

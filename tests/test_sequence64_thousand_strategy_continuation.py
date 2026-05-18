@@ -40,6 +40,17 @@ def test_sequence64_generates_second_1000_without_reusing_variant_ids(
     assert all(variant["no_live_metadata"]["actual_order_count"] == 0 for variant in batch2)
 
 
+def test_sequence64_batches_rotate_to_new_structural_variant_shapes() -> None:
+    from quant_os.research.strategy_factory.strategy_variant_generator import (
+        generate_strategy_variants,
+    )
+
+    batch1 = generate_strategy_variants(target_count=1000, batch_index=1)
+    batch2 = generate_strategy_variants(target_count=1000, batch_index=2)
+
+    assert _variant_shape_keys(batch1).isdisjoint(_variant_shape_keys(batch2))
+
+
 def test_sequence64_next_tranche_tournament_updates_cumulative_checkpoint(
     local_project: Path,
 ) -> None:
@@ -134,9 +145,10 @@ def test_sequence64_cumulative_leaderboard_dedupes_repeated_strategy_shapes(
         for candidate in second["cumulative_leaderboard_top_50"]
     ]
 
-    assert first_signature == second_signature
+    assert first_signature != second_signature
     assert len(cumulative_signatures) == len(set(cumulative_signatures))
     assert cumulative_signatures.count(first_signature) == 1
+    assert cumulative_signatures.count(second_signature) == 1
 
 
 def test_sequence64_readiness_replaces_stale_candidate_blockers_after_fresh_repro_passes(
@@ -212,3 +224,18 @@ def test_sequence64_next_tranche_cli_and_make_target_are_data_only(local_project
     make_cmd = (repo_root / "make.cmd").read_text(encoding="utf-8")
     assert 'if "%TARGET%"=="thousand-strategy-next-tranche"' in make_cmd
     assert 'if "%TARGET%"=="sequence64-smoke"' in make_cmd
+
+
+def _variant_shape_keys(variants: list[dict[str, object]]) -> set[tuple[object, ...]]:
+    return {
+        (
+            variant["family"],
+            tuple(variant["assets"]),
+            variant["lookback"],
+            variant["holding_window"],
+            tuple(sorted(variant["thresholds"].items())),
+            variant["spread_cap_bps"],
+            variant["liquidity_cap_usd"],
+        )
+        for variant in variants
+    }
