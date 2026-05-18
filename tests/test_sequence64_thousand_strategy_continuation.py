@@ -51,6 +51,19 @@ def test_sequence64_batches_rotate_to_new_structural_variant_shapes() -> None:
     assert _variant_shape_keys(batch1).isdisjoint(_variant_shape_keys(batch2))
 
 
+def test_sequence64_wraparound_enters_new_structural_universe_cycle() -> None:
+    from quant_os.research.strategy_factory.strategy_variant_generator import (
+        generate_strategy_variants,
+    )
+
+    batch1 = generate_strategy_variants(target_count=1000, batch_index=1)
+    batch42 = generate_strategy_variants(target_count=1000, batch_index=42)
+
+    assert _variant_shape_keys(batch1).isdisjoint(_variant_shape_keys(batch42))
+    assert {variant["universe_cycle"] for variant in batch42} == {0, 1}
+    assert any(variant["thresholds"]["universe_cycle"] == 1.0 for variant in batch42)
+
+
 def test_sequence64_next_tranche_tournament_updates_cumulative_checkpoint(
     local_project: Path,
 ) -> None:
@@ -236,6 +249,7 @@ def _variant_shape_keys(variants: list[dict[str, object]]) -> set[tuple[object, 
             tuple(sorted(variant["thresholds"].items())),
             variant["spread_cap_bps"],
             variant["liquidity_cap_usd"],
+            variant["universe_cycle"],
         )
         for variant in variants
     }

@@ -70,11 +70,10 @@ def generate_strategy_variants(
     variants: list[StrategyVariant] = []
     seed = 630000 + ((batch_index - 1) * 1_000_000)
     combinations = list(product(LOOKBACKS, HOLDS, THRESHOLDS, SPREAD_CAPS, LIQUIDITY_CAPS, FAMILIES))
-    start = ((batch_index - 1) * target_count) % len(combinations)
     for index in range(target_count):
-        lookback, hold, threshold, spread_cap, liquidity_cap, family = combinations[
-            (start + index) % len(combinations)
-        ]
+        global_index = ((batch_index - 1) * target_count) + index
+        universe_cycle = global_index // len(combinations)
+        lookback, hold, threshold, spread_cap, liquidity_cap, family = combinations[global_index % len(combinations)]
         market_assets = _assets_for_family(family)
         seed += 1
         payload = {
@@ -85,18 +84,24 @@ def generate_strategy_variants(
             "threshold": threshold,
             "spread_cap": spread_cap,
             "liquidity_cap": liquidity_cap,
+            "universe_cycle": universe_cycle,
             "seed": seed,
             "batch_index": batch_index,
         }
         variant: StrategyVariant = {
             "id": stable_id("tsv", payload, length=14),
             "batch_index": batch_index,
+            "universe_cycle": universe_cycle,
             "family": family,
             "assets": market_assets,
             "source": "pre_registered_public_strategy_factory_v1",
             "lookback": lookback,
             "holding_window": hold,
-            "thresholds": {"entry_z": float(threshold), "no_trade_edge_bps": 2.0 + threshold},
+            "thresholds": {
+                "entry_z": float(threshold),
+                "no_trade_edge_bps": 2.0 + threshold + (universe_cycle * 0.05),
+                "universe_cycle": float(universe_cycle),
+            },
             "spread_cap_bps": float(spread_cap),
             "liquidity_cap_usd": float(liquidity_cap),
             "fee_model": {"fee_bps": 8.0, "spread_bps": spread_cap, "slippage_bps": 6.0},

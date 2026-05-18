@@ -6,6 +6,7 @@ from typing import Any, TypedDict
 class StrategyVariant(TypedDict):
     id: str
     batch_index: int
+    universe_cycle: int
     family: str
     assets: list[str]
     source: str
