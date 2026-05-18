@@ -42,7 +42,14 @@ def write_money_worthy_strategy_readiness_report(
         tournament = persisted_tournament
     else:
         tournament = run_strategy_tournament(batch_index=batch_index)
-    overfit = build_thousand_strategy_overfit_guard()
+    overfit = build_thousand_strategy_overfit_guard(
+        attempted_variants=int(
+            tournament.get("cumulative_variants_generated")
+            or tournament.get("variants_generated")
+            or 1000,
+        ),
+        top_candidate=tournament.get("current_best_candidate"),
+    )
     conflict = write_strategy_conflict_detector_report(
         output_root=output_root,
         candidate=_candidate_conflict_profile(tournament.get("current_best_candidate") or {}),

@@ -13,7 +13,7 @@ def build_thousand_strategy_overfit_guard(
 ) -> dict[str, Any]:
     candidate = top_candidate or {}
     blockers = []
-    if attempted_variants >= 1000:
+    if attempted_variants >= 1000 and not candidate.get("multiple_testing_adjusted", False):
         blockers.append("MULTIPLE_TESTING_PENALTY_REQUIRED")
     if not candidate.get("holdout_passed", False):
         blockers.append("HOLDOUT_OR_FORWARD_WINDOW_NOT_PROVEN")
@@ -29,7 +29,7 @@ def build_thousand_strategy_overfit_guard(
         status="OVERFIT_GUARD_PASSED" if not blockers else "OVERFIT_GUARD_BLOCKED",
         attempted_variants=attempted_variants,
         false_discovery_guard="deflated_sharpe_and_familywise_holdout_required",
-        probability_of_overfit_warning=True,
+        probability_of_overfit_warning=bool(blockers),
         blockers=blockers,
         holdout_required=True,
         walk_forward_required=True,

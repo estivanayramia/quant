@@ -206,6 +206,53 @@ def test_sequence64_repeatability_removes_baseline_blocker_for_baseline_placebo_
     assert repeatability["placebo_beaten"] is True
 
 
+def test_sequence64_repeatability_can_pass_only_with_full_candidate_evidence() -> None:
+    from quant_os.proving.thousand_strategy_repeatability import (
+        build_thousand_strategy_repeatability,
+    )
+
+    repeatability = build_thousand_strategy_repeatability(
+        candidate={
+            "baseline_beaten": True,
+            "placebo_beaten": True,
+            "one_trade_dominance": 0.12,
+            "one_window_dominance": 0.21,
+            "one_asset_dominance": 0.3,
+            "stress_tests": {
+                "exclude_top_trade": "PASSED",
+                "exclude_top_5_trades": "PASSED",
+                "delayed_entry": "PASSED",
+                "worse_fill": "PASSED",
+                "higher_fee": "PASSED",
+            },
+        },
+    )
+
+    assert repeatability["status"] == "REPEATABILITY_PASSED"
+    assert repeatability["blockers"] == []
+
+
+def test_sequence64_overfit_guard_can_pass_with_multiple_testing_adjusted_evidence() -> None:
+    from quant_os.proving.thousand_strategy_overfit_guard import (
+        build_thousand_strategy_overfit_guard,
+    )
+
+    overfit = build_thousand_strategy_overfit_guard(
+        attempted_variants=100000,
+        top_candidate={
+            "multiple_testing_adjusted": True,
+            "holdout_passed": True,
+            "purged_validation_passed": True,
+            "neighbor_parameter_pass_rate": 0.72,
+            "placebo_survives_similarly": False,
+            "adjusted_performance_significant": True,
+        },
+    )
+
+    assert overfit["status"] == "OVERFIT_GUARD_PASSED"
+    assert overfit["blockers"] == []
+
+
 def test_sequence64_capacity_distinguishes_tiny_canary_from_scalability() -> None:
     from quant_os.proving.thousand_strategy_capacity import build_thousand_strategy_capacity
 
@@ -321,6 +368,62 @@ def test_sequence64_readiness_uses_persisted_cumulative_tournament_candidate(
 
     assert readiness["current_best_candidate"]["id"] == persisted_best["id"]
     assert state["current_best_candidate"]["id"] == persisted_best["id"]
+
+
+def test_sequence64_readiness_feeds_candidate_evidence_to_overfit_and_repeatability(
+    local_project: Path,
+) -> None:
+    from quant_os.readiness.money_worthy_strategy_readiness_report import (
+        write_money_worthy_strategy_readiness_report,
+    )
+    from quant_os.readiness.thousand_strategy_fresh_repro import (
+        write_thousand_strategy_fresh_repro_report,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    candidate = tournament["current_best_candidate"]
+    candidate.update(
+        {
+            "multiple_testing_adjusted": True,
+            "holdout_passed": True,
+            "purged_validation_passed": True,
+            "neighbor_parameter_pass_rate": 0.72,
+            "placebo_survives_similarly": False,
+            "adjusted_performance_significant": True,
+            "one_trade_dominance": 0.12,
+            "one_window_dominance": 0.21,
+            "one_asset_dominance": 0.3,
+            "stress_tests": {
+                "exclude_top_trade": "PASSED",
+                "exclude_top_5_trades": "PASSED",
+                "delayed_entry": "PASSED",
+                "worse_fill": "PASSED",
+                "higher_fee": "PASSED",
+            },
+        },
+    )
+    tournament["current_best_candidate"] = candidate
+    tournament["cumulative_top_candidates"] = [candidate]
+    tournament["cumulative_leaderboard_top_50"][0] = candidate
+    tournament_path = (
+        local_project
+        / "reports/thousand_strategy_campaign/tournament/latest_tournament.json"
+    )
+    tournament_path.write_text(json.dumps(tournament, indent=2, sort_keys=True), encoding="utf-8")
+    write_thousand_strategy_fresh_repro_report(
+        output_root=local_project,
+        proof_command_passed=True,
+    )
+
+    readiness = write_money_worthy_strategy_readiness_report(output_root=local_project)
+
+    assert readiness["overfit_status"] == "OVERFIT_GUARD_PASSED"
+    assert readiness["repeatability_status"] == "REPEATABILITY_PASSED"
+    assert "OVERFIT_GUARD_NOT_PASSED" not in readiness["blockers"]
+    assert "REPEATABILITY_NOT_PASSED" not in readiness["blockers"]
 
 
 def test_sequence64_readiness_replaces_stale_candidate_blockers_after_fresh_repro_passes(
