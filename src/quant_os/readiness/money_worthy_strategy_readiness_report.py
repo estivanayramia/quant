@@ -1,0 +1,58 @@
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+from quant_os.proving.thousand_strategy_capacity import build_thousand_strategy_capacity
+from quant_os.proving.thousand_strategy_overfit_guard import build_thousand_strategy_overfit_guard
+from quant_os.proving.thousand_strategy_repeatability import build_thousand_strategy_repeatability
+from quant_os.readiness.money_worthy_strategy_readiness import (
+    build_money_worthy_strategy_readiness,
+)
+from quant_os.research.strategy_factory.campaign_common import (
+    write_campaign_state,
+    write_json_md,
+)
+from quant_os.research.strategy_factory.strategy_tournament import run_strategy_tournament
+from quant_os.risk.strategy_conflict_detector import build_strategy_conflict_detector
+
+
+def write_money_worthy_strategy_readiness_report(
+    *,
+    output_root: str | Path = ".",
+) -> dict[str, Any]:
+    tournament = run_strategy_tournament()
+    overfit = build_thousand_strategy_overfit_guard()
+    conflict = build_strategy_conflict_detector()
+    repeatability = build_thousand_strategy_repeatability()
+    capacity = build_thousand_strategy_capacity()
+    fresh_repro = {"status": "FRESH_REPRO_BLOCKED"}
+    payload = build_money_worthy_strategy_readiness(
+        tournament=tournament,
+        overfit=overfit,
+        conflict=conflict,
+        repeatability=repeatability,
+        capacity=capacity,
+        fresh_repro=fresh_repro,
+    )
+    write_campaign_state(
+        output_root=output_root,
+        campaign_status="THOUSAND_STRATEGY_CAMPAIGN_CHECKPOINTED_NOT_COMPLETE",
+        money_worthy_readiness_status=payload["status"],
+        manual_canary_packet_status="FIRST_TINY_MANUAL_CANARY_PACKET_BLOCKED",
+        variants_generated=tournament["variants_generated"],
+        variants_tested=tournament["variants_tested"],
+        variants_rejected=tournament["variants_rejected"],
+        variants_promoted=0,
+        current_best_candidate=tournament["current_best_candidate"],
+        blockers=payload["blockers"],
+    )
+    return write_json_md(
+        payload,
+        output_root=output_root,
+        report_dir="final",
+        json_name="latest_money_worthy_readiness.json",
+        md_name="latest_money_worthy_readiness.md",
+        title="Money-Worthy Strategy Readiness",
+        lines=[f"Status: {payload['status']}", f"Blockers: {', '.join(payload['blockers'])}"],
+    )

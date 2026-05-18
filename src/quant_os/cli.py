@@ -6556,6 +6556,254 @@ def readiness_canary_grade_manual_packet() -> None:
     )
 
 
+@research_app.command("x-quant-hypothesis-intake")
+def research_x_quant_hypothesis_intake(
+    zip_path: Annotated[Path | None, typer.Option("--zip-path")] = None,
+) -> None:
+    from quant_os.research.social_hypotheses.x_quant_batch_intake import (
+        write_x_quant_hypotheses_report,
+    )
+
+    payload = write_x_quant_hypotheses_report(output_root=Path("."), zip_path=zip_path)
+    print(
+        {
+            "status": payload["status"],
+            "safe_hypotheses_count": payload["safe_hypotheses_count"],
+            "unsafe_claims_rejected": payload["unsafe_claims_rejected"],
+            "report": "reports/thousand_strategy_campaign/social_hypotheses/latest_x_quant_hypotheses.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("strategy-research")
+def research_thousand_strategy_research() -> None:
+    from quant_os.research.strategy_factory.strategy_research import (
+        write_strategy_research_report,
+    )
+
+    payload = write_strategy_research_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "families": len(payload["families"]),
+            "report": "reports/thousand_strategy_campaign/research/latest_strategy_research.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("generate-strategy-variants")
+def research_generate_strategy_variants(
+    target_count: int = typer.Option(1000, "--target-count", min=1000),
+) -> None:
+    from quant_os.research.strategy_factory.strategy_variant_generator import (
+        write_strategy_variants_report,
+    )
+
+    payload = write_strategy_variants_report(output_root=Path("."), target_count=target_count)
+    print(
+        {
+            "status": payload["status"],
+            "variant_count": payload["variant_count"],
+            "report": "reports/thousand_strategy_campaign/variants/latest_strategy_variants.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("strategy-tournament")
+def research_strategy_tournament() -> None:
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    payload = write_strategy_tournament_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "variants_generated": payload["variants_generated"],
+            "variants_tested": payload["variants_tested"],
+            "report": "reports/thousand_strategy_campaign/tournament/latest_tournament.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("variant-live-sim-run")
+def autonomy_variant_live_sim_run() -> None:
+    from quant_os.autonomy.variant_live_sim_common import write_live_sim_summary
+    from quant_os.autonomy.variant_live_sim_fill import write_variant_live_sim_fill_report
+    from quant_os.autonomy.variant_live_sim_intents import write_variant_live_sim_intents_report
+    from quant_os.autonomy.variant_live_sim_ledger import write_variant_live_sim_ledger_report
+    from quant_os.autonomy.variant_live_sim_observer import write_variant_live_sim_observer_report
+    from quant_os.autonomy.variant_live_sim_pnl import write_variant_live_sim_pnl_report
+    from quant_os.autonomy.variant_live_sim_reconciliation import (
+        write_variant_live_sim_reconciliation_report,
+    )
+
+    write_variant_live_sim_observer_report(output_root=Path("."))
+    intents = write_variant_live_sim_intents_report(output_root=Path("."))
+    write_variant_live_sim_fill_report(output_root=Path("."))
+    write_variant_live_sim_ledger_report(output_root=Path("."))
+    pnl = write_variant_live_sim_pnl_report(output_root=Path("."))
+    write_variant_live_sim_reconciliation_report(output_root=Path("."))
+    summary = write_live_sim_summary(output_root=Path("."))
+    print(
+        {
+            "status": summary["status"],
+            "eligible_intent_count": intents["eligible_intent_count"],
+            "fake_net_pnl": pnl["fake_net_pnl"],
+            "report": "reports/thousand_strategy_campaign/live_sim/latest_live_sim_summary.json",
+            "live_trading_enabled": summary["live_trading_enabled"],
+            "execution_authority": summary["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("thousand-strategy-overfit-guard")
+def proving_thousand_strategy_overfit_guard() -> None:
+    from quant_os.proving.thousand_strategy_overfit_guard import (
+        write_thousand_strategy_overfit_guard_report,
+    )
+
+    payload = write_thousand_strategy_overfit_guard_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "blockers": payload["blockers"],
+            "report": "reports/thousand_strategy_campaign/overfit/latest_overfit_guard.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@risk_app.command("strategy-conflict-detector")
+def risk_strategy_conflict_detector() -> None:
+    from quant_os.risk.strategy_conflict_detector import write_strategy_conflict_detector_report
+
+    payload = write_strategy_conflict_detector_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "veto_reasons": payload["veto_reasons"],
+            "report": "reports/thousand_strategy_campaign/conflict_detector/latest_conflict_detector.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("thousand-strategy-repeatability")
+def proving_thousand_strategy_repeatability() -> None:
+    from quant_os.proving.thousand_strategy_repeatability import (
+        write_thousand_strategy_repeatability_report,
+    )
+
+    payload = write_thousand_strategy_repeatability_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "blockers": payload["blockers"],
+            "report": "reports/thousand_strategy_campaign/repeatability/latest_repeatability.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("thousand-strategy-capacity")
+def proving_thousand_strategy_capacity() -> None:
+    from quant_os.proving.thousand_strategy_capacity import write_thousand_strategy_capacity_report
+
+    payload = write_thousand_strategy_capacity_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "max_safe_notional_usd": payload["max_safe_notional_usd"],
+            "report": "reports/thousand_strategy_campaign/capacity/latest_capacity.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("thousand-strategy-fresh-repro")
+def readiness_thousand_strategy_fresh_repro() -> None:
+    from quant_os.readiness.thousand_strategy_fresh_repro import (
+        write_thousand_strategy_fresh_repro_report,
+    )
+
+    payload = write_thousand_strategy_fresh_repro_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "blockers": payload["blockers"],
+            "report": "reports/thousand_strategy_campaign/fresh_repro/latest_fresh_repro.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("money-worthy-strategy")
+def readiness_money_worthy_strategy() -> None:
+    from quant_os.readiness.money_worthy_strategy_readiness_report import (
+        write_money_worthy_strategy_readiness_report,
+    )
+
+    payload = write_money_worthy_strategy_readiness_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "blockers": payload["blockers"],
+            "report": "reports/thousand_strategy_campaign/final/latest_money_worthy_readiness.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("thousand-strategy-manual-canary-packet")
+def readiness_thousand_strategy_manual_canary_packet() -> None:
+    from quant_os.readiness.thousand_strategy_manual_canary_packet import (
+        write_thousand_strategy_manual_canary_packet,
+    )
+
+    payload = write_thousand_strategy_manual_canary_packet(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/thousand_strategy_campaign/manual_canary_packet/latest_manual_canary_packet.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("thousand-strategy-schedule")
+def autonomy_thousand_strategy_schedule() -> None:
+    from quant_os.autonomy.thousand_strategy_campaign_schedule import (
+        write_thousand_strategy_campaign_schedule_report,
+    )
+
+    payload = write_thousand_strategy_campaign_schedule_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "data_only": payload["data_only"],
+            "report": "reports/thousand_strategy_campaign/schedule/latest_schedule.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @app.command()
 def smoke() -> None:
     ensure_local_dirs()

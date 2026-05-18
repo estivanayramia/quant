@@ -1684,6 +1684,44 @@ if "%TARGET%"=="sequence62-smoke" (
   python -m pytest tests/test_sequence62_canary_grade_live_sim.py
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="thousand-strategy-campaign-smoke" (
+  python -m quant_os.cli research x-quant-hypothesis-intake
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research strategy-research
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research generate-strategy-variants
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research strategy-tournament
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-live-sim-run
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-overfit-guard
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli risk strategy-conflict-detector
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-repeatability
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-capacity
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness thousand-strategy-fresh-repro
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness money-worthy-strategy
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness thousand-strategy-manual-canary-packet
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy thousand-strategy-schedule
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="thousand-strategy-public-run" (
+  call "%~f0" thousand-strategy-campaign-smoke
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence63-smoke" (
+  call "%~f0" thousand-strategy-campaign-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence63_thousand_strategy_campaign.py
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="venue-capture" (
   python -m quant_os.cli data venue-capture --venue kraken
   exit /b !ERRORLEVEL!
