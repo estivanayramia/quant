@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from quant_os.autonomy.canary_grade_live_sim_common import ROOT, canary_safe_payload
+from quant_os.autonomy.canary_grade_live_sim_common import RESUME_COMMAND, ROOT, canary_safe_payload
 from quant_os.readiness.canary_readiness_common import write_json_markdown_report
 
 REPORT_DIR = ROOT / "schedule"
@@ -16,9 +16,10 @@ def build_canary_grade_live_sim_schedule() -> dict[str, Any]:
         data_only=True,
         powershell_command=(
             "PowerShell data-only resume: no credentials, no orders, no auth, no signing; "
-            ".\\make.cmd canary-grade-live-sim-smoke; stop on CANARY_GRADE_LIVE_SIM_PROFITABILITY_PROVEN "
+            f"{RESUME_COMMAND}; stop on CANARY_GRADE_LIVE_SIM_PROFITABILITY_PROVEN "
             "or documented blocker"
         ),
+        fixture_safe_smoke_command=".\\make.cmd canary-grade-live-sim-smoke",
         interval="5 minutes",
         max_runs=150,
         target_observation_count=1000,

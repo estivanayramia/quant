@@ -12,7 +12,7 @@ from quant_os.readiness.canary_readiness_common import utc_now
 ROOT = Path("reports/canary_grade_live_sim")
 STATE_JSON = ROOT / "state" / "latest_state.json"
 STATE_MD = ROOT / "state" / "latest_state.md"
-RESUME_COMMAND = ".\\make.cmd canary-grade-live-sim-smoke"
+RESUME_COMMAND = ".\\make.cmd canary-grade-live-sim-public-run"
 
 
 def cg_hash(payload: Any, *, length: int = 16) -> str:

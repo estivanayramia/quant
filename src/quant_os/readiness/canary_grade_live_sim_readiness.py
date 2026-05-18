@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from quant_os.autonomy.canary_grade_live_sim_common import (
+    RESUME_COMMAND,
     ROOT,
     canary_safe_payload,
     load_canary_state,
@@ -131,7 +132,7 @@ def build_canary_grade_live_sim_readiness(
         capacity_status=capacity.get("status"),
         fresh_repro_status=fresh_repro.get("status"),
         blockers=blockers,
-        exact_resume_command=".\\make.cmd canary-grade-live-sim-smoke",
+        exact_resume_command=RESUME_COMMAND,
         next_action="Refresh first tiny manual canary packet."
         if status == "CANARY_GRADE_LIVE_SIM_PROFITABILITY_PROVEN"
         else "Continue canary-grade schedule/resume loop.",
