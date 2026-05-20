@@ -12,6 +12,7 @@ from typing import Any
 from quant_os.research.strategy_factory.campaign_common import (
     load_report,
     safe_payload,
+    write_campaign_state,
     write_json_md,
 )
 
@@ -101,8 +102,12 @@ def append_variant_public_forward_observations(
         report_dir="live_sim",
         json_name="latest_live_sim_summary.json",
     )
-    existing_observations = list(previous.get("public_forward_observations") or [])
     incoming = [_normalize_observation(row) for row in observations]
+    existing_observations = list(previous.get("public_forward_observations") or [])
+    if any(not _is_pending_public_forward_observation(row) for row in incoming):
+        existing_observations = [
+            row for row in existing_observations if not _is_pending_public_forward_observation(row)
+        ]
     all_observations = [*existing_observations, *incoming]
     data_sources = sorted({str(row.get("source")) for row in all_observations if row.get("source")})
     payload = build_variant_public_forward_live_sim_summary(
@@ -616,6 +621,155 @@ def write_variant_public_forward_candidate_archive(
     )
 
 
+def write_variant_public_forward_candidate_rotation(
+    *,
+    output_root: str | Path = ".",
+) -> dict[str, Any]:
+    tournament = load_report(
+        output_root=output_root,
+        report_dir="tournament",
+        json_name="latest_tournament.json",
+    )
+    live_summary = load_report(
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_live_sim_summary.json",
+    )
+    archive = load_report(
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_public_forward_candidate_archive.json",
+    )
+    current_candidate = dict(tournament.get("current_best_candidate") or {})
+    current_candidate_id = str(
+        live_summary.get("selected_strategy_id") or current_candidate.get("id") or ""
+    )
+    retired: dict[str, dict[str, Any]] = {}
+    current_reasons = _public_forward_retirement_reasons(live_summary)
+    if current_candidate_id and current_reasons:
+        retired[current_candidate_id] = {
+            "candidate_id": current_candidate_id,
+            "family": live_summary.get("selected_strategy_family") or current_candidate.get("family"),
+            "assets": live_summary.get("selected_strategy_assets") or current_candidate.get("assets", []),
+            "fake_net_pnl": float(live_summary.get("fake_net_pnl") or 0.0),
+            "observation_count": int(live_summary.get("observation_count") or 0),
+            "completed_mark_count": int(live_summary.get("completed_mark_count") or 0),
+            "retirement_reasons": current_reasons,
+        }
+    for candidate_id, evidence in (archive.get("candidate_evidence") or {}).items():
+        reasons = _public_forward_retirement_reasons(evidence)
+        if reasons:
+            retired[str(candidate_id)] = {
+                "candidate_id": str(candidate_id),
+                "family": evidence.get("selected_strategy_family"),
+                "assets": evidence.get("selected_strategy_assets", []),
+                "fake_net_pnl": float(evidence.get("fake_net_pnl") or 0.0),
+                "observation_count": int(evidence.get("observation_count") or 0),
+                "completed_mark_count": int(evidence.get("completed_mark_count") or 0),
+                "retirement_reasons": reasons,
+            }
+
+    candidates = list(
+        tournament.get("cumulative_leaderboard_top_50")
+        or tournament.get("leaderboard_top_50")
+        or tournament.get("top_candidates")
+        or []
+    )
+    skipped_uncollectable: list[str] = []
+    selected: dict[str, Any] | None = None
+    for candidate in candidates:
+        candidate_id = str(candidate.get("id"))
+        if candidate_id in retired:
+            continue
+        if not _is_public_forward_collectable_candidate(candidate):
+            skipped_uncollectable.append(candidate_id)
+            continue
+        selected = dict(candidate)
+        break
+    blockers: list[str] = []
+    if not retired:
+        blockers.append("NO_PUBLIC_FORWARD_RETIREMENT_TRIGGER")
+    if selected is None:
+        blockers.append("NO_ROTATION_CANDIDATE_AVAILABLE")
+
+    status = (
+        "VARIANT_PUBLIC_FORWARD_CANDIDATE_ROTATED"
+        if retired and selected is not None
+        else "VARIANT_PUBLIC_FORWARD_CANDIDATE_ROTATION_BLOCKED"
+    )
+    if selected is not None and retired:
+        tournament = dict(tournament)
+        tournament["public_forward_retired_candidates"] = list(retired.values())
+        tournament["current_best_candidate"] = selected
+        tournament["best_fake_pnl"] = selected.get("fake_net_pnl", 0.0)
+        tournament["baseline_beaten"] = bool(selected.get("baseline_beaten"))
+        tournament["placebo_beaten"] = bool(selected.get("placebo_beaten"))
+        write_json_md(
+            tournament,
+            output_root=output_root,
+            report_dir="tournament",
+            json_name="latest_tournament.json",
+            md_name="latest_tournament.md",
+            title="Strategy Tournament",
+            lines=[
+                f"Status: {tournament.get('status')}",
+                f"Current best candidate: {selected.get('id')}",
+                "Public-forward negative-PnL candidate retired for rotation.",
+                "Campaign complete: False",
+            ],
+        )
+        write_campaign_state(
+            output_root=output_root,
+            current_best_candidate=selected,
+            public_forward_retired_candidates=list(retired.values()),
+            blockers=[
+                "PUBLIC_FORWARD_EVIDENCE_NOT_PROVEN",
+                "OVERFIT_GUARD_NOT_PASSED",
+                "REPEATABILITY_NOT_PASSED",
+            ],
+            next_action="Collect public-forward evidence for the rotated candidate.",
+        )
+        write_variant_public_forward_live_sim_summary(output_root=output_root, candidate=selected)
+
+    retired_values = list(retired.values())
+    payload = safe_payload(
+        status=status,
+        blockers=blockers,
+        retired_candidate_id=retired_values[0]["candidate_id"] if retired_values else None,
+        retirement_reasons=retired_values[0]["retirement_reasons"] if retired_values else [],
+        retired_candidates=retired_values,
+        skipped_uncollectable_candidate_ids=skipped_uncollectable,
+        selected_strategy_id=selected.get("id") if selected else None,
+        selected_strategy_family=selected.get("family") if selected else None,
+        selected_strategy_assets=selected.get("assets", []) if selected else [],
+        public_forward_evidence_proven=False,
+        fake_money=True,
+        no_transmit=True,
+        no_credentials=True,
+        no_orders=True,
+        next_action=(
+            "Collect public-forward observations for rotated candidate."
+            if status == "VARIANT_PUBLIC_FORWARD_CANDIDATE_ROTATED"
+            else "Continue current candidate or generate more tournament candidates."
+        ),
+    )
+    return write_json_md(
+        payload,
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_public_forward_candidate_rotation.json",
+        md_name="latest_public_forward_candidate_rotation.md",
+        title="Variant Public Forward Candidate Rotation",
+        lines=[
+            f"Status: {payload['status']}",
+            f"Retired candidate: {payload['retired_candidate_id']}",
+            f"Selected strategy: {payload['selected_strategy_id']}",
+            f"Blockers: {', '.join(blockers) if blockers else 'None'}",
+            "Fake-money, no-transmit rotation only.",
+        ],
+    )
+
+
 def write_variant_public_forward_proof_finalizer(
     *,
     output_root: str | Path = ".",
@@ -780,6 +934,25 @@ def _normalize_observation(row: dict[str, Any]) -> dict[str, Any]:
     }
     payload["evidence_hash"] = _stable_hash(payload)
     return payload
+
+
+def _is_pending_public_forward_observation(row: dict[str, Any]) -> bool:
+    source = str(row.get("source") or "").lower()
+    timestamp = str(row.get("timestamp") or "").lower()
+    return "pending" in source or timestamp == "pending"
+
+
+def _public_forward_retirement_reasons(report: dict[str, Any]) -> list[str]:
+    reasons: list[str] = []
+    completed_marks = int(report.get("completed_mark_count") or 0)
+    fake_net_pnl = float(report.get("fake_net_pnl") or 0.0)
+    if completed_marks > 0 and fake_net_pnl < 0:
+        reasons.append("PUBLIC_FORWARD_FAKE_NET_PNL_NEGATIVE")
+    return reasons
+
+
+def _is_public_forward_collectable_candidate(candidate: dict[str, Any]) -> bool:
+    return any(str(asset) in KRAKEN_PAIRS for asset in candidate.get("assets", []) or [])
 
 
 def _build_public_forward_intent(

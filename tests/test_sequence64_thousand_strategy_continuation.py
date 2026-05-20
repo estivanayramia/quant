@@ -656,6 +656,54 @@ def test_sequence64_candidate_public_forward_snapshot_appends_selected_assets_on
     assert summary["actual_cancel_count"] == 0
 
 
+def test_sequence64_public_forward_snapshot_evicts_pending_fixture_placeholder(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        append_variant_public_forward_observations,
+        append_variant_public_forward_snapshot,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    append_variant_public_forward_observations(
+        output_root=local_project,
+        observations=[
+            {
+                "asset": "BTC/USD",
+                "bid": 0.0,
+                "ask": 0.0,
+                "source": "kraken_public_rest_unauthenticated_forward_pending",
+                "timestamp": "pending",
+            }
+        ],
+    )
+
+    summary = append_variant_public_forward_snapshot(
+        output_root=local_project,
+        public_snapshot={
+            "source": "kraken_public_rest_unauthenticated_forward",
+            "fetched_at": "2026-05-18T11:00:00Z",
+            "symbols": {
+                "BTC/USD": {"book": {"bid": 100.0, "ask": 100.1}},
+                "ETH/USD": {"book": {"bid": 50.0, "ask": 50.1}},
+            },
+        },
+    )
+
+    assert summary["observation_count"] == 2
+    assert summary["data_sources"] == ["kraken_public_rest_unauthenticated_forward"]
+    assert all(
+        row["source"] == "kraken_public_rest_unauthenticated_forward"
+        for row in summary["public_forward_observations"]
+    )
+    assert all(row["timestamp"] != "pending" for row in summary["public_forward_observations"])
+    assert summary["actual_order_count"] == 0
+    assert summary["actual_cancel_count"] == 0
+
+
 def test_sequence64_candidate_public_forward_fetch_defaults_to_no_network(
     local_project: Path,
 ) -> None:
@@ -1094,6 +1142,134 @@ def test_sequence64_public_forward_candidate_archive_separates_rotated_candidate
     assert second_archive["order_transmission_enabled"] is False
     assert second_archive["authenticated_requests_enabled"] is False
     assert second_archive["request_signing_enabled"] is False
+
+
+def test_sequence64_public_forward_rotation_retires_negative_pnl_candidate(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_candidate_rotation,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    first_candidate = tournament["current_best_candidate"]
+    live_sim_dir = local_project / "reports/thousand_strategy_campaign/live_sim"
+    live_sim_dir.mkdir(parents=True, exist_ok=True)
+    (live_sim_dir / "latest_live_sim_summary.json").write_text(
+        json.dumps(
+            {
+                "status": "VARIANT_PUBLIC_FORWARD_LIVE_SIM_PENDING",
+                "selected_strategy_id": first_candidate["id"],
+                "selected_strategy_family": first_candidate["family"],
+                "selected_strategy_assets": first_candidate["assets"],
+                "observation_count": 540,
+                "eligible_intent_count": 540,
+                "fake_fill_count": 538,
+                "completed_mark_count": 538,
+                "fake_net_pnl": -1.09,
+                "data_sources": ["kraken_public_rest_unauthenticated_forward"],
+                "public_forward_evidence_proven": False,
+                "live_trading_enabled": False,
+                "execution_authority": "NONE",
+                "order_transmission_enabled": False,
+                "authenticated_requests_enabled": False,
+                "request_signing_enabled": False,
+                "api_keys_loaded": False,
+                "private_keys_loaded": False,
+                "actual_order_count": 0,
+                "actual_cancel_count": 0,
+            },
+            indent=2,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+
+    rotation = write_variant_public_forward_candidate_rotation(output_root=local_project)
+    rotated_tournament = json.loads(
+        (
+            local_project / "reports/thousand_strategy_campaign/tournament/latest_tournament.json"
+        ).read_text(encoding="utf-8")
+    )
+    rotated_summary = json.loads(
+        (live_sim_dir / "latest_live_sim_summary.json").read_text(encoding="utf-8")
+    )
+
+    assert rotation["status"] == "VARIANT_PUBLIC_FORWARD_CANDIDATE_ROTATED"
+    assert rotation["retired_candidate_id"] == first_candidate["id"]
+    assert rotation["selected_strategy_id"] != first_candidate["id"]
+    assert "PUBLIC_FORWARD_FAKE_NET_PNL_NEGATIVE" in rotation["retirement_reasons"]
+    assert rotated_tournament["current_best_candidate"]["id"] == rotation["selected_strategy_id"]
+    assert rotated_summary["selected_strategy_id"] == rotation["selected_strategy_id"]
+    assert rotated_summary["observation_count"] == 0
+    assert rotated_summary["actual_order_count"] == 0
+    assert rotated_summary["actual_cancel_count"] == 0
+
+
+def test_sequence64_public_forward_rotation_skips_uncollectable_candidates(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_candidate_rotation,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    first_candidate = tournament["current_best_candidate"]
+    weather_candidate = {
+        "id": "tsv_weather_uncollectable",
+        "family": "temperature_tail_mispricing",
+        "assets": ["KXHIGHNY"],
+        "fake_net_pnl": 99.0,
+        "baseline_beaten": True,
+        "placebo_beaten": True,
+        "score": 9.0,
+    }
+    crypto_candidate = {
+        "id": "tsv_crypto_collectable",
+        "family": "range_breakout_cost_filtered",
+        "assets": ["BTC/USD", "ETH/USD"],
+        "fake_net_pnl": 20.0,
+        "baseline_beaten": True,
+        "placebo_beaten": True,
+        "score": 2.0,
+    }
+    tournament["cumulative_leaderboard_top_50"] = [
+        first_candidate,
+        weather_candidate,
+        crypto_candidate,
+    ]
+    tournament_path = (
+        local_project / "reports/thousand_strategy_campaign/tournament/latest_tournament.json"
+    )
+    tournament_path.write_text(json.dumps(tournament, indent=2, sort_keys=True), encoding="utf-8")
+    live_sim_dir = local_project / "reports/thousand_strategy_campaign/live_sim"
+    live_sim_dir.mkdir(parents=True, exist_ok=True)
+    (live_sim_dir / "latest_live_sim_summary.json").write_text(
+        json.dumps(
+            {
+                "selected_strategy_id": first_candidate["id"],
+                "selected_strategy_family": first_candidate["family"],
+                "selected_strategy_assets": first_candidate["assets"],
+                "completed_mark_count": 10,
+                "fake_net_pnl": -0.1,
+            },
+            indent=2,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+
+    rotation = write_variant_public_forward_candidate_rotation(output_root=local_project)
+
+    assert rotation["status"] == "VARIANT_PUBLIC_FORWARD_CANDIDATE_ROTATED"
+    assert rotation["selected_strategy_id"] == "tsv_crypto_collectable"
+    assert rotation["skipped_uncollectable_candidate_ids"] == ["tsv_weather_uncollectable"]
 
 
 def test_sequence64_public_forward_proof_finalizer_blocks_until_strict_thresholds(

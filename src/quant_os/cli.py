@@ -6907,6 +6907,29 @@ def autonomy_variant_public_forward_candidate_archive() -> None:
     )
 
 
+@autonomy_app.command("variant-public-forward-candidate-rotation")
+def autonomy_variant_public_forward_candidate_rotation() -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_candidate_rotation,
+    )
+
+    payload = write_variant_public_forward_candidate_rotation(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "retired_candidate_id": payload["retired_candidate_id"],
+            "selected_strategy_id": payload["selected_strategy_id"],
+            "retirement_reasons": payload["retirement_reasons"],
+            "report": (
+                "reports/thousand_strategy_campaign/live_sim/"
+                "latest_public_forward_candidate_rotation.json"
+            ),
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @autonomy_app.command("variant-public-forward-proof-finalizer")
 def autonomy_variant_public_forward_proof_finalizer() -> None:
     from quant_os.autonomy.variant_public_forward_live_sim import (
