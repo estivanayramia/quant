@@ -772,6 +772,87 @@ def test_sequence64_candidate_public_forward_intents_are_candidate_matched_no_tr
     assert intents["actual_cancel_count"] == 0
 
 
+def test_sequence64_candidate_public_forward_fills_and_marks_use_later_observations_only(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        append_variant_public_forward_observations,
+        write_variant_public_forward_fills_and_marks_report,
+        write_variant_public_forward_intents_report,
+    )
+    from quant_os.proving.thousand_strategy_public_forward_evidence import (
+        write_thousand_strategy_public_forward_evidence_report,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    candidate = tournament["current_best_candidate"]
+    append_variant_public_forward_observations(
+        output_root=local_project,
+        observations=[
+            {
+                "asset": "BTC/USD",
+                "bid": 100.0,
+                "ask": 100.1,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-19T12:00:00Z",
+            },
+            {
+                "asset": "ETH/USD",
+                "bid": 50.0,
+                "ask": 50.1,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-19T12:00:00Z",
+            },
+            {
+                "asset": "BTC/USD",
+                "bid": 100.2,
+                "ask": 100.3,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-19T12:05:00Z",
+            },
+            {
+                "asset": "ETH/USD",
+                "bid": 49.8,
+                "ask": 49.9,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-19T12:05:00Z",
+            },
+        ],
+    )
+    write_variant_public_forward_intents_report(output_root=local_project)
+
+    fills_marks = write_variant_public_forward_fills_and_marks_report(output_root=local_project)
+    evidence = write_thousand_strategy_public_forward_evidence_report(output_root=local_project)
+    summary = json.loads(
+        (
+            local_project
+            / "reports/thousand_strategy_campaign/live_sim/latest_live_sim_summary.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert fills_marks["status"] == "VARIANT_PUBLIC_FORWARD_FILLS_AND_MARKS_READY"
+    assert fills_marks["selected_strategy_id"] == candidate["id"]
+    assert fills_marks["fake_fill_count"] == 2
+    assert fills_marks["completed_mark_count"] == 2
+    assert summary["fake_fill_count"] == 2
+    assert summary["completed_mark_count"] == 2
+    assert summary["fake_net_pnl"] == fills_marks["fake_net_pnl"]
+    assert summary["public_forward_evidence_proven"] is False
+    assert all(row["fake_money"] is True for row in fills_marks["fake_fills"])
+    assert all(row["no_transmit"] is True for row in fills_marks["fake_fills"])
+    assert all(row["guaranteed_fill"] is False for row in fills_marks["fake_fills"])
+    assert all(row["mark_timestamp"] > row["entry_timestamp"] for row in fills_marks["mark_rows"])
+    assert all(row["mark_source"] == "future_public_observation" for row in fills_marks["mark_rows"])
+    assert fills_marks["lookahead_detected"] is False
+    assert fills_marks["order_transmission_enabled"] is False
+    assert fills_marks["request_signing_enabled"] is False
+    assert evidence["status"] == "PUBLIC_FORWARD_EVIDENCE_BLOCKED"
+    assert "PUBLIC_FORWARD_EVIDENCE_NOT_PROVEN" in evidence["blockers"]
+
+
 def test_sequence64_readiness_uses_public_forward_evidence_report_for_provenance(
     local_project: Path,
 ) -> None:

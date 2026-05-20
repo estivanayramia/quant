@@ -28,6 +28,7 @@ def build_variant_public_forward_live_sim_summary(
     candidate: dict[str, Any] | None = None,
     observation_count: int = 0,
     eligible_intent_count: int = 0,
+    fake_fill_count: int = 0,
     completed_mark_count: int = 0,
     fake_net_pnl: float = 0.0,
 ) -> dict[str, Any]:
@@ -39,7 +40,7 @@ def build_variant_public_forward_live_sim_summary(
         selected_strategy_assets=candidate.get("assets", []),
         observation_count=observation_count,
         eligible_intent_count=eligible_intent_count,
-        fake_fill_count=0,
+        fake_fill_count=fake_fill_count,
         completed_mark_count=completed_mark_count,
         fake_net_pnl=round(fake_net_pnl, 8),
         data_sources=["kraken_public_rest_unauthenticated_forward_pending"],
@@ -291,6 +292,117 @@ def write_variant_public_forward_intents_report(
     return payload
 
 
+def write_variant_public_forward_fills_and_marks_report(
+    *,
+    output_root: str | Path = ".",
+    candidate: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    tournament = load_report(
+        output_root=output_root,
+        report_dir="tournament",
+        json_name="latest_tournament.json",
+    )
+    selected_candidate = candidate or tournament.get("current_best_candidate") or {}
+    previous = load_report(
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_live_sim_summary.json",
+    )
+    intents_report = load_report(
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_public_forward_intents.json",
+    )
+    observations = list(previous.get("public_forward_observations") or [])
+    intents = list(intents_report.get("intents") or [])
+    fake_fills: list[dict[str, Any]] = []
+    mark_rows: list[dict[str, Any]] = []
+    for index, intent in enumerate(intents):
+        future_observation = _find_future_observation(intent=intent, observations=observations)
+        if future_observation is None:
+            continue
+        fill, mark = _build_public_forward_fill_and_mark(
+            index=index,
+            intent=intent,
+            future_observation=future_observation,
+        )
+        fake_fills.append(fill)
+        mark_rows.append(mark)
+    fake_net_pnl = round(sum(float(row["net_pnl"]) for row in mark_rows), 8)
+    lookahead_detected = any(
+        str(row["mark_timestamp"]) <= str(row["entry_timestamp"]) for row in mark_rows
+    )
+    payload = safe_payload(
+        status="VARIANT_PUBLIC_FORWARD_FILLS_AND_MARKS_READY",
+        selected_strategy_id=selected_candidate.get("id"),
+        selected_strategy_family=selected_candidate.get("family"),
+        selected_strategy_assets=selected_candidate.get("assets", []),
+        fake_fills=fake_fills,
+        mark_rows=mark_rows,
+        fake_fill_count=len(fake_fills),
+        completed_mark_count=len(mark_rows),
+        fake_net_pnl=fake_net_pnl,
+        lookahead_detected=lookahead_detected,
+        public_forward_evidence_proven=False,
+        evidence_source="public_forward_live_sim_pending",
+        data_sources=previous.get("data_sources", []),
+        fake_money=True,
+        no_transmit=True,
+        no_credentials=True,
+        no_orders=True,
+    )
+    write_json_md(
+        payload,
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_public_forward_fills_and_marks.json",
+        md_name="latest_public_forward_fills_and_marks.md",
+        title="Variant Public Forward Fills And Marks",
+        lines=[
+            f"Status: {payload['status']}",
+            f"Selected strategy: {payload['selected_strategy_id']}",
+            f"Fake fills: {payload['fake_fill_count']}",
+            f"Completed future marks: {payload['completed_mark_count']}",
+            f"Fake net PnL: {payload['fake_net_pnl']}",
+            "Fake-money, no-transmit fills and future public marks only.",
+        ],
+    )
+    summary = build_variant_public_forward_live_sim_summary(
+        candidate=selected_candidate,
+        observation_count=len(observations),
+        eligible_intent_count=int(previous.get("eligible_intent_count") or len(intents)),
+        fake_fill_count=len(fake_fills),
+        completed_mark_count=len(mark_rows),
+        fake_net_pnl=fake_net_pnl,
+    )
+    summary.update(
+        public_forward_observations=observations,
+        data_sources=previous.get("data_sources", []),
+        source_sample_hashes=previous.get("source_sample_hashes", []),
+        public_forward_intent_hashes=previous.get("public_forward_intent_hashes", []),
+        public_forward_fill_hashes=[row["fill_id"] for row in fake_fills[:25]],
+        public_forward_mark_hashes=[row["mark_id"] for row in mark_rows[:25]],
+    )
+    write_json_md(
+        summary,
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_live_sim_summary.json",
+        md_name="latest_live_sim_summary.md",
+        title="Variant Public Forward Live Sim Summary",
+        lines=[
+            f"Status: {summary['status']}",
+            f"Selected strategy: {summary['selected_strategy_id']}",
+            f"Observations: {summary['observation_count']}",
+            f"Eligible intents: {summary['eligible_intent_count']}",
+            f"Fake fills: {summary['fake_fill_count']}",
+            f"Completed marks: {summary['completed_mark_count']}",
+            "No live orders, auth, credentials, or signing.",
+        ],
+    )
+    return payload
+
+
 def fetch_kraken_public_forward_snapshot(
     *,
     candidate: dict[str, Any] | None = None,
@@ -352,6 +464,74 @@ def _build_public_forward_intent(
         1,
     )
     return payload
+
+
+def _find_future_observation(
+    *,
+    intent: dict[str, Any],
+    observations: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    asset = str(intent.get("asset") or "")
+    timestamp = str(intent.get("timestamp") or "")
+    future_rows = [
+        row
+        for row in observations
+        if str(row.get("asset") or "") == asset and str(row.get("timestamp") or "") > timestamp
+    ]
+    return sorted(future_rows, key=lambda row: str(row.get("timestamp") or ""))[0] if future_rows else None
+
+
+def _build_public_forward_fill_and_mark(
+    *,
+    index: int,
+    intent: dict[str, Any],
+    future_observation: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    side = str(intent.get("side") or "buy")
+    entry_price = float(intent.get("reference_price") or 0.0)
+    mark_price = float(
+        future_observation.get("bid") if side == "buy" else future_observation.get("ask") or 0.0
+    )
+    notional = float(intent.get("notional_usd") or 0.0)
+    quantity = round(notional / entry_price, 12) if entry_price > 0 else 0.0
+    gross = (mark_price - entry_price) * quantity
+    if side == "sell":
+        gross = (entry_price - mark_price) * quantity
+    fee_cost = round(notional * 0.0008, 8)
+    spread_cost = round(notional * 0.0006, 8)
+    slippage_cost = round(notional * 0.0006, 8)
+    net_pnl = round(gross - fee_cost - spread_cost - slippage_cost, 8)
+    fill_seed = {"intent_id": intent.get("intent_id"), "future": future_observation, "index": index}
+    fill_id = _stable_hash({"fill": fill_seed}).replace("pfobs_", "pffill_", 1)
+    mark_id = _stable_hash({"mark": fill_seed}).replace("pfobs_", "pfmark_", 1)
+    fill = {
+        "fill_id": fill_id,
+        "intent_id": intent.get("intent_id"),
+        "variant_id": intent.get("variant_id"),
+        "asset": intent.get("asset"),
+        "side": side,
+        "entry_timestamp": intent.get("timestamp"),
+        "entry_price": round(entry_price, 8),
+        "quantity": quantity,
+        "notional_usd": notional,
+        "fake_money": True,
+        "no_transmit": True,
+        "guaranteed_fill": False,
+        "fill_type": "conservative_public_forward_fake_fill",
+    }
+    mark = {
+        **fill,
+        "mark_id": mark_id,
+        "mark_timestamp": future_observation.get("timestamp"),
+        "mark_price": round(mark_price, 8),
+        "mark_source": "future_public_observation",
+        "source_observation_hash": future_observation.get("evidence_hash"),
+        "fee_cost": fee_cost,
+        "spread_cost": spread_cost,
+        "slippage_cost": slippage_cost,
+        "net_pnl": net_pnl,
+    }
+    return fill, mark
 
 
 def _stable_hash(payload: dict[str, Any]) -> str:
