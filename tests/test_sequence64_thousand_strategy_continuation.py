@@ -106,6 +106,29 @@ def test_sequence64_next_tranche_tournament_updates_cumulative_checkpoint(
     assert state_after_dynamic["exact_resume_command"] == ".\\make.cmd thousand-strategy-next-tranche"
 
 
+def test_sequence64_campaign_state_write_recovers_from_empty_state_file(
+    local_project: Path,
+) -> None:
+    from quant_os.research.strategy_factory.campaign_common import write_campaign_state
+
+    state_dir = local_project / "reports/thousand_strategy_campaign/state"
+    state_dir.mkdir(parents=True, exist_ok=True)
+    (state_dir / "latest_state.json").write_text("", encoding="utf-8")
+
+    state = write_campaign_state(
+        output_root=local_project,
+        variants_generated=123,
+        blockers=["RECOVERED_EMPTY_STATE_FILE"],
+    )
+    persisted = json.loads((state_dir / "latest_state.json").read_text(encoding="utf-8"))
+
+    assert state["variants_generated"] == 123
+    assert persisted["variants_generated"] == 123
+    assert persisted["blockers"] == ["RECOVERED_EMPTY_STATE_FILE"]
+    assert persisted["live_trading_enabled"] is False
+    assert persisted["actual_order_count"] == 0
+
+
 def test_sequence64_tournament_preserves_cumulative_leaderboard_across_tranches(
     local_project: Path,
 ) -> None:

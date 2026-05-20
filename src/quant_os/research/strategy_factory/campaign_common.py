@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from datetime import UTC, datetime
+from json import JSONDecodeError
 from pathlib import Path
 from typing import Any
 
@@ -56,8 +58,8 @@ def write_json_md(
     md_path = root / md_name
     payload = dict(payload)
     payload["report_paths"] = {"json": str(json_path), "markdown": str(md_path)}
-    json_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
-    md_path.write_text("\n".join([f"# {title}", "", *lines]) + "\n", encoding="utf-8")
+    _atomic_write_text(json_path, json.dumps(payload, indent=2, sort_keys=True))
+    _atomic_write_text(md_path, "\n".join([f"# {title}", "", *lines]) + "\n")
     return payload
 
 
@@ -70,7 +72,10 @@ def load_report(
     path = Path(output_root) / ROOT / report_dir / json_name
     if not path.exists():
         return {}
-    return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except JSONDecodeError:
+        return {}
 
 
 def write_campaign_state(*, output_root: str | Path, **updates: Any) -> dict[str, Any]:
@@ -100,7 +105,7 @@ def write_campaign_state(*, output_root: str | Path, **updates: Any) -> dict[str
     root.mkdir(parents=True, exist_ok=True)
     json_path = root / "latest_state.json"
     md_path = root / "latest_state.md"
-    json_path.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
+    _atomic_write_text(json_path, json.dumps(state, indent=2, sort_keys=True))
     md_lines = [
         "# Thousand Strategy Campaign State",
         "",
@@ -118,5 +123,12 @@ def write_campaign_state(*, output_root: str | Path, **updates: Any) -> dict[str
         f"Live trading enabled: {state['safety_state']['live_trading_enabled']}",
         f"Execution authority: {state['safety_state']['execution_authority']}",
     ]
-    md_path.write_text("\n".join(md_lines) + "\n", encoding="utf-8")
+    _atomic_write_text(md_path, "\n".join(md_lines) + "\n")
     return state
+
+
+def _atomic_write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    tmp_path.write_text(text, encoding="utf-8")
+    tmp_path.replace(path)
