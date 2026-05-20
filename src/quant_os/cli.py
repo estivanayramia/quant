@@ -6818,6 +6818,35 @@ def autonomy_variant_public_forward_fills_and_marks() -> None:
     )
 
 
+@autonomy_app.command("variant-public-forward-cycle")
+def autonomy_variant_public_forward_cycle(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_collection_cycle,
+    )
+
+    payload = write_variant_public_forward_collection_cycle(
+        output_root=Path("."),
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "selected_strategy_id": payload["selected_strategy_id"],
+            "observation_count": payload["observation_count"],
+            "eligible_intent_count": payload["eligible_intent_count"],
+            "fake_fill_count": payload["fake_fill_count"],
+            "completed_mark_count": payload["completed_mark_count"],
+            "fake_net_pnl": payload["fake_net_pnl"],
+            "public_forward_evidence_status": payload["public_forward_evidence_status"],
+            "report": "reports/thousand_strategy_campaign/live_sim/latest_public_forward_cycle.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @proving_app.command("thousand-strategy-overfit-guard")
 def proving_thousand_strategy_overfit_guard() -> None:
     from quant_os.proving.thousand_strategy_overfit_guard import (

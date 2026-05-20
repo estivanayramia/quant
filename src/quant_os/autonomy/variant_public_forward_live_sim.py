@@ -403,6 +403,73 @@ def write_variant_public_forward_fills_and_marks_report(
     return payload
 
 
+def write_variant_public_forward_collection_cycle(
+    *,
+    output_root: str | Path = ".",
+    public_network_ok: bool = False,
+    public_snapshot: dict[str, Any] | None = None,
+    candidate: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    observation_summary = append_variant_public_forward_public_snapshot(
+        output_root=output_root,
+        public_network_ok=public_network_ok,
+        public_snapshot=public_snapshot,
+        candidate=candidate,
+    )
+    intents = write_variant_public_forward_intents_report(
+        output_root=output_root,
+        candidate=candidate,
+    )
+    fills_marks = write_variant_public_forward_fills_and_marks_report(
+        output_root=output_root,
+        candidate=candidate,
+    )
+    from quant_os.proving.thousand_strategy_public_forward_evidence import (
+        write_thousand_strategy_public_forward_evidence_report,
+    )
+
+    evidence = write_thousand_strategy_public_forward_evidence_report(output_root=output_root)
+    payload = safe_payload(
+        status="VARIANT_PUBLIC_FORWARD_COLLECTION_CYCLE_CHECKPOINTED",
+        selected_strategy_id=fills_marks.get("selected_strategy_id"),
+        selected_strategy_family=fills_marks.get("selected_strategy_family"),
+        selected_strategy_assets=fills_marks.get("selected_strategy_assets", []),
+        observation_count=observation_summary.get("observation_count", 0),
+        eligible_intent_count=intents.get("eligible_intent_count", 0),
+        fake_fill_count=fills_marks.get("fake_fill_count", 0),
+        completed_mark_count=fills_marks.get("completed_mark_count", 0),
+        fake_net_pnl=fills_marks.get("fake_net_pnl", 0.0),
+        public_forward_evidence_status=evidence.get("status"),
+        public_forward_evidence_proven=False,
+        evidence_blockers=evidence.get("blockers", []),
+        collection_blockers=observation_summary.get("collection_blockers", []),
+        data_sources=observation_summary.get("data_sources", []),
+        fake_money=True,
+        no_transmit=True,
+        no_credentials=True,
+        no_orders=True,
+        next_action="Continue append-only public-forward observation/fill/mark collection.",
+    )
+    return write_json_md(
+        payload,
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_public_forward_cycle.json",
+        md_name="latest_public_forward_cycle.md",
+        title="Variant Public Forward Collection Cycle",
+        lines=[
+            f"Status: {payload['status']}",
+            f"Selected strategy: {payload['selected_strategy_id']}",
+            f"Observations: {payload['observation_count']}",
+            f"Eligible intents: {payload['eligible_intent_count']}",
+            f"Fake fills: {payload['fake_fill_count']}",
+            f"Completed marks: {payload['completed_mark_count']}",
+            f"Public-forward evidence: {payload['public_forward_evidence_status']}",
+            "Append-only, fake-money, no-transmit public-data collection.",
+        ],
+    )
+
+
 def fetch_kraken_public_forward_snapshot(
     *,
     candidate: dict[str, Any] | None = None,
