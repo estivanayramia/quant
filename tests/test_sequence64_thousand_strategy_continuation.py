@@ -1016,6 +1016,86 @@ def test_sequence64_public_forward_batch_cycle_runs_bounded_append_only_cycles(
     assert batch["request_signing_enabled"] is False
 
 
+def test_sequence64_public_forward_candidate_archive_separates_rotated_candidates(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        append_variant_public_forward_observations,
+        write_variant_public_forward_candidate_archive,
+        write_variant_public_forward_collection_cycle,
+        write_variant_public_forward_live_sim_summary,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    first_candidate = tournament["current_best_candidate"]
+    append_variant_public_forward_observations(
+        output_root=local_project,
+        observations=[
+            {
+                "asset": "BTC/USD",
+                "bid": 100.0,
+                "ask": 100.1,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-19T15:00:00Z",
+            },
+            {
+                "asset": "BTC/USD",
+                "bid": 100.2,
+                "ask": 100.3,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-19T15:05:00Z",
+            },
+        ],
+    )
+    write_variant_public_forward_collection_cycle(
+        output_root=local_project,
+        public_network_ok=True,
+        public_snapshot={
+            "source": "kraken_public_rest_unauthenticated_forward",
+            "fetched_at": "2026-05-19T15:10:00Z",
+            "symbols": {
+                "BTC/USD": {"book": {"bid": 100.4, "ask": 100.5}},
+                "ETH/USD": {"book": {"bid": 50.0, "ask": 50.1}},
+            },
+        },
+    )
+    first_archive = write_variant_public_forward_candidate_archive(output_root=local_project)
+
+    second_candidate = {
+        "id": "tsv_rotated_candidate",
+        "family": "cross_asset_lead_lag",
+        "assets": ["SOL/USD"],
+    }
+    write_variant_public_forward_live_sim_summary(
+        output_root=local_project,
+        candidate=second_candidate,
+    )
+    second_archive = write_variant_public_forward_candidate_archive(output_root=local_project)
+
+    assert first_archive["status"] == "VARIANT_PUBLIC_FORWARD_CANDIDATE_ARCHIVE_READY"
+    assert second_archive["status"] == "VARIANT_PUBLIC_FORWARD_CANDIDATE_ARCHIVE_READY"
+    assert first_candidate["id"] in second_archive["candidate_evidence"]
+    assert "tsv_rotated_candidate" in second_archive["candidate_evidence"]
+    assert second_archive["candidate_evidence"][first_candidate["id"]]["observation_count"] == 4
+    assert second_archive["candidate_evidence"][first_candidate["id"]]["fake_fill_count"] == 2
+    assert second_archive["candidate_evidence"]["tsv_rotated_candidate"]["observation_count"] == 0
+    assert second_archive["candidate_evidence"]["tsv_rotated_candidate"]["fake_fill_count"] == 0
+    assert second_archive["candidate_evidence"][first_candidate["id"]]["selected_strategy_assets"] == [
+        "BTC/USD",
+        "ETH/USD",
+    ]
+    assert second_archive["candidate_evidence"]["tsv_rotated_candidate"][
+        "selected_strategy_assets"
+    ] == ["SOL/USD"]
+    assert second_archive["public_forward_evidence_proven"] is False
+    assert second_archive["order_transmission_enabled"] is False
+    assert second_archive["authenticated_requests_enabled"] is False
+    assert second_archive["request_signing_enabled"] is False
+
+
 def test_sequence64_readiness_uses_public_forward_evidence_report_for_provenance(
     local_project: Path,
 ) -> None:

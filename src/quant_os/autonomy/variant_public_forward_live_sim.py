@@ -430,6 +430,7 @@ def write_variant_public_forward_collection_cycle(
     )
 
     evidence = write_thousand_strategy_public_forward_evidence_report(output_root=output_root)
+    write_variant_public_forward_candidate_archive(output_root=output_root)
     payload = safe_payload(
         status="VARIANT_PUBLIC_FORWARD_COLLECTION_CYCLE_CHECKPOINTED",
         selected_strategy_id=fills_marks.get("selected_strategy_id"),
@@ -547,6 +548,70 @@ def write_variant_public_forward_batch_cycle(
             f"Completed marks: {payload['completed_mark_count']}",
             f"Public-forward evidence: {payload['public_forward_evidence_status']}",
             "Bounded, append-only, fake-money, no-transmit public-data collection.",
+        ],
+    )
+
+
+def write_variant_public_forward_candidate_archive(
+    *,
+    output_root: str | Path = ".",
+) -> dict[str, Any]:
+    previous_archive = load_report(
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_public_forward_candidate_archive.json",
+    )
+    live_summary = load_report(
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_live_sim_summary.json",
+    )
+    evidence = load_report(
+        output_root=output_root,
+        report_dir="public_forward_evidence",
+        json_name="latest_public_forward_evidence.json",
+    )
+    candidate_evidence = dict(previous_archive.get("candidate_evidence") or {})
+    candidate_id = str(live_summary.get("selected_strategy_id") or "")
+    if candidate_id:
+        candidate_evidence[candidate_id] = {
+            "selected_strategy_id": candidate_id,
+            "selected_strategy_family": live_summary.get("selected_strategy_family"),
+            "selected_strategy_assets": live_summary.get("selected_strategy_assets", []),
+            "observation_count": int(live_summary.get("observation_count") or 0),
+            "eligible_intent_count": int(live_summary.get("eligible_intent_count") or 0),
+            "fake_fill_count": int(live_summary.get("fake_fill_count") or 0),
+            "completed_mark_count": int(live_summary.get("completed_mark_count") or 0),
+            "fake_net_pnl": float(live_summary.get("fake_net_pnl") or 0.0),
+            "public_forward_evidence_status": evidence.get("status", "PUBLIC_FORWARD_EVIDENCE_BLOCKED"),
+            "public_forward_evidence_proven": False,
+            "evidence_blockers": evidence.get("blockers", []),
+            "data_sources": live_summary.get("data_sources", []),
+        }
+    payload = safe_payload(
+        status="VARIANT_PUBLIC_FORWARD_CANDIDATE_ARCHIVE_READY",
+        candidate_count=len(candidate_evidence),
+        selected_strategy_id=candidate_id or None,
+        candidate_evidence=candidate_evidence,
+        public_forward_evidence_proven=False,
+        fake_money=True,
+        no_transmit=True,
+        no_credentials=True,
+        no_orders=True,
+        next_action="Continue rotating candidates with candidate-scoped public-forward evidence.",
+    )
+    return write_json_md(
+        payload,
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_public_forward_candidate_archive.json",
+        md_name="latest_public_forward_candidate_archive.md",
+        title="Variant Public Forward Candidate Archive",
+        lines=[
+            f"Status: {payload['status']}",
+            f"Candidates archived: {payload['candidate_count']}",
+            f"Latest selected strategy: {payload['selected_strategy_id']}",
+            "Candidate-scoped, fake-money, no-transmit public-forward evidence.",
         ],
     )
 
