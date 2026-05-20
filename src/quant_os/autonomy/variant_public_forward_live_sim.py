@@ -616,6 +616,139 @@ def write_variant_public_forward_candidate_archive(
     )
 
 
+def write_variant_public_forward_proof_finalizer(
+    *,
+    output_root: str | Path = ".",
+) -> dict[str, Any]:
+    live_summary = load_report(
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_live_sim_summary.json",
+    )
+    fills_marks = load_report(
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_public_forward_fills_and_marks.json",
+    )
+    data_sources = [str(source) for source in live_summary.get("data_sources", [])]
+    observation_count = int(live_summary.get("observation_count") or 0)
+    eligible_intent_count = int(live_summary.get("eligible_intent_count") or 0)
+    fake_fill_count = int(live_summary.get("fake_fill_count") or 0)
+    completed_mark_count = int(live_summary.get("completed_mark_count") or 0)
+    fake_net_pnl = float(live_summary.get("fake_net_pnl") or 0.0)
+    blockers: list[str] = []
+    if not live_summary.get("selected_strategy_id"):
+        blockers.append("NO_SELECTED_CANDIDATE")
+    if not data_sources:
+        blockers.append("PUBLIC_FORWARD_DATA_SOURCE_MISSING")
+    if any("fixture" in source.lower() for source in data_sources):
+        blockers.append("FIXTURE_DATA_NOT_PUBLIC_FORWARD_EVIDENCE")
+    if any("pending" in source.lower() for source in data_sources):
+        blockers.append("PUBLIC_FORWARD_DATA_SOURCE_PENDING")
+    if observation_count < 1000:
+        blockers.append("PUBLIC_FORWARD_OBSERVATION_COUNT_TOO_LOW")
+    if eligible_intent_count < 300:
+        blockers.append("PUBLIC_FORWARD_INTENT_COUNT_TOO_LOW")
+    if fake_fill_count < 150:
+        blockers.append("PUBLIC_FORWARD_FAKE_FILL_COUNT_TOO_LOW")
+    if completed_mark_count < 150:
+        blockers.append("PUBLIC_FORWARD_COMPLETED_MARK_COUNT_TOO_LOW")
+    if fake_net_pnl <= 0:
+        blockers.append("PUBLIC_FORWARD_FAKE_NET_PNL_NOT_POSITIVE")
+    if fills_marks.get("lookahead_detected") is True:
+        blockers.append("PUBLIC_FORWARD_LOOKAHEAD_DETECTED")
+
+    ready = not blockers
+    if ready:
+        ready_summary = dict(live_summary)
+        ready_summary.update(
+            status="VARIANT_LIVE_SIM_SUMMARY_READY",
+            evidence_source="public_forward_live_sim",
+            public_forward_evidence_proven=True,
+        )
+        write_json_md(
+            ready_summary,
+            output_root=output_root,
+            report_dir="live_sim",
+            json_name="latest_live_sim_summary.json",
+            md_name="latest_live_sim_summary.md",
+            title="Variant Public Forward Live Sim Summary",
+            lines=[
+                "Status: VARIANT_LIVE_SIM_SUMMARY_READY",
+                f"Selected strategy: {ready_summary.get('selected_strategy_id')}",
+                f"Observations: {ready_summary.get('observation_count')}",
+                f"Eligible intents: {ready_summary.get('eligible_intent_count')}",
+                f"Fake fills: {ready_summary.get('fake_fill_count')}",
+                f"Completed marks: {ready_summary.get('completed_mark_count')}",
+                f"Fake net PnL: {ready_summary.get('fake_net_pnl')}",
+                "Public-forward evidence source is proven without live orders, auth, credentials, or signing.",
+            ],
+        )
+        reconciliation = safe_payload(
+            status="VARIANT_LIVE_SIM_RECONCILIATION_PASSED",
+            selected_strategy_id=ready_summary.get("selected_strategy_id"),
+            observation_count=observation_count,
+            eligible_intent_count=eligible_intent_count,
+            fake_fill_count=fake_fill_count,
+            completed_mark_count=completed_mark_count,
+            fake_net_pnl=round(fake_net_pnl, 8),
+            public_forward_evidence_proven=True,
+            no_credentials=True,
+            no_orders=True,
+        )
+        write_json_md(
+            reconciliation,
+            output_root=output_root,
+            report_dir="live_sim",
+            json_name="latest_reconciliation.json",
+            md_name="latest_reconciliation.md",
+            title="Variant Public Forward Reconciliation",
+            lines=[
+                f"Status: {reconciliation['status']}",
+                f"Selected strategy: {reconciliation['selected_strategy_id']}",
+                "No live orders, auth, credentials, or signing.",
+            ],
+        )
+
+    payload = safe_payload(
+        status="VARIANT_PUBLIC_FORWARD_PROOF_READY" if ready else "VARIANT_PUBLIC_FORWARD_PROOF_BLOCKED",
+        blockers=blockers,
+        selected_strategy_id=live_summary.get("selected_strategy_id"),
+        observation_count=observation_count,
+        eligible_intent_count=eligible_intent_count,
+        fake_fill_count=fake_fill_count,
+        completed_mark_count=completed_mark_count,
+        fake_net_pnl=round(fake_net_pnl, 8),
+        data_sources=data_sources,
+        public_forward_evidence_proven=ready,
+        evidence_source="public_forward_live_sim" if ready else "public_forward_live_sim_pending",
+        fake_money=True,
+        no_transmit=True,
+        no_credentials=True,
+        no_orders=True,
+        next_action=(
+            "Run public-forward evidence, overfit, repeatability, capacity, and readiness gates."
+            if ready
+            else "Continue public-forward accumulation until strict proof thresholds are met."
+        ),
+    )
+    write_variant_public_forward_candidate_archive(output_root=output_root)
+    return write_json_md(
+        payload,
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_public_forward_proof_finalizer.json",
+        md_name="latest_public_forward_proof_finalizer.md",
+        title="Variant Public Forward Proof Finalizer",
+        lines=[
+            f"Status: {payload['status']}",
+            f"Selected strategy: {payload['selected_strategy_id']}",
+            f"Blockers: {', '.join(blockers) if blockers else 'None'}",
+            f"Fake net PnL: {payload['fake_net_pnl']}",
+        ],
+    )
+
+
 def fetch_kraken_public_forward_snapshot(
     *,
     candidate: dict[str, Any] | None = None,

@@ -256,6 +256,13 @@ def test_sequence63_cli_make_targets_are_fixture_safe(local_project: Path) -> No
             "autonomy",
             "variant-public-forward-candidate-archive",
         ],
+        [
+            sys.executable,
+            "-m",
+            "quant_os.cli",
+            "autonomy",
+            "variant-public-forward-proof-finalizer",
+        ],
         [sys.executable, "-m", "quant_os.cli", "proving", "thousand-strategy-overfit-guard"],
         [sys.executable, "-m", "quant_os.cli", "proving", "thousand-strategy-public-forward-evidence"],
         [sys.executable, "-m", "quant_os.cli", "risk", "strategy-conflict-detector"],

@@ -1096,6 +1096,132 @@ def test_sequence64_public_forward_candidate_archive_separates_rotated_candidate
     assert second_archive["request_signing_enabled"] is False
 
 
+def test_sequence64_public_forward_proof_finalizer_blocks_until_strict_thresholds(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        append_variant_public_forward_observations,
+        write_variant_public_forward_proof_finalizer,
+    )
+    from quant_os.proving.thousand_strategy_public_forward_evidence import (
+        write_thousand_strategy_public_forward_evidence_report,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    append_variant_public_forward_observations(
+        output_root=local_project,
+        observations=[
+            {
+                "asset": "BTC/USD",
+                "bid": 100.0,
+                "ask": 100.1,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-19T16:00:00Z",
+            }
+        ],
+    )
+
+    finalizer = write_variant_public_forward_proof_finalizer(output_root=local_project)
+    evidence = write_thousand_strategy_public_forward_evidence_report(output_root=local_project)
+    summary = json.loads(
+        (
+            local_project
+            / "reports/thousand_strategy_campaign/live_sim/latest_live_sim_summary.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert finalizer["status"] == "VARIANT_PUBLIC_FORWARD_PROOF_BLOCKED"
+    assert "PUBLIC_FORWARD_OBSERVATION_COUNT_TOO_LOW" in finalizer["blockers"]
+    assert "PUBLIC_FORWARD_FAKE_NET_PNL_NOT_POSITIVE" in finalizer["blockers"]
+    assert summary["status"] == "VARIANT_PUBLIC_FORWARD_LIVE_SIM_PENDING"
+    assert summary["public_forward_evidence_proven"] is False
+    assert summary["evidence_source"] == "public_forward_live_sim_pending"
+    assert evidence["status"] == "PUBLIC_FORWARD_EVIDENCE_BLOCKED"
+    assert finalizer["order_transmission_enabled"] is False
+    assert finalizer["authenticated_requests_enabled"] is False
+    assert finalizer["request_signing_enabled"] is False
+
+
+def test_sequence64_public_forward_proof_finalizer_can_make_strict_ready_summary(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_proof_finalizer,
+    )
+    from quant_os.proving.thousand_strategy_public_forward_evidence import (
+        write_thousand_strategy_public_forward_evidence_report,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    candidate = tournament["current_best_candidate"]
+    live_sim_dir = local_project / "reports/thousand_strategy_campaign/live_sim"
+    live_sim_dir.mkdir(parents=True, exist_ok=True)
+    summary = {
+        "status": "VARIANT_PUBLIC_FORWARD_LIVE_SIM_PENDING",
+        "selected_strategy_id": candidate["id"],
+        "selected_strategy_family": candidate["family"],
+        "selected_strategy_assets": candidate["assets"],
+        "observation_count": 1200,
+        "eligible_intent_count": 400,
+        "fake_fill_count": 250,
+        "completed_mark_count": 220,
+        "fake_net_pnl": 12.5,
+        "data_sources": ["kraken_public_rest_unauthenticated_forward"],
+        "evidence_source": "public_forward_live_sim_pending",
+        "public_forward_evidence_proven": False,
+        "public_forward_observations": [],
+        "live_trading_enabled": False,
+        "execution_authority": "NONE",
+        "order_transmission_enabled": False,
+        "authenticated_requests_enabled": False,
+        "request_signing_enabled": False,
+        "api_keys_loaded": False,
+        "private_keys_loaded": False,
+        "actual_order_count": 0,
+        "actual_cancel_count": 0,
+    }
+    (live_sim_dir / "latest_live_sim_summary.json").write_text(
+        json.dumps(summary, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    (live_sim_dir / "latest_public_forward_fills_and_marks.json").write_text(
+        json.dumps(
+            {
+                "status": "VARIANT_PUBLIC_FORWARD_FILLS_AND_MARKS_READY",
+                "lookahead_detected": False,
+                "fake_fill_count": 250,
+                "completed_mark_count": 220,
+            },
+            indent=2,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+
+    finalizer = write_variant_public_forward_proof_finalizer(output_root=local_project)
+    evidence = write_thousand_strategy_public_forward_evidence_report(output_root=local_project)
+    ready_summary = json.loads((live_sim_dir / "latest_live_sim_summary.json").read_text())
+    reconciliation = json.loads((live_sim_dir / "latest_reconciliation.json").read_text())
+
+    assert finalizer["status"] == "VARIANT_PUBLIC_FORWARD_PROOF_READY"
+    assert finalizer["blockers"] == []
+    assert ready_summary["status"] == "VARIANT_LIVE_SIM_SUMMARY_READY"
+    assert ready_summary["evidence_source"] == "public_forward_live_sim"
+    assert ready_summary["public_forward_evidence_proven"] is True
+    assert reconciliation["status"] == "VARIANT_LIVE_SIM_RECONCILIATION_PASSED"
+    assert evidence["status"] == "PUBLIC_FORWARD_EVIDENCE_PASSED"
+    assert evidence["candidate_evidence"]["public_forward_evidence_proven"] is True
+    assert finalizer["order_transmission_enabled"] is False
+    assert finalizer["actual_order_count"] == 0
+    assert finalizer["actual_cancel_count"] == 0
+
+
 def test_sequence64_readiness_uses_public_forward_evidence_report_for_provenance(
     local_project: Path,
 ) -> None:

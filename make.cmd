@@ -1709,6 +1709,8 @@ if "%TARGET%"=="thousand-strategy-campaign-smoke" (
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomy variant-public-forward-candidate-archive
   if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-proof-finalizer
+  if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli proving thousand-strategy-public-forward-evidence
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli proving thousand-strategy-overfit-guard
@@ -1750,6 +1752,8 @@ if "%TARGET%"=="thousand-strategy-next-tranche" (
   python -m quant_os.cli autonomy variant-public-forward-batch-cycle
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomy variant-public-forward-candidate-archive
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-proof-finalizer
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli proving thousand-strategy-public-forward-evidence
   if errorlevel 1 exit /b !ERRORLEVEL!
@@ -1794,6 +1798,8 @@ if "%TARGET%"=="sequence64-smoke" (
   python -m quant_os.cli autonomy variant-public-forward-batch-cycle
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomy variant-public-forward-candidate-archive
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-proof-finalizer
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli proving thousand-strategy-public-forward-evidence
   if errorlevel 1 exit /b !ERRORLEVEL!
