@@ -927,6 +927,95 @@ def test_sequence64_public_forward_collection_cycle_preserves_and_extends_observ
     assert cycle["request_signing_enabled"] is False
 
 
+def test_sequence64_public_forward_batch_cycle_runs_bounded_append_only_cycles(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        append_variant_public_forward_observations,
+        write_variant_public_forward_batch_cycle,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    candidate = tournament["current_best_candidate"]
+    append_variant_public_forward_observations(
+        output_root=local_project,
+        observations=[
+            {
+                "asset": "BTC/USD",
+                "bid": 100.0,
+                "ask": 100.1,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-19T14:00:00Z",
+            },
+            {
+                "asset": "ETH/USD",
+                "bid": 50.0,
+                "ask": 50.1,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-19T14:00:00Z",
+            },
+        ],
+    )
+
+    batch = write_variant_public_forward_batch_cycle(
+        output_root=local_project,
+        public_network_ok=True,
+        public_snapshots=[
+            {
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "fetched_at": "2026-05-19T14:05:00Z",
+                "symbols": {
+                    "BTC/USD": {"book": {"bid": 100.2, "ask": 100.3}},
+                    "ETH/USD": {"book": {"bid": 49.8, "ask": 49.9}},
+                    "SOL/USD": {"book": {"bid": 20.0, "ask": 20.1}},
+                },
+            },
+            {
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "fetched_at": "2026-05-19T14:10:00Z",
+                "symbols": {
+                    "BTC/USD": {"book": {"bid": 100.4, "ask": 100.5}},
+                    "ETH/USD": {"book": {"bid": 49.6, "ask": 49.7}},
+                    "SOL/USD": {"book": {"bid": 20.2, "ask": 20.3}},
+                },
+            },
+        ],
+        cycle_count=2,
+        sleep_seconds=0,
+    )
+    summary = json.loads(
+        (
+            local_project
+            / "reports/thousand_strategy_campaign/live_sim/latest_live_sim_summary.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert batch["status"] == "VARIANT_PUBLIC_FORWARD_BATCH_CYCLE_CHECKPOINTED"
+    assert batch["selected_strategy_id"] == candidate["id"]
+    assert batch["cycle_count_requested"] == 2
+    assert batch["cycle_count_completed"] == 2
+    assert [row["observation_count"] for row in batch["cycle_summaries"]] == [4, 6]
+    assert batch["observation_count"] == 6
+    assert batch["eligible_intent_count"] == 6
+    assert batch["fake_fill_count"] == 4
+    assert batch["completed_mark_count"] == 4
+    assert batch["public_forward_evidence_status"] == "PUBLIC_FORWARD_EVIDENCE_BLOCKED"
+    assert batch["public_forward_evidence_proven"] is False
+    assert summary["observation_count"] == 6
+    assert summary["fake_fill_count"] == 4
+    assert summary["completed_mark_count"] == 4
+    assert {row["asset"] for row in summary["public_forward_observations"]} == {
+        "BTC/USD",
+        "ETH/USD",
+    }
+    assert batch["order_transmission_enabled"] is False
+    assert batch["authenticated_requests_enabled"] is False
+    assert batch["request_signing_enabled"] is False
+
+
 def test_sequence64_readiness_uses_public_forward_evidence_report_for_provenance(
     local_project: Path,
 ) -> None:

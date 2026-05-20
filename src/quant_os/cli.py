@@ -6847,6 +6847,43 @@ def autonomy_variant_public_forward_cycle(
     )
 
 
+@autonomy_app.command("variant-public-forward-batch-cycle")
+def autonomy_variant_public_forward_batch_cycle(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+    cycle_count: int = typer.Option(1, "--cycle-count", min=1, max=50),
+    sleep_seconds: float = typer.Option(0.0, "--sleep-seconds", min=0.0, max=60.0),
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_batch_cycle,
+    )
+
+    payload = write_variant_public_forward_batch_cycle(
+        output_root=Path("."),
+        public_network_ok=public_network_ok,
+        cycle_count=cycle_count,
+        sleep_seconds=sleep_seconds,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "selected_strategy_id": payload["selected_strategy_id"],
+            "cycle_count_completed": payload["cycle_count_completed"],
+            "observation_count": payload["observation_count"],
+            "eligible_intent_count": payload["eligible_intent_count"],
+            "fake_fill_count": payload["fake_fill_count"],
+            "completed_mark_count": payload["completed_mark_count"],
+            "fake_net_pnl": payload["fake_net_pnl"],
+            "public_forward_evidence_status": payload["public_forward_evidence_status"],
+            "report": (
+                "reports/thousand_strategy_campaign/live_sim/"
+                "latest_public_forward_batch_cycle.json"
+            ),
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @proving_app.command("thousand-strategy-overfit-guard")
 def proving_thousand_strategy_overfit_guard() -> None:
     from quant_os.proving.thousand_strategy_overfit_guard import (

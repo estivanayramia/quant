@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import time
 import urllib.parse
 import urllib.request
 from collections.abc import Iterable
@@ -466,6 +467,86 @@ def write_variant_public_forward_collection_cycle(
             f"Completed marks: {payload['completed_mark_count']}",
             f"Public-forward evidence: {payload['public_forward_evidence_status']}",
             "Append-only, fake-money, no-transmit public-data collection.",
+        ],
+    )
+
+
+def write_variant_public_forward_batch_cycle(
+    *,
+    output_root: str | Path = ".",
+    cycle_count: int = 1,
+    sleep_seconds: float = 0.0,
+    public_network_ok: bool = False,
+    public_snapshots: Iterable[dict[str, Any]] | None = None,
+    candidate: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    bounded_cycle_count = max(1, min(int(cycle_count), 50))
+    snapshots = list(public_snapshots or [])
+    cycle_summaries: list[dict[str, Any]] = []
+    latest: dict[str, Any] = {}
+    for index in range(bounded_cycle_count):
+        snapshot = snapshots[index] if index < len(snapshots) else None
+        latest = write_variant_public_forward_collection_cycle(
+            output_root=output_root,
+            public_network_ok=public_network_ok,
+            public_snapshot=snapshot,
+            candidate=candidate,
+        )
+        cycle_summaries.append(
+            {
+                "cycle_index": index + 1,
+                "selected_strategy_id": latest.get("selected_strategy_id"),
+                "observation_count": latest.get("observation_count", 0),
+                "eligible_intent_count": latest.get("eligible_intent_count", 0),
+                "fake_fill_count": latest.get("fake_fill_count", 0),
+                "completed_mark_count": latest.get("completed_mark_count", 0),
+                "fake_net_pnl": latest.get("fake_net_pnl", 0.0),
+                "public_forward_evidence_status": latest.get("public_forward_evidence_status"),
+            }
+        )
+        if sleep_seconds > 0 and index < bounded_cycle_count - 1:
+            time.sleep(min(float(sleep_seconds), 60.0))
+    payload = safe_payload(
+        status="VARIANT_PUBLIC_FORWARD_BATCH_CYCLE_CHECKPOINTED",
+        selected_strategy_id=latest.get("selected_strategy_id"),
+        selected_strategy_family=latest.get("selected_strategy_family"),
+        selected_strategy_assets=latest.get("selected_strategy_assets", []),
+        cycle_count_requested=cycle_count,
+        cycle_count_completed=len(cycle_summaries),
+        sleep_seconds=min(max(float(sleep_seconds), 0.0), 60.0),
+        observation_count=latest.get("observation_count", 0),
+        eligible_intent_count=latest.get("eligible_intent_count", 0),
+        fake_fill_count=latest.get("fake_fill_count", 0),
+        completed_mark_count=latest.get("completed_mark_count", 0),
+        fake_net_pnl=latest.get("fake_net_pnl", 0.0),
+        public_forward_evidence_status=latest.get("public_forward_evidence_status"),
+        public_forward_evidence_proven=False,
+        evidence_blockers=latest.get("evidence_blockers", []),
+        collection_blockers=latest.get("collection_blockers", []),
+        cycle_summaries=cycle_summaries,
+        fake_money=True,
+        no_transmit=True,
+        no_credentials=True,
+        no_orders=True,
+        next_action="Continue bounded append-only public-forward batch cycles until evidence thresholds are met.",
+    )
+    return write_json_md(
+        payload,
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_public_forward_batch_cycle.json",
+        md_name="latest_public_forward_batch_cycle.md",
+        title="Variant Public Forward Batch Cycle",
+        lines=[
+            f"Status: {payload['status']}",
+            f"Selected strategy: {payload['selected_strategy_id']}",
+            f"Cycles completed: {payload['cycle_count_completed']}",
+            f"Observations: {payload['observation_count']}",
+            f"Eligible intents: {payload['eligible_intent_count']}",
+            f"Fake fills: {payload['fake_fill_count']}",
+            f"Completed marks: {payload['completed_mark_count']}",
+            f"Public-forward evidence: {payload['public_forward_evidence_status']}",
+            "Bounded, append-only, fake-money, no-transmit public-data collection.",
         ],
     )
 
