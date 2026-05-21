@@ -32,6 +32,12 @@
     "stealth_scraping_or_anti_bot_collection",
     "unreviewed_public_bot_clone_strategy"
   ],
+  "live_public_market_priority_order": [
+    "crypto_public_forward_spot",
+    "prediction_market_read_only_clob",
+    "event_driven_replay_architecture",
+    "weather_issue_time_calibration"
+  ],
   "live_trading_enabled": false,
   "next_resume_command": ".\\make.cmd thousand-strategy-next-tranche",
   "order_transmission_enabled": false,
@@ -104,6 +110,128 @@
       ]
     }
   },
+  "priority_repo_leads": [
+    {
+      "adoption_decision": "REFERENCE_PUBLIC_DATA_ONLY",
+      "allows_live_orders": false,
+      "id": "spl_509a2a7f8d13",
+      "market_lane": "crypto_public_forward_spot",
+      "repo": "binance/binance-public-data",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "use_for": "public historical candles/trades benchmark and provenance checks",
+      "validation_blocker": "BINANCE_PUBLIC_DATA_FIXTURE_NOT_REPLAYED"
+    },
+    {
+      "adoption_decision": "REFERENCE_PUBLIC_DATA_ONLY",
+      "allows_live_orders": false,
+      "id": "spl_428808ea55d6",
+      "market_lane": "crypto_public_forward_spot",
+      "repo": "ccxt/ccxt",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "use_for": "exchange-symbol normalization and public market-data interface patterns",
+      "validation_blocker": "DEPENDENCY_REVIEW_NOT_COMPLETED"
+    },
+    {
+      "adoption_decision": "REFERENCE_DRY_RUN_ONLY",
+      "allows_live_orders": false,
+      "id": "spl_25d830673c22",
+      "market_lane": "crypto_public_forward_spot",
+      "repo": "freqtrade/freq",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "use_for": "dry-run validation discipline and crypto strategy report patterns",
+      "validation_blocker": "FREQTRADE_DRY_RUN_ONLY_VALIDATION_REQUIRED"
+    },
+    {
+      "adoption_decision": "REFERENCE_READ_ONLY_FIRST",
+      "allows_live_orders": false,
+      "id": "spl_a789e97765de",
+      "market_lane": "prediction_market_read_only_clob",
+      "repo": "Polymarket/py-clob-client-v2",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "use_for": "current CLOB field names and read-only market discovery design",
+      "validation_blocker": "AUTH_AND_ORDER_EXAMPLES_MUST_STAY_UNWIRED"
+    },
+    {
+      "adoption_decision": "REFERENCE_PUBLIC_DATA_ONLY",
+      "allows_live_orders": false,
+      "id": "spl_703a50a1d2fd",
+      "market_lane": "prediction_market_read_only_clob",
+      "repo": "warproxxx/poly_data",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "use_for": "Polymarket historical market, trade, and order-filled event schema",
+      "validation_blocker": "PUBLIC_PREDICTION_MARKET_DATA_LANE_NOT_BUILT"
+    },
+    {
+      "adoption_decision": "REFERENCE_REPLAY_ARCHITECTURE_ONLY",
+      "allows_live_orders": false,
+      "id": "spl_fed4d57ee96b",
+      "market_lane": "prediction_market_read_only_clob",
+      "repo": "evan-kolberg/prediction-market-backtesting",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "use_for": "event-driven prediction-market replay and fill realism patterns",
+      "validation_blocker": "REPLAY_REALISM_STRESS_NOT_APPLIED"
+    },
+    {
+      "adoption_decision": "REFERENCE_ARCHITECTURE_ONLY",
+      "allows_live_orders": false,
+      "id": "spl_fe4dafb1c174",
+      "market_lane": "event_driven_replay_architecture",
+      "repo": "nautechsystems/nautilus_trader",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "use_for": "deterministic event-driven replay architecture benchmark",
+      "validation_blocker": "EVENT_DRIVEN_REPLAY_NOT_IMPLEMENTED"
+    },
+    {
+      "adoption_decision": "REFERENCE_BENCHMARK_ONLY",
+      "allows_live_orders": false,
+      "id": "spl_468e274da1a2",
+      "market_lane": "prediction_market_read_only_clob",
+      "repo": "PolyBench/PolyBench",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "use_for": "timestamp-locked benchmark framing for CLOB/news evaluation",
+      "validation_blocker": "TIMESTAMP_LOCKED_BENCHMARK_NOT_BUILT"
+    },
+    {
+      "adoption_decision": "DEFER_UNTIL_OUTCOME_ALIGNMENT",
+      "allows_live_orders": false,
+      "id": "spl_23bb2ba4b2e0",
+      "market_lane": "weather_issue_time_calibration",
+      "repo": "yangyuan-zhen/PolyWeather",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/repo_cards/yangyuan-zhen__PolyWeather.md",
+      "use_for": "weather market hypothesis origin and forecast/outcome schema ideas",
+      "validation_blocker": "WEATHER_OUTCOME_DATA_PATH_NOT_READY"
+    },
+    {
+      "adoption_decision": "ARCHIVE_FAILURE_MODES_ONLY",
+      "allows_live_orders": false,
+      "id": "spl_32d584974003",
+      "market_lane": "prediction_market_cross_platform_structure",
+      "repo": "TopTrenDev/polymarket-kalshi-arbitrage-bot",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/repo_cards/TopTrenDev__polymarket-kalshi-arbitrage-bot.md",
+      "use_for": "cross-platform relation hypotheses and settlement-rule failure modes only",
+      "validation_blocker": "COPY_OR_LIVE_BOT_LOGIC_REJECTED"
+    }
+  ],
   "private_keys_loaded": false,
   "proof_status_changed": false,
   "report_paths": {

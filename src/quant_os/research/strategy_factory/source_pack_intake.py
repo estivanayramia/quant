@@ -34,6 +34,7 @@ def build_source_pack_intake(
     combined_text = "\n".join(primary_docs.values())
 
     ideas = _build_ideas(combined_text)
+    priority_repo_leads = _build_priority_repo_leads(combined_text)
     state = load_report(
         output_root=output_root,
         report_dir="state",
@@ -58,6 +59,7 @@ def build_source_pack_intake(
         deferred_idea_count=sum(1 for idea in ideas if idea["decision"] == "DEFER"),
         rejected_idea_count=sum(1 for idea in ideas if idea["decision"] == "REJECT"),
         ideas=ideas,
+        priority_repo_leads=priority_repo_leads,
         safety_notes=[
             "source packs are hypothesis and repo-research input only",
             "PnL screenshots, stars, popularity, claims, and engagement are never proof",
@@ -104,6 +106,11 @@ def write_source_pack_intake_report(
             f"- {idea['decision']}: {idea['strategy_family']} "
             f"({idea['reason_code']}) -> {idea['minimum_viable_test']}"
         )
+    lines.append("Priority repo leads:")
+    lines.extend(
+        f"- {lead['adoption_decision']}: {lead['repo']} -> {lead['market_lane']}"
+        for lead in payload["priority_repo_leads"][:12]
+    )
     return write_json_md(
         payload,
         output_root=output_root,
@@ -391,3 +398,110 @@ def _build_ideas(text: str) -> list[dict[str, Any]]:
             }
         )
     return ideas
+
+
+def _build_priority_repo_leads(text: str) -> list[dict[str, Any]]:
+    lower = text.lower()
+    specs = [
+        {
+            "repo": "binance/binance-public-data",
+            "tokens": ["binance/binance-public-data", "binance-public-data"],
+            "market_lane": "crypto_public_forward_spot",
+            "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+            "adoption_decision": "REFERENCE_PUBLIC_DATA_ONLY",
+            "use_for": "public historical candles/trades benchmark and provenance checks",
+            "validation_blocker": "BINANCE_PUBLIC_DATA_FIXTURE_NOT_REPLAYED",
+        },
+        {
+            "repo": "ccxt/ccxt",
+            "tokens": ["ccxt/ccxt"],
+            "market_lane": "crypto_public_forward_spot",
+            "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+            "adoption_decision": "REFERENCE_PUBLIC_DATA_ONLY",
+            "use_for": "exchange-symbol normalization and public market-data interface patterns",
+            "validation_blocker": "DEPENDENCY_REVIEW_NOT_COMPLETED",
+        },
+        {
+            "repo": "freqtrade/freq",
+            "tokens": ["freqtrade/freq"],
+            "market_lane": "crypto_public_forward_spot",
+            "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+            "adoption_decision": "REFERENCE_DRY_RUN_ONLY",
+            "use_for": "dry-run validation discipline and crypto strategy report patterns",
+            "validation_blocker": "FREQTRADE_DRY_RUN_ONLY_VALIDATION_REQUIRED",
+        },
+        {
+            "repo": "Polymarket/py-clob-client-v2",
+            "tokens": ["polymarket/py-clob-client-v2", "py-clob-client-v2"],
+            "market_lane": "prediction_market_read_only_clob",
+            "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+            "adoption_decision": "REFERENCE_READ_ONLY_FIRST",
+            "use_for": "current CLOB field names and read-only market discovery design",
+            "validation_blocker": "AUTH_AND_ORDER_EXAMPLES_MUST_STAY_UNWIRED",
+        },
+        {
+            "repo": "warproxxx/poly_data",
+            "tokens": ["warproxxx/poly_data", "poly_data"],
+            "market_lane": "prediction_market_read_only_clob",
+            "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+            "adoption_decision": "REFERENCE_PUBLIC_DATA_ONLY",
+            "use_for": "Polymarket historical market, trade, and order-filled event schema",
+            "validation_blocker": "PUBLIC_PREDICTION_MARKET_DATA_LANE_NOT_BUILT",
+        },
+        {
+            "repo": "evan-kolberg/prediction-market-backtesting",
+            "tokens": ["evan-kolberg/prediction-market-backtesting", "prediction-market-backtesting"],
+            "market_lane": "prediction_market_read_only_clob",
+            "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+            "adoption_decision": "REFERENCE_REPLAY_ARCHITECTURE_ONLY",
+            "use_for": "event-driven prediction-market replay and fill realism patterns",
+            "validation_blocker": "REPLAY_REALISM_STRESS_NOT_APPLIED",
+        },
+        {
+            "repo": "nautechsystems/nautilus_trader",
+            "tokens": ["nautechsystems/nautilus_trader", "nautilus_trader"],
+            "market_lane": "event_driven_replay_architecture",
+            "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+            "adoption_decision": "REFERENCE_ARCHITECTURE_ONLY",
+            "use_for": "deterministic event-driven replay architecture benchmark",
+            "validation_blocker": "EVENT_DRIVEN_REPLAY_NOT_IMPLEMENTED",
+        },
+        {
+            "repo": "PolyBench/PolyBench",
+            "tokens": ["polybench/polybench"],
+            "market_lane": "prediction_market_read_only_clob",
+            "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+            "adoption_decision": "REFERENCE_BENCHMARK_ONLY",
+            "use_for": "timestamp-locked benchmark framing for CLOB/news evaluation",
+            "validation_blocker": "TIMESTAMP_LOCKED_BENCHMARK_NOT_BUILT",
+        },
+        {
+            "repo": "yangyuan-zhen/PolyWeather",
+            "tokens": ["yangyuan-zhen/polyweather", "polyweather"],
+            "market_lane": "weather_issue_time_calibration",
+            "source_pack_file_or_card": "github_repo_research/repo_cards/yangyuan-zhen__PolyWeather.md",
+            "adoption_decision": "DEFER_UNTIL_OUTCOME_ALIGNMENT",
+            "use_for": "weather market hypothesis origin and forecast/outcome schema ideas",
+            "validation_blocker": "WEATHER_OUTCOME_DATA_PATH_NOT_READY",
+        },
+        {
+            "repo": "TopTrenDev/polymarket-kalshi-arbitrage-bot",
+            "tokens": ["toptrendev/polymarket-kalshi-arbitrage-bot"],
+            "market_lane": "prediction_market_cross_platform_structure",
+            "source_pack_file_or_card": "github_repo_research/repo_cards/TopTrenDev__polymarket-kalshi-arbitrage-bot.md",
+            "adoption_decision": "ARCHIVE_FAILURE_MODES_ONLY",
+            "use_for": "cross-platform relation hypotheses and settlement-rule failure modes only",
+            "validation_blocker": "COPY_OR_LIVE_BOT_LOGIC_REJECTED",
+        },
+    ]
+    leads = []
+    for spec in specs:
+        tokens = spec.pop("tokens")
+        if any(token in lower for token in tokens):
+            lead = dict(spec)
+            lead["id"] = stable_id("spl", lead, length=12)
+            lead["social_or_repo_claim_is_proof"] = False
+            lead["requires_auth"] = False
+            lead["allows_live_orders"] = False
+            leads.append(lead)
+    return leads

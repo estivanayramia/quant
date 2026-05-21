@@ -18,3 +18,14 @@ Money-worthy readiness remains: MONEY_WORTHY_BLOCKED_BY_OVERFIT
 - DEFER: weather_forecast_market_calibration (NEEDS_PUBLIC_OUTCOME_ALIGNMENT) -> single-city fixture with issue-time forecast alignment and resolved outcome labels
 - REJECT: copy_trading_wallet_mirroring (UNSAFE_COPY_TRADING_REJECTED) -> none; unsafe execution logic rejected
 - REJECT: stealth_scraping_or_anti_bot_collection (STEALTH_TOOLING_REJECTED) -> none; stealth collection rejected
+Priority repo leads:
+- REFERENCE_PUBLIC_DATA_ONLY: binance/binance-public-data -> crypto_public_forward_spot
+- REFERENCE_PUBLIC_DATA_ONLY: ccxt/ccxt -> crypto_public_forward_spot
+- REFERENCE_DRY_RUN_ONLY: freqtrade/freq -> crypto_public_forward_spot
+- REFERENCE_READ_ONLY_FIRST: Polymarket/py-clob-client-v2 -> prediction_market_read_only_clob
+- REFERENCE_PUBLIC_DATA_ONLY: warproxxx/poly_data -> prediction_market_read_only_clob
+- REFERENCE_REPLAY_ARCHITECTURE_ONLY: evan-kolberg/prediction-market-backtesting -> prediction_market_read_only_clob
+- REFERENCE_ARCHITECTURE_ONLY: nautechsystems/nautilus_trader -> event_driven_replay_architecture
+- REFERENCE_BENCHMARK_ONLY: PolyBench/PolyBench -> prediction_market_read_only_clob
+- DEFER_UNTIL_OUTCOME_ALIGNMENT: yangyuan-zhen/PolyWeather -> weather_issue_time_calibration
+- ARCHIVE_FAILURE_MODES_ONLY: TopTrenDev/polymarket-kalshi-arbitrage-bot -> prediction_market_cross_platform_structure

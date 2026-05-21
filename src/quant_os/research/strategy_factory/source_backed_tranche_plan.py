@@ -57,6 +57,13 @@ def build_source_backed_tranche_plan(
         schema_version="source_backed_tranche_plan_v1",
         proof_status_changed=False,
         target_next_variants=360,
+        live_public_market_priority_order=[
+            "crypto_public_forward_spot",
+            "prediction_market_read_only_clob",
+            "event_driven_replay_architecture",
+            "weather_issue_time_calibration",
+        ],
+        priority_repo_leads=list(intake.get("priority_repo_leads") or []),
         families_added=families_added,
         families_deferred=families_deferred,
         families_removed_or_deprioritized=families_removed,

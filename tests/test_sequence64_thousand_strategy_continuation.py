@@ -2141,6 +2141,21 @@ def test_sequence64_source_pack_intake_extracts_useful_repo_knowledge_without_pr
     assert any(idea["strategy_family"] == "prediction_market_read_only_clob_replay" for idea in payload["ideas"])
     assert any(idea["strategy_family"] == "replay_realism_veto_layer" for idea in payload["ideas"])
     assert any(idea["decision"] == "REJECT" for idea in payload["ideas"])
+    assert any(
+        lead["repo"] == "Polymarket/py-clob-client-v2"
+        and lead["adoption_decision"] == "REFERENCE_READ_ONLY_FIRST"
+        for lead in payload["priority_repo_leads"]
+    )
+    assert any(
+        lead["repo"] == "warproxxx/poly_data"
+        and lead["market_lane"] == "prediction_market_read_only_clob"
+        for lead in payload["priority_repo_leads"]
+    )
+    assert any(
+        lead["repo"] == "TopTrenDev/polymarket-kalshi-arbitrage-bot"
+        and lead["adoption_decision"] == "ARCHIVE_FAILURE_MODES_ONLY"
+        for lead in payload["priority_repo_leads"]
+    )
     assert all(idea["accept_reject_defer_decision"] in {"ACCEPT", "REJECT", "DEFER"} for idea in payload["ideas"])
     assert payload["live_trading_enabled"] is False
     assert payload["request_signing_enabled"] is False
@@ -2181,6 +2196,20 @@ def test_sequence64_source_backed_tranche_plan_narrows_future_generation(
     assert "copy_trading_wallet_mirroring" in plan["families_removed_or_deprioritized"]
     assert "coinflip_open_hour_bias" in plan["families_removed_or_deprioritized"]
     assert plan["parameter_range_changes"]["spread_cap_bps"]["after"] == [5.0, 10.0]
+    assert plan["live_public_market_priority_order"][:2] == [
+        "crypto_public_forward_spot",
+        "prediction_market_read_only_clob",
+    ]
+    assert any(
+        lead["repo"] == "binance/binance-public-data"
+        and lead["market_lane"] == "crypto_public_forward_spot"
+        for lead in plan["priority_repo_leads"]
+    )
+    assert any(
+        lead["repo"] == "Polymarket/py-clob-client-v2"
+        and lead["adoption_decision"] == "REFERENCE_READ_ONLY_FIRST"
+        for lead in plan["priority_repo_leads"]
+    )
     assert any(path["requires_auth"] is False for path in plan["required_public_data_paths"])
     assert "PUBLIC_FORWARD_EVIDENCE_NOT_PROVEN" in plan["blockers_addressed"]
     assert plan["next_resume_command"] == ".\\make.cmd thousand-strategy-next-tranche"
