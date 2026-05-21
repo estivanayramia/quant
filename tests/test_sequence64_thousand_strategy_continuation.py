@@ -983,6 +983,72 @@ def test_sequence64_public_forward_intents_veto_signals_below_execution_uncertai
     assert intent["execution_uncertainty_reason"] == "fee_spread_slippage_and_observed_spread"
 
 
+def test_sequence64_public_forward_intents_use_candidate_lookback_not_only_last_tick(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        append_variant_public_forward_observations,
+        write_variant_public_forward_intents_report,
+    )
+
+    candidate = {
+        "id": "tsv_lookback_signal",
+        "family": "crypto_public_data_quality_filtered_momentum",
+        "assets": ["BTC/USD"],
+        "variant_configuration": {
+            "lookback": 3,
+            "thresholds": {
+                "no_trade_edge_bps": 1.0,
+            },
+        },
+    }
+    append_variant_public_forward_observations(
+        output_root=local_project,
+        observations=[
+            {
+                "asset": "BTC/USD",
+                "bid": 100.00,
+                "ask": 100.10,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-20T13:10:00Z",
+            },
+            {
+                "asset": "BTC/USD",
+                "bid": 100.10,
+                "ask": 100.20,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-20T13:11:00Z",
+            },
+            {
+                "asset": "BTC/USD",
+                "bid": 100.20,
+                "ask": 100.30,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-20T13:12:00Z",
+            },
+            {
+                "asset": "BTC/USD",
+                "bid": 100.35,
+                "ask": 100.45,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-20T13:13:00Z",
+            },
+        ],
+    )
+
+    intents = write_variant_public_forward_intents_report(
+        output_root=local_project,
+        candidate=candidate,
+    )
+
+    assert intents["eligible_intent_count"] == 1
+    intent = intents["intents"][0]
+    assert intent["timestamp"] == "2026-05-20T13:13:00Z"
+    assert intent["side"] == "buy"
+    assert intent["signal_lookback_observations"] == 3
+    assert intent["signal_change_bps"] > intent["execution_uncertainty_bps"]
+
+
 def test_sequence64_candidate_public_forward_fills_and_marks_use_later_observations_only(
     local_project: Path,
 ) -> None:

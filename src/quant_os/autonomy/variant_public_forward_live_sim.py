@@ -230,19 +230,20 @@ def write_variant_public_forward_intents_report(
     )
     observations = list(previous.get("public_forward_observations") or [])
     candidate_assets = set(selected_candidate.get("assets") or [])
-    previous_by_asset: dict[str, dict[str, Any]] = {}
+    history_by_asset: dict[str, list[dict[str, Any]]] = {}
     intents = []
     for index, observation in enumerate(observations):
         asset = str(observation.get("asset") or "")
         if candidate_assets and asset not in candidate_assets:
             continue
+        prior_observations = history_by_asset.setdefault(asset, [])
         intent = _build_public_forward_intent(
             index=index,
             candidate=selected_candidate,
             observation=observation,
-            previous_observation=previous_by_asset.get(asset),
+            prior_observations=prior_observations,
         )
-        previous_by_asset[asset] = observation
+        prior_observations.append(observation)
         if intent:
             intents.append(intent)
     payload = safe_payload(
@@ -1032,12 +1033,12 @@ def _build_public_forward_intent(
     index: int,
     candidate: dict[str, Any],
     observation: dict[str, Any],
-    previous_observation: dict[str, Any] | None = None,
+    prior_observations: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any] | None:
     signal = _public_forward_signal(
         candidate=candidate,
         observation=observation,
-        previous_observation=previous_observation,
+        prior_observations=prior_observations or [],
     )
     if signal is None:
         return None
@@ -1070,10 +1071,12 @@ def _public_forward_signal(
     *,
     candidate: dict[str, Any],
     observation: dict[str, Any],
-    previous_observation: dict[str, Any] | None,
+    prior_observations: list[dict[str, Any]],
 ) -> dict[str, Any] | None:
-    if previous_observation is None:
+    lookback_observations = _public_forward_signal_lookback_observations(candidate)
+    if len(prior_observations) < lookback_observations:
         return None
+    previous_observation = prior_observations[-lookback_observations]
     current_mid = _public_forward_mid_price(observation)
     previous_mid = _public_forward_mid_price(previous_observation)
     if current_mid <= 0.0 or previous_mid <= 0.0:
@@ -1101,6 +1104,7 @@ def _public_forward_signal(
         "signal_reason": "candidate_family_mid_price_change_threshold",
         "signal_change_bps": round(change_bps, 6),
         "signal_threshold_bps": round(threshold_bps, 6),
+        "signal_lookback_observations": lookback_observations,
         "execution_uncertainty_bps": round(execution_uncertainty_bps, 6),
         "execution_uncertainty_reason": "fee_spread_slippage_and_observed_spread",
         "candidate_signal_model": "public_forward_no_lookahead_mid_change",
@@ -1155,6 +1159,12 @@ def _public_forward_signal_threshold_bps(candidate: dict[str, Any]) -> float:
         or {}
     )
     return max(0.0, float(thresholds.get("no_trade_edge_bps") or 1.0))
+
+
+def _public_forward_signal_lookback_observations(candidate: dict[str, Any]) -> int:
+    variant_configuration = candidate.get("variant_configuration", {}) or {}
+    configured = variant_configuration.get("lookback", candidate.get("lookback", 1))
+    return max(1, min(60, int(configured or 1)))
 
 
 def _find_future_observation(
