@@ -214,6 +214,14 @@ def _add_cumulative_leaderboard(
         )
         latest_best = eligible_latest[0] if eligible_latest else latest_best
     cumulative_best = cumulative_candidates[0] if cumulative_candidates else latest_best
+    latest_best = _with_default_candidate_blockers(latest_best)
+    cumulative_best = _with_default_candidate_blockers(cumulative_best)
+    cumulative_leaderboard = [
+        _with_default_candidate_blockers(candidate) for candidate in cumulative_leaderboard
+    ]
+    cumulative_candidates = [
+        _with_default_candidate_blockers(candidate) for candidate in cumulative_candidates
+    ]
 
     payload["latest_batch_best_candidate"] = latest_best
     payload["cumulative_leaderboard_top_50"] = cumulative_leaderboard
@@ -223,6 +231,20 @@ def _add_cumulative_leaderboard(
     payload["baseline_beaten"] = cumulative_best["baseline_beaten"]
     payload["placebo_beaten"] = cumulative_best["placebo_beaten"]
     return payload
+
+
+def _with_default_candidate_blockers(candidate: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(candidate)
+    normalized.setdefault(
+        "blockers",
+        [
+            "HOLDOUT_OR_FORWARD_WINDOW_NOT_PROVEN",
+            "MULTIPLE_TESTING_GUARD_NOT_PASSED",
+            "FRESH_WORKTREE_REPRO_NOT_PASSED",
+            "MANUAL_CANARY_PACKET_BLOCKED",
+        ],
+    )
+    return normalized
 
 
 def _retired_candidate_ids(rotation: dict[str, Any]) -> set[str]:

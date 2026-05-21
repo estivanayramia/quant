@@ -791,12 +791,13 @@ def test_sequence64_candidate_public_forward_intents_are_candidate_matched_no_tr
         append_variant_public_forward_observations,
         write_variant_public_forward_intents_report,
     )
-    from quant_os.research.strategy_factory.strategy_tournament import (
-        write_strategy_tournament_report,
-    )
 
-    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=1)
-    candidate = tournament["current_best_candidate"]
+    candidate = {
+        "id": "tsv_candidate_matched_signal",
+        "family": "crypto_public_data_quality_filtered_momentum",
+        "assets": ["BTC/USD", "ETH/USD"],
+        "variant_configuration": {"thresholds": {"no_trade_edge_bps": 1.0}},
+    }
     append_variant_public_forward_observations(
         output_root=local_project,
         observations=[
@@ -808,16 +809,33 @@ def test_sequence64_candidate_public_forward_intents_are_candidate_matched_no_tr
                 "timestamp": "2026-05-18T12:00:00Z",
             },
             {
+                "asset": "BTC/USD",
+                "bid": 100.2,
+                "ask": 100.3,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-18T12:01:00Z",
+            },
+            {
                 "asset": "ETH/USD",
                 "bid": 50.0,
                 "ask": 50.1,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-18T12:00:00Z",
+            },
+            {
+                "asset": "ETH/USD",
+                "bid": 50.2,
+                "ask": 50.3,
                 "source": "kraken_public_rest_unauthenticated_forward",
                 "timestamp": "2026-05-18T12:01:00Z",
             },
         ],
     )
 
-    intents = write_variant_public_forward_intents_report(output_root=local_project)
+    intents = write_variant_public_forward_intents_report(
+        output_root=local_project,
+        candidate=candidate,
+    )
     summary = json.loads(
         (
             local_project
@@ -832,6 +850,8 @@ def test_sequence64_candidate_public_forward_intents_are_candidate_matched_no_tr
     assert summary["public_forward_evidence_proven"] is False
     assert summary["evidence_source"] == "public_forward_live_sim_pending"
     assert all(intent["variant_id"] == candidate["id"] for intent in intents["intents"])
+    assert all(intent["candidate_signal_model"] == "public_forward_no_lookahead_mid_change" for intent in intents["intents"])
+    assert all(intent["uses_lookahead"] is False for intent in intents["intents"])
     assert all(intent["fake_money"] is True for intent in intents["intents"])
     assert all(intent["no_transmit"] is True for intent in intents["intents"])
     assert all("signed_headers" not in intent for intent in intents["intents"])
@@ -842,6 +862,67 @@ def test_sequence64_candidate_public_forward_intents_are_candidate_matched_no_tr
     assert intents["request_signing_enabled"] is False
     assert intents["actual_order_count"] == 0
     assert intents["actual_cancel_count"] == 0
+
+
+def test_sequence64_public_forward_intents_use_candidate_signal_not_row_parity(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        append_variant_public_forward_observations,
+        write_variant_public_forward_intents_report,
+    )
+
+    candidate = {
+        "id": "tsv_signal_aware_momentum",
+        "family": "crypto_public_data_quality_filtered_momentum",
+        "assets": ["BTC/USD"],
+        "variant_configuration": {
+            "thresholds": {
+                "no_trade_edge_bps": 1.0,
+            }
+        },
+    }
+    append_variant_public_forward_observations(
+        output_root=local_project,
+        observations=[
+            {
+                "asset": "BTC/USD",
+                "bid": 100.00,
+                "ask": 100.10,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-20T12:00:00Z",
+            },
+            {
+                "asset": "BTC/USD",
+                "bid": 100.20,
+                "ask": 100.30,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-20T12:01:00Z",
+            },
+            {
+                "asset": "BTC/USD",
+                "bid": 100.40,
+                "ask": 100.50,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-20T12:02:00Z",
+            },
+        ],
+    )
+
+    intents = write_variant_public_forward_intents_report(
+        output_root=local_project,
+        candidate=candidate,
+    )
+
+    assert intents["eligible_intent_count"] == 2
+    assert [intent["side"] for intent in intents["intents"]] == ["buy", "buy"]
+    assert all(intent["candidate_signal_model"] == "public_forward_no_lookahead_mid_change" for intent in intents["intents"])
+    assert all(intent["uses_lookahead"] is False for intent in intents["intents"])
+    assert all(intent["signal_change_bps"] > 0 for intent in intents["intents"])
+    assert all(intent["signal_direction"] == "momentum_up" for intent in intents["intents"])
+    assert all(intent["fake_money"] is True for intent in intents["intents"])
+    assert all(intent["no_transmit"] is True for intent in intents["intents"])
+    assert all("order" not in intent["endpoint"].lower() for intent in intents["intents"])
 
 
 def test_sequence64_candidate_public_forward_fills_and_marks_use_later_observations_only(
@@ -855,12 +936,13 @@ def test_sequence64_candidate_public_forward_fills_and_marks_use_later_observati
     from quant_os.proving.thousand_strategy_public_forward_evidence import (
         write_thousand_strategy_public_forward_evidence_report,
     )
-    from quant_os.research.strategy_factory.strategy_tournament import (
-        write_strategy_tournament_report,
-    )
 
-    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=1)
-    candidate = tournament["current_best_candidate"]
+    candidate = {
+        "id": "tsv_future_mark_signal",
+        "family": "crypto_public_data_quality_filtered_momentum",
+        "assets": ["BTC/USD", "ETH/USD"],
+        "variant_configuration": {"thresholds": {"no_trade_edge_bps": 1.0}},
+    }
     append_variant_public_forward_observations(
         output_root=local_project,
         observations=[
@@ -892,11 +974,28 @@ def test_sequence64_candidate_public_forward_fills_and_marks_use_later_observati
                 "source": "kraken_public_rest_unauthenticated_forward",
                 "timestamp": "2026-05-19T12:05:00Z",
             },
+            {
+                "asset": "BTC/USD",
+                "bid": 100.4,
+                "ask": 100.5,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-19T12:10:00Z",
+            },
+            {
+                "asset": "ETH/USD",
+                "bid": 49.6,
+                "ask": 49.7,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-19T12:10:00Z",
+            },
         ],
     )
-    write_variant_public_forward_intents_report(output_root=local_project)
+    write_variant_public_forward_intents_report(output_root=local_project, candidate=candidate)
 
-    fills_marks = write_variant_public_forward_fills_and_marks_report(output_root=local_project)
+    fills_marks = write_variant_public_forward_fills_and_marks_report(
+        output_root=local_project,
+        candidate=candidate,
+    )
     evidence = write_thousand_strategy_public_forward_evidence_report(output_root=local_project)
     summary = json.loads(
         (
@@ -981,15 +1080,15 @@ def test_sequence64_public_forward_collection_cycle_preserves_and_extends_observ
     assert cycle["status"] == "VARIANT_PUBLIC_FORWARD_COLLECTION_CYCLE_CHECKPOINTED"
     assert cycle["selected_strategy_id"] == candidate["id"]
     assert cycle["observation_count"] == 4
-    assert cycle["eligible_intent_count"] == 4
-    assert cycle["fake_fill_count"] == 2
-    assert cycle["completed_mark_count"] == 2
+    assert cycle["eligible_intent_count"] == 2
+    assert cycle["fake_fill_count"] == 0
+    assert cycle["completed_mark_count"] == 0
     assert cycle["public_forward_evidence_status"] == "PUBLIC_FORWARD_EVIDENCE_BLOCKED"
     assert cycle["public_forward_evidence_proven"] is False
     assert cycle["collection_blockers"] == []
     assert summary["observation_count"] == 4
-    assert summary["fake_fill_count"] == 2
-    assert summary["completed_mark_count"] == 2
+    assert summary["fake_fill_count"] == 0
+    assert summary["completed_mark_count"] == 0
     assert {row["asset"] for row in summary["public_forward_observations"]} == {
         "BTC/USD",
         "ETH/USD",
@@ -1071,14 +1170,14 @@ def test_sequence64_public_forward_batch_cycle_runs_bounded_append_only_cycles(
     assert batch["cycle_count_completed"] == 2
     assert [row["observation_count"] for row in batch["cycle_summaries"]] == [4, 6]
     assert batch["observation_count"] == 6
-    assert batch["eligible_intent_count"] == 6
-    assert batch["fake_fill_count"] == 4
-    assert batch["completed_mark_count"] == 4
+    assert batch["eligible_intent_count"] == 4
+    assert batch["fake_fill_count"] == 2
+    assert batch["completed_mark_count"] == 2
     assert batch["public_forward_evidence_status"] == "PUBLIC_FORWARD_EVIDENCE_BLOCKED"
     assert batch["public_forward_evidence_proven"] is False
     assert summary["observation_count"] == 6
-    assert summary["fake_fill_count"] == 4
-    assert summary["completed_mark_count"] == 4
+    assert summary["fake_fill_count"] == 2
+    assert summary["completed_mark_count"] == 2
     assert {row["asset"] for row in summary["public_forward_observations"]} == {
         "BTC/USD",
         "ETH/USD",
@@ -1211,7 +1310,7 @@ def test_sequence64_public_forward_candidate_archive_separates_rotated_candidate
     assert first_candidate["id"] in second_archive["candidate_evidence"]
     assert "tsv_rotated_candidate" in second_archive["candidate_evidence"]
     assert second_archive["candidate_evidence"][first_candidate["id"]]["observation_count"] == 4
-    assert second_archive["candidate_evidence"][first_candidate["id"]]["fake_fill_count"] == 2
+    assert second_archive["candidate_evidence"][first_candidate["id"]]["fake_fill_count"] == 1
     assert second_archive["candidate_evidence"]["tsv_rotated_candidate"]["observation_count"] == 0
     assert second_archive["candidate_evidence"]["tsv_rotated_candidate"]["fake_fill_count"] == 0
     assert second_archive["candidate_evidence"][first_candidate["id"]]["selected_strategy_assets"] == [
@@ -1353,6 +1452,69 @@ def test_sequence64_public_forward_rotation_skips_uncollectable_candidates(
     assert rotation["status"] == "VARIANT_PUBLIC_FORWARD_CANDIDATE_ROTATED"
     assert rotation["selected_strategy_id"] == "tsv_crypto_collectable"
     assert rotation["skipped_uncollectable_candidate_ids"] == ["tsv_weather_uncollectable"]
+
+
+def test_sequence64_public_forward_rotation_skips_validation_only_crypto_candidates(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_candidate_rotation,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    first_candidate = tournament["current_best_candidate"]
+    validation_only_candidate = {
+        "id": "tsv_validation_only",
+        "family": "calibration_holdout_walk_forward_protocol",
+        "assets": ["BTC/USD", "ETH/USD"],
+        "fake_net_pnl": 50.0,
+        "baseline_beaten": True,
+        "placebo_beaten": True,
+        "score": 9.0,
+    }
+    signal_candidate = {
+        "id": "tsv_signal_collectable",
+        "family": "crypto_public_data_quality_filtered_momentum",
+        "assets": ["BTC/USD", "ETH/USD"],
+        "fake_net_pnl": 20.0,
+        "baseline_beaten": True,
+        "placebo_beaten": True,
+        "score": 2.0,
+    }
+    tournament["cumulative_leaderboard_top_50"] = [
+        first_candidate,
+        validation_only_candidate,
+        signal_candidate,
+    ]
+    tournament_path = (
+        local_project / "reports/thousand_strategy_campaign/tournament/latest_tournament.json"
+    )
+    tournament_path.write_text(json.dumps(tournament, indent=2, sort_keys=True), encoding="utf-8")
+    live_sim_dir = local_project / "reports/thousand_strategy_campaign/live_sim"
+    live_sim_dir.mkdir(parents=True, exist_ok=True)
+    (live_sim_dir / "latest_live_sim_summary.json").write_text(
+        json.dumps(
+            {
+                "selected_strategy_id": first_candidate["id"],
+                "selected_strategy_family": first_candidate["family"],
+                "selected_strategy_assets": first_candidate["assets"],
+                "completed_mark_count": 10,
+                "fake_net_pnl": -0.1,
+            },
+            indent=2,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+
+    rotation = write_variant_public_forward_candidate_rotation(output_root=local_project)
+
+    assert rotation["status"] == "VARIANT_PUBLIC_FORWARD_CANDIDATE_ROTATED"
+    assert rotation["selected_strategy_id"] == "tsv_signal_collectable"
+    assert "tsv_validation_only" in rotation["skipped_uncollectable_candidate_ids"]
 
 
 def test_sequence64_public_forward_proof_finalizer_blocks_until_strict_thresholds(
@@ -1849,6 +2011,56 @@ def test_sequence64_next_tranche_does_not_resurrect_public_forward_retired_candi
     assert retired_id not in {candidate["id"] for candidate in second["cumulative_top_candidates"]}
     assert retired_id not in {candidate["id"] for candidate in second["cumulative_leaderboard_top_50"]}
     assert state["current_best_candidate"]["id"] != retired_id
+
+
+def test_sequence64_tournament_normalizes_cumulative_candidate_without_blockers(
+    local_project: Path,
+) -> None:
+    from quant_os.research.strategy_factory.campaign_common import write_json_md
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    prior_candidate = {
+        "id": "tsv_prior_without_blockers",
+        "family": "momentum_reversion_intraday",
+        "assets": ["BTC/USD", "ETH/USD"],
+        "baseline_beaten": True,
+        "placebo_beaten": True,
+        "fake_net_pnl": 999.0,
+        "score": 99.0,
+        "observations": 9999,
+        "structural_signature": "tss_prior_without_blockers",
+    }
+    write_json_md(
+        {
+            "status": "THOUSAND_STRATEGY_CAMPAIGN_CHECKPOINTED_NOT_COMPLETE",
+            "batch_index": 1,
+            "current_best_candidate": prior_candidate,
+            "cumulative_leaderboard_top_50": [prior_candidate],
+            "cumulative_top_candidates": [prior_candidate],
+            "leaderboard_top_50": [prior_candidate],
+            "top_candidates": [prior_candidate],
+        },
+        output_root=local_project,
+        report_dir="tournament",
+        json_name="latest_tournament.json",
+        md_name="latest_tournament.md",
+        title="Tournament",
+        lines=["fixture"],
+    )
+
+    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=2)
+    state = json.loads(
+        (
+            local_project / "reports/thousand_strategy_campaign/state/latest_state.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert tournament["current_best_candidate"]["id"] == prior_candidate["id"]
+    assert "blockers" in tournament["current_best_candidate"]
+    assert "HOLDOUT_OR_FORWARD_WINDOW_NOT_PROVEN" in tournament["current_best_candidate"]["blockers"]
+    assert state["blockers"] == tournament["current_best_candidate"]["blockers"]
 
 
 def _variant_shape_keys(variants: list[dict[str, object]]) -> set[tuple[object, ...]]:

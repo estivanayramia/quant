@@ -229,15 +229,22 @@ def write_variant_public_forward_intents_report(
         json_name="latest_live_sim_summary.json",
     )
     observations = list(previous.get("public_forward_observations") or [])
-    intents = [
-        _build_public_forward_intent(
+    candidate_assets = set(selected_candidate.get("assets") or [])
+    previous_by_asset: dict[str, dict[str, Any]] = {}
+    intents = []
+    for index, observation in enumerate(observations):
+        asset = str(observation.get("asset") or "")
+        if candidate_assets and asset not in candidate_assets:
+            continue
+        intent = _build_public_forward_intent(
             index=index,
             candidate=selected_candidate,
             observation=observation,
+            previous_observation=previous_by_asset.get(asset),
         )
-        for index, observation in enumerate(observations)
-        if observation.get("asset") in set(selected_candidate.get("assets") or [observation.get("asset")])
-    ]
+        previous_by_asset[asset] = observation
+        if intent:
+            intents.append(intent)
     payload = safe_payload(
         status="VARIANT_PUBLIC_FORWARD_INTENTS_READY",
         selected_strategy_id=selected_candidate.get("id"),
@@ -1010,7 +1017,10 @@ def _candidate_from_tournament(
 
 
 def _is_public_forward_collectable_candidate(candidate: dict[str, Any]) -> bool:
-    return any(str(asset) in KRAKEN_PAIRS for asset in candidate.get("assets", []) or [])
+    return (
+        any(str(asset) in KRAKEN_PAIRS for asset in candidate.get("assets", []) or [])
+        and _public_forward_family_signal_mode(candidate) is not None
+    )
 
 
 def _build_public_forward_intent(
@@ -1018,8 +1028,16 @@ def _build_public_forward_intent(
     index: int,
     candidate: dict[str, Any],
     observation: dict[str, Any],
-) -> dict[str, Any]:
-    side = "buy" if index % 2 == 0 else "sell"
+    previous_observation: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    signal = _public_forward_signal(
+        candidate=candidate,
+        observation=observation,
+        previous_observation=previous_observation,
+    )
+    if signal is None:
+        return None
+    side = signal["side"]
     price = float(observation.get("ask") if side == "buy" else observation.get("bid") or 0.0)
     payload = {
         "variant_id": candidate.get("id"),
@@ -1034,6 +1052,7 @@ def _build_public_forward_intent(
         "no_transmit": True,
         "contains_signed_headers": False,
         "endpoint": "/public/market-data/forward-intent-preview",
+        **signal,
     }
     payload["intent_id"] = _stable_hash({"intent": payload, "index": index}).replace(
         "pfobs_",
@@ -1041,6 +1060,80 @@ def _build_public_forward_intent(
         1,
     )
     return payload
+
+
+def _public_forward_signal(
+    *,
+    candidate: dict[str, Any],
+    observation: dict[str, Any],
+    previous_observation: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if previous_observation is None:
+        return None
+    current_mid = _public_forward_mid_price(observation)
+    previous_mid = _public_forward_mid_price(previous_observation)
+    if current_mid <= 0.0 or previous_mid <= 0.0:
+        return None
+    change_bps = ((current_mid - previous_mid) / previous_mid) * 10_000.0
+    threshold_bps = _public_forward_signal_threshold_bps(candidate)
+    if abs(change_bps) < threshold_bps:
+        return None
+
+    signal_mode = _public_forward_family_signal_mode(candidate)
+    if signal_mode is None:
+        return None
+
+    follows_move = signal_mode == "momentum"
+    up_move = change_bps > 0.0
+    side = "buy" if up_move == follows_move else "sell"
+    direction_suffix = "up" if up_move else "down"
+    return {
+        "side": side,
+        "signal_direction": f"{signal_mode}_{direction_suffix}",
+        "signal_reason": "candidate_family_mid_price_change_threshold",
+        "signal_change_bps": round(change_bps, 6),
+        "signal_threshold_bps": round(threshold_bps, 6),
+        "candidate_signal_model": "public_forward_no_lookahead_mid_change",
+        "uses_lookahead": False,
+    }
+
+
+def _public_forward_family_signal_mode(candidate: dict[str, Any]) -> str | None:
+    family = str(candidate.get("family") or "").lower()
+    if any(token in family for token in ("reversion", "reversal", "snapback", "failure")):
+        return "reversion"
+    if any(
+        token in family
+        for token in (
+            "momentum",
+            "trend",
+            "breakout",
+            "continuation",
+            "relative_strength",
+            "source_quality",
+            "quality_filtered",
+            "no_trade_veto",
+        )
+    ):
+        return "momentum"
+    return None
+
+
+def _public_forward_mid_price(observation: dict[str, Any]) -> float:
+    bid = float(observation.get("bid") or 0.0)
+    ask = float(observation.get("ask") or 0.0)
+    if bid <= 0.0 or ask <= 0.0:
+        return 0.0
+    return (bid + ask) / 2.0
+
+
+def _public_forward_signal_threshold_bps(candidate: dict[str, Any]) -> float:
+    thresholds = (
+        candidate.get("variant_configuration", {}).get("thresholds", {})
+        or candidate.get("thresholds", {})
+        or {}
+    )
+    return max(0.0, float(thresholds.get("no_trade_edge_bps") or 1.0))
 
 
 def _find_future_observation(
