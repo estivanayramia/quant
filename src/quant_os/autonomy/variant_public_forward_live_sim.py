@@ -953,10 +953,14 @@ def _is_pending_public_forward_observation(row: dict[str, Any]) -> bool:
 
 def _public_forward_retirement_reasons(report: dict[str, Any]) -> list[str]:
     reasons: list[str] = []
+    observations = int(report.get("observation_count") or 0)
+    eligible_intents = int(report.get("eligible_intent_count") or 0)
     completed_marks = int(report.get("completed_mark_count") or 0)
     fake_net_pnl = float(report.get("fake_net_pnl") or 0.0)
     if completed_marks > 0 and fake_net_pnl < 0:
         reasons.append("PUBLIC_FORWARD_FAKE_NET_PNL_NEGATIVE")
+    if observations >= 100 and eligible_intents == 0:
+        reasons.append("PUBLIC_FORWARD_NO_SIGNAL_AFTER_MIN_OBSERVATIONS")
     return reasons
 
 
@@ -1075,7 +1079,11 @@ def _public_forward_signal(
     if current_mid <= 0.0 or previous_mid <= 0.0:
         return None
     change_bps = ((current_mid - previous_mid) / previous_mid) * 10_000.0
-    threshold_bps = _public_forward_signal_threshold_bps(candidate)
+    execution_uncertainty_bps = _public_forward_execution_uncertainty_bps(observation)
+    threshold_bps = max(
+        _public_forward_signal_threshold_bps(candidate),
+        execution_uncertainty_bps,
+    )
     if abs(change_bps) < threshold_bps:
         return None
 
@@ -1093,6 +1101,8 @@ def _public_forward_signal(
         "signal_reason": "candidate_family_mid_price_change_threshold",
         "signal_change_bps": round(change_bps, 6),
         "signal_threshold_bps": round(threshold_bps, 6),
+        "execution_uncertainty_bps": round(execution_uncertainty_bps, 6),
+        "execution_uncertainty_reason": "fee_spread_slippage_and_observed_spread",
         "candidate_signal_model": "public_forward_no_lookahead_mid_change",
         "uses_lookahead": False,
     }
@@ -1125,6 +1135,17 @@ def _public_forward_mid_price(observation: dict[str, Any]) -> float:
     if bid <= 0.0 or ask <= 0.0:
         return 0.0
     return (bid + ask) / 2.0
+
+
+def _public_forward_execution_uncertainty_bps(observation: dict[str, Any]) -> float:
+    mid = _public_forward_mid_price(observation)
+    if mid <= 0.0:
+        return 20.0
+    bid = float(observation.get("bid") or 0.0)
+    ask = float(observation.get("ask") or 0.0)
+    observed_spread_bps = ((ask - bid) / mid) * 10_000.0 if ask > bid > 0.0 else 0.0
+    modeled_fee_spread_slippage_bps = 20.0
+    return modeled_fee_spread_slippage_bps + max(0.0, observed_spread_bps)
 
 
 def _public_forward_signal_threshold_bps(candidate: dict[str, Any]) -> float:
