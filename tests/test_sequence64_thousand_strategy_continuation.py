@@ -1694,6 +1694,112 @@ def test_sequence64_public_forward_rotation_retires_zero_intent_candidate_after_
     assert "PUBLIC_FORWARD_NO_SIGNAL_AFTER_MIN_OBSERVATIONS" in rotation["retirement_reasons"]
 
 
+def test_sequence64_public_forward_rotation_retires_low_intent_rate_candidate(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_candidate_rotation,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    first_candidate = tournament["current_best_candidate"]
+    next_candidate = {
+        "id": "tsv_next_frequent_signal_candidate",
+        "family": "crypto_public_data_quality_filtered_momentum",
+        "assets": ["BTC/USD", "ETH/USD"],
+        "fake_net_pnl": 20.0,
+        "baseline_beaten": True,
+        "placebo_beaten": True,
+        "score": 2.0,
+    }
+    tournament["cumulative_leaderboard_top_50"] = [first_candidate, next_candidate]
+    tournament_path = (
+        local_project / "reports/thousand_strategy_campaign/tournament/latest_tournament.json"
+    )
+    tournament_path.write_text(json.dumps(tournament, indent=2, sort_keys=True), encoding="utf-8")
+    live_sim_dir = local_project / "reports/thousand_strategy_campaign/live_sim"
+    live_sim_dir.mkdir(parents=True, exist_ok=True)
+    (live_sim_dir / "latest_live_sim_summary.json").write_text(
+        json.dumps(
+            {
+                "selected_strategy_id": first_candidate["id"],
+                "selected_strategy_family": first_candidate["family"],
+                "selected_strategy_assets": first_candidate["assets"],
+                "observation_count": 160,
+                "eligible_intent_count": 1,
+                "completed_mark_count": 0,
+                "fake_net_pnl": 0.0,
+            },
+            indent=2,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+
+    rotation = write_variant_public_forward_candidate_rotation(output_root=local_project)
+
+    assert rotation["status"] == "VARIANT_PUBLIC_FORWARD_CANDIDATE_ROTATED"
+    assert rotation["retired_candidate_id"] == first_candidate["id"]
+    assert rotation["selected_strategy_id"] == "tsv_next_frequent_signal_candidate"
+    assert "PUBLIC_FORWARD_INTENT_RATE_TOO_LOW" in rotation["retirement_reasons"]
+
+
+def test_sequence64_public_forward_rotation_retires_low_mark_completion_candidate(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_candidate_rotation,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    first_candidate = tournament["current_best_candidate"]
+    next_candidate = {
+        "id": "tsv_next_marking_candidate",
+        "family": "crypto_public_data_quality_filtered_momentum",
+        "assets": ["BTC/USD", "ETH/USD"],
+        "fake_net_pnl": 20.0,
+        "baseline_beaten": True,
+        "placebo_beaten": True,
+        "score": 2.0,
+    }
+    tournament["cumulative_leaderboard_top_50"] = [first_candidate, next_candidate]
+    tournament_path = (
+        local_project / "reports/thousand_strategy_campaign/tournament/latest_tournament.json"
+    )
+    tournament_path.write_text(json.dumps(tournament, indent=2, sort_keys=True), encoding="utf-8")
+    live_sim_dir = local_project / "reports/thousand_strategy_campaign/live_sim"
+    live_sim_dir.mkdir(parents=True, exist_ok=True)
+    (live_sim_dir / "latest_live_sim_summary.json").write_text(
+        json.dumps(
+            {
+                "selected_strategy_id": first_candidate["id"],
+                "selected_strategy_family": first_candidate["family"],
+                "selected_strategy_assets": first_candidate["assets"],
+                "observation_count": 180,
+                "eligible_intent_count": 24,
+                "completed_mark_count": 0,
+                "fake_net_pnl": 0.0,
+            },
+            indent=2,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+
+    rotation = write_variant_public_forward_candidate_rotation(output_root=local_project)
+
+    assert rotation["status"] == "VARIANT_PUBLIC_FORWARD_CANDIDATE_ROTATED"
+    assert rotation["retired_candidate_id"] == first_candidate["id"]
+    assert rotation["selected_strategy_id"] == "tsv_next_marking_candidate"
+    assert "PUBLIC_FORWARD_MARK_COMPLETION_RATE_TOO_LOW" in rotation["retirement_reasons"]
+
+
 def test_sequence64_public_forward_proof_finalizer_blocks_until_strict_thresholds(
     local_project: Path,
 ) -> None:

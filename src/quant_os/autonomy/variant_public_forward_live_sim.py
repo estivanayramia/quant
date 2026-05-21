@@ -23,6 +23,11 @@ KRAKEN_PAIRS = {
     "SOL/USD": "SOLUSD",
     "XRP/USD": "XXRPZUSD",
 }
+PUBLIC_FORWARD_RETIREMENT_MIN_OBSERVATIONS = 100
+PUBLIC_FORWARD_LOW_INTENT_RATE_MIN_OBSERVATIONS = 150
+PUBLIC_FORWARD_MIN_INTENT_RATE = 0.01
+PUBLIC_FORWARD_LOW_MARK_RATE_MIN_INTENTS = 20
+PUBLIC_FORWARD_MIN_MARK_COMPLETION_RATE = 0.05
 
 
 def build_variant_public_forward_live_sim_summary(
@@ -960,8 +965,16 @@ def _public_forward_retirement_reasons(report: dict[str, Any]) -> list[str]:
     fake_net_pnl = float(report.get("fake_net_pnl") or 0.0)
     if completed_marks > 0 and fake_net_pnl < 0:
         reasons.append("PUBLIC_FORWARD_FAKE_NET_PNL_NEGATIVE")
-    if observations >= 100 and eligible_intents == 0:
+    if observations >= PUBLIC_FORWARD_RETIREMENT_MIN_OBSERVATIONS and eligible_intents == 0:
         reasons.append("PUBLIC_FORWARD_NO_SIGNAL_AFTER_MIN_OBSERVATIONS")
+    if observations >= PUBLIC_FORWARD_LOW_INTENT_RATE_MIN_OBSERVATIONS and eligible_intents > 0:
+        intent_rate = eligible_intents / observations
+        if intent_rate < PUBLIC_FORWARD_MIN_INTENT_RATE:
+            reasons.append("PUBLIC_FORWARD_INTENT_RATE_TOO_LOW")
+    if eligible_intents >= PUBLIC_FORWARD_LOW_MARK_RATE_MIN_INTENTS:
+        mark_completion_rate = completed_marks / eligible_intents
+        if mark_completion_rate < PUBLIC_FORWARD_MIN_MARK_COMPLETION_RATE:
+            reasons.append("PUBLIC_FORWARD_MARK_COMPLETION_RATE_TOO_LOW")
     return reasons
 
 
