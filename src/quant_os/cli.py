@@ -6595,6 +6595,57 @@ def research_thousand_strategy_research() -> None:
     )
 
 
+@research_app.command("source-pack-intake")
+def research_source_pack_intake(
+    primary_source_pack: Annotated[Path, typer.Option("--primary-source-pack")] = Path(
+        "C:/Users/estiv/Downloads/quant_project_source_pack_20260520_v4_github_repo_research.zip"
+    ),
+    supporting_source_pack: Annotated[Path | None, typer.Option("--supporting-source-pack")] = Path(
+        "C:/Users/estiv/Downloads/quant_project_source_pack_20260520_v3_media_researched.zip"
+    ),
+) -> None:
+    from quant_os.research.strategy_factory.source_pack_intake import (
+        write_source_pack_intake_report,
+    )
+
+    payload = write_source_pack_intake_report(
+        output_root=Path("."),
+        primary_source_pack=primary_source_pack,
+        supporting_source_pack=supporting_source_pack,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "accepted_idea_count": payload["accepted_idea_count"],
+            "rejected_idea_count": payload["rejected_idea_count"],
+            "proof_status_changed": payload["proof_status_changed"],
+            "report": "reports/thousand_strategy_campaign/source_pack_intake/latest_source_pack_intake.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("source-backed-tranche-plan")
+def research_source_backed_tranche_plan() -> None:
+    from quant_os.research.strategy_factory.source_backed_tranche_plan import (
+        write_source_backed_tranche_plan_report,
+    )
+
+    payload = write_source_backed_tranche_plan_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "target_next_variants": payload["target_next_variants"],
+            "families_added": payload["families_added"],
+            "proof_status_changed": payload["proof_status_changed"],
+            "report": "reports/thousand_strategy_campaign/source_backed_tranche_plan/latest_source_backed_tranche_plan.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @research_app.command("generate-strategy-variants")
 def research_generate_strategy_variants(
     target_count: int = typer.Option(1000, "--target-count", min=1000),

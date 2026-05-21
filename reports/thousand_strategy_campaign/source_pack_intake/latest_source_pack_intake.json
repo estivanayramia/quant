@@ -1,0 +1,285 @@
+{
+  "accepted_idea_count": 8,
+  "actual_cancel_count": 0,
+  "actual_order_count": 0,
+  "api_keys_loaded": false,
+  "authenticated_requests_enabled": false,
+  "checked_account_balance": false,
+  "checked_portfolio": false,
+  "deferred_idea_count": 1,
+  "exact_resume_command": ".\\make.cmd thousand-strategy-next-tranche",
+  "execution_authority": "NONE",
+  "existing_blockers_preserved": [
+    "OVERFIT_GUARD_NOT_PASSED",
+    "PUBLIC_FORWARD_EVIDENCE_NOT_PROVEN",
+    "REPEATABILITY_NOT_PASSED",
+    "REPLAY_REALISM_STRESS_NOT_APPLIED"
+  ],
+  "ideas": [
+    {
+      "accept_reject_defer_decision": "ACCEPT",
+      "changes_overfit_repeatability_capacity_validation": true,
+      "changes_public_forward_collection": true,
+      "changes_variant_generation": true,
+      "decision": "ACCEPT",
+      "expected_failure_mode": "stale snapshots or missing resolution labels create fantasy fills",
+      "id": "spi_09a767ef7e45",
+      "minimum_viable_test": "offline schema fixture plus freshness, stale-book, and resolved-label checks",
+      "reason_code": "SOURCE_BACKED_PUBLIC_REPLAY_LANE",
+      "repo_module_affected": "src/quant_os/research/prediction_markets/; src/quant_os/data/; src/quant_os/replay/",
+      "required_public_data": [
+        "public market metadata",
+        "public CLOB snapshots",
+        "public trades/order-filled events",
+        "resolved outcomes"
+      ],
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "source_type": "v4_repo_research_primary",
+      "strategy_family": "prediction_market_read_only_clob_replay",
+      "validation_blocker": "PUBLIC_PREDICTION_MARKET_DATA_LANE_NOT_BUILT"
+    },
+    {
+      "accept_reject_defer_decision": "ACCEPT",
+      "changes_overfit_repeatability_capacity_validation": true,
+      "changes_public_forward_collection": false,
+      "changes_variant_generation": true,
+      "decision": "ACCEPT",
+      "expected_failure_mode": "OHLC-only or guaranteed fills overstate edge",
+      "id": "spi_239445a5ae44",
+      "minimum_viable_test": "stale book, adverse selection, partial-fill, spread, and latency stress fixtures",
+      "reason_code": "REPLAY_REALISM_BEFORE_EDGE",
+      "repo_module_affected": "src/quant_os/replay/; src/quant_os/risk/; src/quant_os/validation/",
+      "required_public_data": [
+        "orderbook depth",
+        "spread",
+        "latency timestamp",
+        "future public mark"
+      ],
+      "source_pack_file_or_card": "github_repo_research/repo_research_backlog.md",
+      "source_type": "v4_repo_research_primary",
+      "strategy_family": "replay_realism_veto_layer",
+      "validation_blocker": "REPLAY_REALISM_STRESS_NOT_APPLIED"
+    },
+    {
+      "accept_reject_defer_decision": "ACCEPT",
+      "changes_overfit_repeatability_capacity_validation": true,
+      "changes_public_forward_collection": true,
+      "changes_variant_generation": true,
+      "decision": "ACCEPT",
+      "expected_failure_mode": "generic crypto drift disappears after costs and forward replay",
+      "id": "spi_08a0514efad9",
+      "minimum_viable_test": "Kraken/Binance-compatible replay with stricter data provenance and cost stress",
+      "reason_code": "CRYPTO_DATA_PROVENANCE_TIGHTENING",
+      "repo_module_affected": "src/quant_os/research/crypto/; src/quant_os/data/; src/quant_os/replay/",
+      "required_public_data": [
+        "public candles",
+        "public spread/depth proxy",
+        "future public marks"
+      ],
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "source_type": "v4_repo_research_primary",
+      "strategy_family": "crypto_public_data_quality_filtered_momentum",
+      "validation_blocker": "PUBLIC_FORWARD_EVIDENCE_NOT_PROVEN"
+    },
+    {
+      "accept_reject_defer_decision": "ACCEPT",
+      "changes_overfit_repeatability_capacity_validation": true,
+      "changes_public_forward_collection": false,
+      "changes_variant_generation": true,
+      "decision": "ACCEPT",
+      "expected_failure_mode": "untrusted social/media text accidentally becomes strategy evidence",
+      "id": "spi_552b4a7725c3",
+      "minimum_viable_test": "compact evidence-card fixture with hashes and explicit proof/non-proof labels",
+      "reason_code": "SOURCE_QUALITY_BEFORE_VARIANT_EXPANSION",
+      "repo_module_affected": "src/quant_os/research/strategy_factory/; reports/thousand_strategy_campaign/",
+      "required_public_data": [
+        "source URL",
+        "retrieval timestamp",
+        "content hash",
+        "license/security note"
+      ],
+      "source_pack_file_or_card": "project_sources/08_GITHUB_REPO_RESEARCH_ADDENDUM.md",
+      "source_type": "v4_repo_research_primary",
+      "strategy_family": "source_quality_filtering_and_evidence_pack",
+      "validation_blocker": "SOURCE_PROVENANCE_NOT_RECORDED"
+    },
+    {
+      "accept_reject_defer_decision": "ACCEPT",
+      "changes_overfit_repeatability_capacity_validation": true,
+      "changes_public_forward_collection": false,
+      "changes_variant_generation": true,
+      "decision": "ACCEPT",
+      "expected_failure_mode": "broad variant search finds a false discovery",
+      "id": "spi_0bd6cf8fca95",
+      "minimum_viable_test": "holdout/walk-forward fixture that blocks neighboring-parameter fragility",
+      "reason_code": "MULTIPLE_TESTING_AND_CALIBRATION_HARDENING",
+      "repo_module_affected": "src/quant_os/proving/; src/quant_os/validation/",
+      "required_public_data": [
+        "pre-registered split",
+        "holdout window",
+        "purged labels",
+        "placebo seed"
+      ],
+      "source_pack_file_or_card": "github_repo_research/repo_relevance_matrix.csv",
+      "source_type": "v4_repo_research_primary",
+      "strategy_family": "calibration_holdout_walk_forward_protocol",
+      "validation_blocker": "HOLDOUT_OR_FORWARD_WINDOW_NOT_PROVEN"
+    },
+    {
+      "accept_reject_defer_decision": "ACCEPT",
+      "changes_overfit_repeatability_capacity_validation": true,
+      "changes_public_forward_collection": true,
+      "changes_variant_generation": true,
+      "decision": "ACCEPT",
+      "expected_failure_mode": "apparent arbitrage disappears after fees, spread, or settlement-rule mismatch",
+      "id": "spi_8a45c9459fac",
+      "minimum_viable_test": "fixture that proves basket/negation mispricing is net of spread and settlement risk",
+      "reason_code": "STRUCTURAL_EDGE_REQUIRES_LOCKED_PUBLIC_REPLAY",
+      "repo_module_affected": "src/quant_os/research/prediction_markets/; src/quant_os/risk/",
+      "required_public_data": [
+        "mutually exclusive market set",
+        "negation pair metadata",
+        "best bid/ask",
+        "resolution rule"
+      ],
+      "source_pack_file_or_card": "github_repo_research/repo_research_backlog.md",
+      "source_type": "v4_repo_research_primary",
+      "strategy_family": "prediction_market_structural_consistency_checks",
+      "validation_blocker": "PREDICTION_MARKET_STRUCTURE_NOT_REPLAYABLE"
+    },
+    {
+      "accept_reject_defer_decision": "ACCEPT",
+      "changes_overfit_repeatability_capacity_validation": true,
+      "changes_public_forward_collection": false,
+      "changes_variant_generation": false,
+      "decision": "ACCEPT",
+      "expected_failure_mode": "repo pattern or client adopted before safe public-data review",
+      "id": "spi_a4b11085e268",
+      "minimum_viable_test": "dependency intake card blocks adoption until source/license/security review passes",
+      "reason_code": "NO_DEPENDENCY_ADOPTION_WITHOUT_REVIEW",
+      "repo_module_affected": "src/quant_os/data/; src/quant_os/research/; reports/research/",
+      "required_public_data": [
+        "repo URL",
+        "license",
+        "maintenance signal",
+        "security review note"
+      ],
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "source_type": "v4_repo_research_primary",
+      "strategy_family": "dependency_license_security_gate",
+      "validation_blocker": "DEPENDENCY_REVIEW_NOT_COMPLETED"
+    },
+    {
+      "accept_reject_defer_decision": "ACCEPT",
+      "changes_overfit_repeatability_capacity_validation": true,
+      "changes_public_forward_collection": true,
+      "changes_variant_generation": true,
+      "decision": "ACCEPT",
+      "expected_failure_mode": "more indicators add noise instead of blocking false entries",
+      "id": "spi_2ba9a7118cb6",
+      "minimum_viable_test": "candidate is blocked when expected edge is smaller than replay uncertainty",
+      "reason_code": "FEWER_HIGHER_QUALITY_TRADES",
+      "repo_module_affected": "src/quant_os/risk/strategy_conflict_detector.py",
+      "required_public_data": [
+        "source freshness",
+        "spread cap",
+        "cross-market agreement",
+        "execution uncertainty"
+      ],
+      "source_pack_file_or_card": "github_repo_research/repo_research_backlog.md",
+      "source_type": "v4_repo_research_primary",
+      "strategy_family": "source_backed_no_trade_veto_behavior",
+      "validation_blocker": "CONFLICT_DETECTOR_NOT_SOURCE_BACKED"
+    },
+    {
+      "accept_reject_defer_decision": "DEFER",
+      "changes_overfit_repeatability_capacity_validation": true,
+      "changes_public_forward_collection": false,
+      "changes_variant_generation": true,
+      "decision": "DEFER",
+      "expected_failure_mode": "forecast timestamps leak resolution-period information",
+      "id": "spi_08c0f7d0c1b9",
+      "minimum_viable_test": "single-city fixture with issue-time forecast alignment and resolved outcome labels",
+      "reason_code": "NEEDS_PUBLIC_OUTCOME_ALIGNMENT",
+      "repo_module_affected": "src/quant_os/research/prediction_markets/; src/quant_os/validation/",
+      "required_public_data": [
+        "issue-time forecast",
+        "market bucket price",
+        "resolved weather observation"
+      ],
+      "source_pack_file_or_card": "github_repo_research/repo_cards/yangyuan-zhen__PolyWeather.md",
+      "source_type": "v4_repo_card_reference",
+      "strategy_family": "weather_forecast_market_calibration",
+      "validation_blocker": "WEATHER_OUTCOME_DATA_PATH_NOT_READY"
+    },
+    {
+      "accept_reject_defer_decision": "REJECT",
+      "changes_overfit_repeatability_capacity_validation": false,
+      "changes_public_forward_collection": false,
+      "changes_variant_generation": true,
+      "decision": "REJECT",
+      "expected_failure_mode": "unverifiable social claims and unsafe wallet-following behavior",
+      "id": "spi_2aa8e1303723",
+      "minimum_viable_test": "none; unsafe execution logic rejected",
+      "reason_code": "UNSAFE_COPY_TRADING_REJECTED",
+      "repo_module_affected": "none",
+      "required_public_data": [
+        "not applicable"
+      ],
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "source_type": "v4_repo_research_primary",
+      "strategy_family": "copy_trading_wallet_mirroring",
+      "validation_blocker": "UNSAFE_COPY_TRADING_WALLET_MIRRORING"
+    },
+    {
+      "accept_reject_defer_decision": "REJECT",
+      "changes_overfit_repeatability_capacity_validation": false,
+      "changes_public_forward_collection": false,
+      "changes_variant_generation": true,
+      "decision": "REJECT",
+      "expected_failure_mode": "policy-unsafe data acquisition path",
+      "id": "spi_987682271c03",
+      "minimum_viable_test": "none; stealth collection rejected",
+      "reason_code": "STEALTH_TOOLING_REJECTED",
+      "repo_module_affected": "none",
+      "required_public_data": [
+        "not applicable"
+      ],
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "source_type": "v4_repo_research_primary",
+      "strategy_family": "stealth_scraping_or_anti_bot_collection",
+      "validation_blocker": "STEALTH_BROWSER_OR_ANTI_BOT_TOOLING"
+    }
+  ],
+  "live_trading_enabled": false,
+  "money_worthy_readiness_status": "MONEY_WORTHY_BLOCKED_BY_OVERFIT",
+  "next_action": "Use source-backed tranche plan before generating more campaign variants.",
+  "order_transmission_enabled": false,
+  "primary_file_count": 176,
+  "primary_source_pack": "C:\\Users\\estiv\\Downloads\\quant_project_source_pack_20260520_v4_github_repo_research.zip",
+  "private_keys_loaded": false,
+  "proof_status_changed": false,
+  "rejected_idea_count": 2,
+  "report_paths": {
+    "json": "reports\\thousand_strategy_campaign\\source_pack_intake\\latest_source_pack_intake.json",
+    "markdown": "reports\\thousand_strategy_campaign\\source_pack_intake\\latest_source_pack_intake.md"
+  },
+  "request_signing_enabled": false,
+  "safety_notes": [
+    "source packs are hypothesis and repo-research input only",
+    "PnL screenshots, stars, popularity, claims, and engagement are never proof",
+    "no dependency or API is adopted without license/source/security review",
+    "all accepted ideas require public read-only data and fake-money replay"
+  ],
+  "schema_version": "source_pack_intake_v1",
+  "social_or_repo_claims_are_proof": false,
+  "source_pack_files_used": [
+    "quant_project_source_pack_20260520_v4_github_repo_research/github_repo_research/priority_repo_decisions.md",
+    "quant_project_source_pack_20260520_v4_github_repo_research/github_repo_research/repo_relevance_matrix.csv",
+    "quant_project_source_pack_20260520_v4_github_repo_research/github_repo_research/repo_relevance_matrix.jsonl",
+    "quant_project_source_pack_20260520_v4_github_repo_research/github_repo_research/repo_research_backlog.md"
+  ],
+  "status": "SOURCE_PACK_INTAKE_READY",
+  "supporting_file_count": 3,
+  "supporting_source_pack": "C:\\Users\\estiv\\Downloads\\quant_project_source_pack_20260520_v3_media_researched.zip"
+}

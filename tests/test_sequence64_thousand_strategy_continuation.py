@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 
@@ -1578,6 +1579,108 @@ def test_sequence64_next_tranche_cli_and_make_target_are_data_only(local_project
     make_cmd = (repo_root / "make.cmd").read_text(encoding="utf-8")
     assert 'if "%TARGET%"=="thousand-strategy-next-tranche"' in make_cmd
     assert 'if "%TARGET%"=="sequence64-smoke"' in make_cmd
+
+
+def test_sequence64_source_pack_intake_extracts_useful_repo_knowledge_without_proof(
+    local_project: Path,
+) -> None:
+    from quant_os.research.strategy_factory.source_pack_intake import (
+        write_source_pack_intake_report,
+    )
+
+    v4_zip = local_project / "v4_source_pack.zip"
+    with zipfile.ZipFile(v4_zip, "w") as archive:
+        archive.writestr(
+            "github_repo_research/priority_repo_decisions.md",
+            "\n".join(
+                [
+                    "# Priority Repo Decisions",
+                    "### Polymarket/py-clob-client-v2",
+                    "- URL: https://github.com/Polymarket/py-clob-client-v2",
+                    "- Why: Direct prediction-market venue/data/replay relevance; keep as persistent reference, but do not promote to live execution.",
+                    "- Use for: src/quant_os/research/prediction_markets/; src/quant_os/data/; src/quant_os/replay/",
+                    "### warproxxx/poly_data",
+                    "- URL: https://github.com/warproxxx/poly_data",
+                    "- Why: Public Polymarket data pipeline; keep as persistent reference, but do not promote to live execution.",
+                    "- Use for: src/quant_os/research/prediction_markets/; src/quant_os/data/; src/quant_os/replay/",
+                    "## Archive / research-only repos",
+                    "- `TopTrenDev/polymarket-kalshi-arbitrage-bot` - inspect only for data/replay/risk patterns.",
+                ]
+            ),
+        )
+        archive.writestr(
+            "github_repo_research/repo_research_backlog.md",
+            "\n".join(
+                [
+                    "# Repo-Derived Research Backlog",
+                    "1. Add Polymarket read-only data lane design doc",
+                    "- Source repos: `warproxxx/poly_data`, `Polymarket/py-clob-client-v2`, `PolyBench/PolyBench`",
+                    "- Hypothesis: prediction-market research should start with market metadata, order-filled events, trades, and CLOB snapshots, not trading.",
+                    "- Failure modes: stale snapshots, on-chain/feed mismatch, missing resolution labels.",
+                    "2. Improve replay realism from external benchmarks",
+                    "- Source repos: `evan-kolberg/prediction-market-backtesting`, `nautechsystems/nautilus_trader`, `PolyBench/PolyBench`",
+                    "- Test: add stale book, adverse selection, partial-fill, spread, and latency scenarios.",
+                ]
+            ),
+        )
+
+    payload = write_source_pack_intake_report(
+        output_root=local_project,
+        primary_source_pack=v4_zip,
+    )
+
+    assert payload["status"] == "SOURCE_PACK_INTAKE_READY"
+    assert payload["social_or_repo_claims_are_proof"] is False
+    assert payload["proof_status_changed"] is False
+    assert payload["money_worthy_readiness_status"] != "MONEY_WORTHY_CANARY_GRADE_PROFITABILITY_PROVEN"
+    assert payload["accepted_idea_count"] >= 2
+    assert any(idea["strategy_family"] == "prediction_market_read_only_clob_replay" for idea in payload["ideas"])
+    assert any(idea["strategy_family"] == "replay_realism_veto_layer" for idea in payload["ideas"])
+    assert any(idea["decision"] == "REJECT" for idea in payload["ideas"])
+    assert all(idea["accept_reject_defer_decision"] in {"ACCEPT", "REJECT", "DEFER"} for idea in payload["ideas"])
+    assert payload["live_trading_enabled"] is False
+    assert payload["request_signing_enabled"] is False
+
+
+def test_sequence64_source_backed_tranche_plan_narrows_future_generation(
+    local_project: Path,
+) -> None:
+    from quant_os.research.strategy_factory.source_backed_tranche_plan import (
+        write_source_backed_tranche_plan_report,
+    )
+    from quant_os.research.strategy_factory.source_pack_intake import (
+        write_source_pack_intake_report,
+    )
+
+    v4_zip = local_project / "v4_source_pack.zip"
+    with zipfile.ZipFile(v4_zip, "w") as archive:
+        archive.writestr(
+            "github_repo_research/priority_repo_decisions.md",
+            "Polymarket/py-clob-client-v2\nwarproxxx/poly_data\n"
+            "binance/binance-public-data\nccxt/ccxt\nfreqtrade/freq\n"
+            "TopTrenDev/polymarket-kalshi-arbitrage-bot copy trade wallet mirror\n",
+        )
+        archive.writestr(
+            "github_repo_research/repo_research_backlog.md",
+            "Add Polymarket read-only data lane design doc\n"
+            "Improve replay realism from external benchmarks\n"
+            "Keep crypto-first data tooling practical\n",
+        )
+    write_source_pack_intake_report(output_root=local_project, primary_source_pack=v4_zip)
+
+    plan = write_source_backed_tranche_plan_report(output_root=local_project)
+
+    assert plan["status"] == "SOURCE_BACKED_TRANCHE_PLAN_READY"
+    assert plan["proof_status_changed"] is False
+    assert plan["target_next_variants"] < 1000
+    assert "prediction_market_read_only_clob_replay" in plan["families_added"]
+    assert "copy_trading_wallet_mirroring" in plan["families_removed_or_deprioritized"]
+    assert "coinflip_open_hour_bias" in plan["families_removed_or_deprioritized"]
+    assert plan["parameter_range_changes"]["spread_cap_bps"]["after"] == [5.0, 10.0]
+    assert any(path["requires_auth"] is False for path in plan["required_public_data_paths"])
+    assert "PUBLIC_FORWARD_EVIDENCE_NOT_PROVEN" in plan["blockers_addressed"]
+    assert plan["next_resume_command"] == ".\\make.cmd thousand-strategy-next-tranche"
+    assert plan["order_transmission_enabled"] is False
 
 
 def _variant_shape_keys(variants: list[dict[str, object]]) -> set[tuple[object, ...]]:
