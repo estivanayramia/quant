@@ -66,10 +66,15 @@ def generate_strategy_variants(
     *,
     target_count: int = 1000,
     batch_index: int = 1,
+    families: list[str] | None = None,
+    source_label: str = "pre_registered_public_strategy_factory_v1",
 ) -> list[StrategyVariant]:
     variants: list[StrategyVariant] = []
     seed = 630000 + ((batch_index - 1) * 1_000_000)
-    combinations = list(product(LOOKBACKS, HOLDS, THRESHOLDS, SPREAD_CAPS, LIQUIDITY_CAPS, FAMILIES))
+    selected_families = families or FAMILIES
+    combinations = list(
+        product(LOOKBACKS, HOLDS, THRESHOLDS, SPREAD_CAPS, LIQUIDITY_CAPS, selected_families)
+    )
     for index in range(target_count):
         global_index = ((batch_index - 1) * target_count) + index
         universe_cycle = global_index // len(combinations)
@@ -94,7 +99,7 @@ def generate_strategy_variants(
             "universe_cycle": universe_cycle,
             "family": family,
             "assets": market_assets,
-            "source": "pre_registered_public_strategy_factory_v1",
+            "source": source_label,
             "lookback": lookback,
             "holding_window": hold,
             "thresholds": {
@@ -132,26 +137,40 @@ def write_strategy_variants_report(
     output_root: str | Path = ".",
     target_count: int = 1000,
     batch_index: int = 1,
+    families: list[str] | None = None,
+    source_label: str = "pre_registered_public_strategy_factory_v1",
+    cumulative_variant_count: int | None = None,
+    source_backed_plan_applied: bool = False,
 ) -> dict[str, Any]:
-    variants = generate_strategy_variants(target_count=target_count, batch_index=batch_index)
-    cumulative_variant_count = batch_index * len(variants)
+    variants = generate_strategy_variants(
+        target_count=target_count,
+        batch_index=batch_index,
+        families=families,
+        source_label=source_label,
+    )
+    total_variant_count = cumulative_variant_count or batch_index * len(variants)
     payload = safe_payload(
         status="STRATEGY_VARIANTS_PREREGISTERED",
         batch_index=batch_index,
         variant_count=len(variants),
-        cumulative_variant_count=cumulative_variant_count,
+        cumulative_variant_count=total_variant_count,
         variants=variants,
         top_k_preview=variants[:25],
         pre_registered_before_testing=True,
         deterministic_seed="strategy_factory_v1_seed_630000",
         family_count=len({variant["family"] for variant in variants}),
         asset_count=len({asset for variant in variants for asset in variant["assets"]}),
+        source_backed_plan_applied=source_backed_plan_applied,
+        source_backed_families=sorted(set(families or [])),
     )
     write_campaign_state(
         output_root=output_root,
-        variants_generated=cumulative_variant_count,
+        variants_generated=total_variant_count,
         last_completed_batch_index=batch_index,
         strategy_families_queued=sorted({variant["family"] for variant in variants}),
+        source_backed_tranche_plan_status=(
+            "SOURCE_BACKED_TRANCHE_PLAN_APPLIED" if source_backed_plan_applied else None
+        ),
     )
     lines = [
         f"Status: {payload['status']}",

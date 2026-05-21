@@ -6699,7 +6699,7 @@ def research_strategy_tournament(
 
 @research_app.command("strategy-next-tranche")
 def research_strategy_next_tranche(
-    target_count: int = typer.Option(1000, "--target-count", min=1000),
+    target_count: int | None = typer.Option(None, "--target-count", min=1),
 ) -> None:
     from quant_os.research.strategy_factory.strategy_tournament import (
         write_next_strategy_tranche_report,

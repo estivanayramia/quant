@@ -22,8 +22,15 @@ def run_strategy_tournament(
     *,
     target_count: int = 1000,
     batch_index: int = 1,
+    families: list[str] | None = None,
+    source_label: str = "pre_registered_public_strategy_factory_v1",
 ) -> dict[str, Any]:
-    variants = generate_strategy_variants(target_count=target_count, batch_index=batch_index)
+    variants = generate_strategy_variants(
+        target_count=target_count,
+        batch_index=batch_index,
+        families=families,
+        source_label=source_label,
+    )
     stage1 = [_score_variant(variant, index, stage=1) for index, variant in enumerate(variants[:250])]
     stage1_survivors = _dedup_ranked(stage1)[:50]
     stage2 = [_harden(item, stage=2) for item in stage1_survivors]
@@ -94,14 +101,42 @@ def write_strategy_tournament_report(
     output_root: str | Path = ".",
     target_count: int = 1000,
     batch_index: int = 1,
+    families: list[str] | None = None,
+    source_label: str = "pre_registered_public_strategy_factory_v1",
+    cumulative_variants_generated: int | None = None,
+    cumulative_variants_tested: int | None = None,
+    cumulative_variants_rejected: int | None = None,
+    source_backed_plan_applied: bool = False,
 ) -> dict[str, Any]:
     previous = load_report(
         output_root=output_root,
         report_dir="tournament",
         json_name="latest_tournament.json",
     )
-    payload = run_strategy_tournament(target_count=target_count, batch_index=batch_index)
-    payload = _add_cumulative_leaderboard(payload, previous=previous)
+    payload = run_strategy_tournament(
+        target_count=target_count,
+        batch_index=batch_index,
+        families=families,
+        source_label=source_label,
+    )
+    if cumulative_variants_generated is not None:
+        payload["cumulative_variants_generated"] = cumulative_variants_generated
+    if cumulative_variants_tested is not None:
+        payload["cumulative_variants_tested"] = cumulative_variants_tested
+    if cumulative_variants_rejected is not None:
+        payload["cumulative_variants_rejected"] = cumulative_variants_rejected
+    payload["source_backed_plan_applied"] = source_backed_plan_applied
+    payload["source_backed_families"] = sorted(set(families or []))
+    rotation = load_report(
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_public_forward_candidate_rotation.json",
+    )
+    payload = _add_cumulative_leaderboard(
+        payload,
+        previous=previous,
+        retired_candidate_ids=_retired_candidate_ids(rotation),
+    )
     write_campaign_state(
         output_root=output_root,
         campaign_status=payload["status"],
@@ -117,6 +152,9 @@ def write_strategy_tournament_report(
         blockers=payload["current_best_candidate"]["blockers"],
         manual_canary_packet_status="FIRST_TINY_MANUAL_CANARY_PACKET_BLOCKED",
         exact_resume_command=payload["exact_resume_command"],
+        source_backed_tranche_plan_status=(
+            "SOURCE_BACKED_TRANCHE_PLAN_APPLIED" if source_backed_plan_applied else None
+        ),
     )
     lines = [
         f"Status: {payload['status']}",
@@ -145,8 +183,10 @@ def _add_cumulative_leaderboard(
     payload: dict[str, Any],
     *,
     previous: dict[str, Any],
+    retired_candidate_ids: set[str] | None = None,
 ) -> dict[str, Any]:
     payload = dict(payload)
+    retired_candidate_ids = retired_candidate_ids or set()
     latest_best = dict(payload["current_best_candidate"])
     prior_leaderboard: list[dict[str, Any]] = []
     prior_candidates: list[dict[str, Any]] = []
@@ -163,11 +203,16 @@ def _add_cumulative_leaderboard(
         )
 
     cumulative_leaderboard = _dedup_ranked(
-        [*prior_leaderboard, *payload["leaderboard_top_50"]],
+        _exclude_retired([*prior_leaderboard, *payload["leaderboard_top_50"]], retired_candidate_ids),
     )[:50]
     cumulative_candidates = _dedup_ranked(
-        [*prior_candidates, *payload["top_candidates"]],
+        _exclude_retired([*prior_candidates, *payload["top_candidates"]], retired_candidate_ids),
     )[:10]
+    if latest_best.get("id") in retired_candidate_ids:
+        eligible_latest = _dedup_ranked(
+            _exclude_retired(payload["leaderboard_top_50"], retired_candidate_ids)
+        )
+        latest_best = eligible_latest[0] if eligible_latest else latest_best
     cumulative_best = cumulative_candidates[0] if cumulative_candidates else latest_best
 
     payload["latest_batch_best_candidate"] = latest_best
@@ -178,6 +223,26 @@ def _add_cumulative_leaderboard(
     payload["baseline_beaten"] = cumulative_best["baseline_beaten"]
     payload["placebo_beaten"] = cumulative_best["placebo_beaten"]
     return payload
+
+
+def _retired_candidate_ids(rotation: dict[str, Any]) -> set[str]:
+    retired = {
+        str(row.get("candidate_id"))
+        for row in rotation.get("retired_candidates", [])
+        if row.get("candidate_id")
+    }
+    if rotation.get("retired_candidate_id"):
+        retired.add(str(rotation["retired_candidate_id"]))
+    return retired
+
+
+def _exclude_retired(
+    items: list[dict[str, Any]],
+    retired_candidate_ids: set[str],
+) -> list[dict[str, Any]]:
+    if not retired_candidate_ids:
+        return items
+    return [item for item in items if str(item.get("id")) not in retired_candidate_ids]
 
 
 def _dedup_ranked(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -204,23 +269,53 @@ def _rank_key(item: dict[str, Any]) -> tuple[float, float, int]:
 def write_next_strategy_tranche_report(
     *,
     output_root: str | Path = ".",
-    target_count: int = 1000,
+    target_count: int | None = None,
 ) -> dict[str, Any]:
     state = load_report(
         output_root=output_root,
         report_dir="state",
         json_name="latest_state.json",
     )
+    plan = load_report(
+        output_root=output_root,
+        report_dir="source_backed_tranche_plan",
+        json_name="latest_source_backed_tranche_plan.json",
+    )
     next_batch_index = int(state.get("last_completed_batch_index", 0) or 0) + 1
+    source_backed = bool(plan.get("status") == "SOURCE_BACKED_TRANCHE_PLAN_READY")
+    plan_families = list(plan.get("families_added") or []) if source_backed else None
+    selected_count = int(target_count or plan.get("target_next_variants") or 1000)
+    previous_generated = int(state.get("variants_generated", 0) or 0)
+    previous_tested = int(state.get("variants_tested", 0) or 0)
+    previous_rejected = int(state.get("variants_rejected", 0) or 0)
+    cumulative_generated = previous_generated + selected_count
+    staged_test_count = min(250, selected_count)
+    cumulative_tested = previous_tested + staged_test_count
+    cumulative_rejected = previous_rejected + max(staged_test_count - 1, 0)
+    source_label = (
+        "source_backed_public_strategy_factory_v1"
+        if source_backed
+        else "pre_registered_public_strategy_factory_v1"
+    )
     write_strategy_variants_report(
         output_root=output_root,
-        target_count=target_count,
+        target_count=selected_count,
         batch_index=next_batch_index,
+        families=plan_families,
+        source_label=source_label,
+        cumulative_variant_count=cumulative_generated,
+        source_backed_plan_applied=source_backed,
     )
     return write_strategy_tournament_report(
         output_root=output_root,
-        target_count=target_count,
+        target_count=selected_count,
         batch_index=next_batch_index,
+        families=plan_families,
+        source_label=source_label,
+        cumulative_variants_generated=cumulative_generated,
+        cumulative_variants_tested=cumulative_tested,
+        cumulative_variants_rejected=cumulative_rejected,
+        source_backed_plan_applied=source_backed,
     )
 
 

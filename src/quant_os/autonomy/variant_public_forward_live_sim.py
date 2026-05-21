@@ -416,19 +416,20 @@ def write_variant_public_forward_collection_cycle(
     public_snapshot: dict[str, Any] | None = None,
     candidate: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    resolved_candidate = candidate or _resolve_public_forward_collectable_candidate(output_root)
     observation_summary = append_variant_public_forward_public_snapshot(
         output_root=output_root,
         public_network_ok=public_network_ok,
         public_snapshot=public_snapshot,
-        candidate=candidate,
+        candidate=resolved_candidate,
     )
     intents = write_variant_public_forward_intents_report(
         output_root=output_root,
-        candidate=candidate,
+        candidate=resolved_candidate,
     )
     fills_marks = write_variant_public_forward_fills_and_marks_report(
         output_root=output_root,
-        candidate=candidate,
+        candidate=resolved_candidate,
     )
     from quant_os.proving.thousand_strategy_public_forward_evidence import (
         write_thousand_strategy_public_forward_evidence_report,
@@ -488,6 +489,7 @@ def write_variant_public_forward_batch_cycle(
 ) -> dict[str, Any]:
     bounded_cycle_count = max(1, min(int(cycle_count), 50))
     snapshots = list(public_snapshots or [])
+    resolved_candidate = candidate or _resolve_public_forward_collectable_candidate(output_root)
     cycle_summaries: list[dict[str, Any]] = []
     latest: dict[str, Any] = {}
     for index in range(bounded_cycle_count):
@@ -496,7 +498,7 @@ def write_variant_public_forward_batch_cycle(
             output_root=output_root,
             public_network_ok=public_network_ok,
             public_snapshot=snapshot,
-            candidate=candidate,
+            candidate=resolved_candidate,
         )
         cycle_summaries.append(
             {
@@ -949,6 +951,62 @@ def _public_forward_retirement_reasons(report: dict[str, Any]) -> list[str]:
     if completed_marks > 0 and fake_net_pnl < 0:
         reasons.append("PUBLIC_FORWARD_FAKE_NET_PNL_NEGATIVE")
     return reasons
+
+
+def _resolve_public_forward_collectable_candidate(output_root: str | Path) -> dict[str, Any] | None:
+    tournament = load_report(
+        output_root=output_root,
+        report_dir="tournament",
+        json_name="latest_tournament.json",
+    )
+    current = dict(tournament.get("current_best_candidate") or {})
+    if _is_public_forward_collectable_candidate(current):
+        return current
+
+    live_summary = load_report(
+        output_root=output_root,
+        report_dir="live_sim",
+        json_name="latest_live_sim_summary.json",
+    )
+    selected_id = str(live_summary.get("selected_strategy_id") or "")
+    if selected_id:
+        selected = _candidate_from_tournament(tournament, selected_id)
+        if selected and _is_public_forward_collectable_candidate(selected):
+            return selected
+        summary_candidate = {
+            "id": selected_id,
+            "family": live_summary.get("selected_strategy_family"),
+            "assets": live_summary.get("selected_strategy_assets", []),
+        }
+        if _is_public_forward_collectable_candidate(summary_candidate):
+            return summary_candidate
+
+    for candidate in (
+        tournament.get("cumulative_leaderboard_top_50")
+        or tournament.get("leaderboard_top_50")
+        or tournament.get("top_candidates")
+        or []
+    ):
+        if _is_public_forward_collectable_candidate(candidate):
+            return dict(candidate)
+    return current or None
+
+
+def _candidate_from_tournament(
+    tournament: dict[str, Any],
+    candidate_id: str,
+) -> dict[str, Any] | None:
+    candidates = [
+        tournament.get("current_best_candidate"),
+        tournament.get("latest_batch_best_candidate"),
+        *(tournament.get("cumulative_leaderboard_top_50") or []),
+        *(tournament.get("leaderboard_top_50") or []),
+        *(tournament.get("top_candidates") or []),
+    ]
+    for candidate in candidates:
+        if isinstance(candidate, dict) and str(candidate.get("id")) == candidate_id:
+            return dict(candidate)
+    return None
 
 
 def _is_public_forward_collectable_candidate(candidate: dict[str, Any]) -> bool:

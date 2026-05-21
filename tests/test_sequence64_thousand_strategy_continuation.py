@@ -1088,6 +1088,65 @@ def test_sequence64_public_forward_batch_cycle_runs_bounded_append_only_cycles(
     assert batch["request_signing_enabled"] is False
 
 
+def test_sequence64_public_forward_batch_uses_rotated_collectable_candidate(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_batch_cycle,
+        write_variant_public_forward_live_sim_summary,
+    )
+    from quant_os.research.strategy_factory.campaign_common import write_json_md
+
+    weather_candidate = {
+        "id": "tsv_weather_not_collectable",
+        "family": "temperature_tail_mispricing",
+        "assets": ["KXHIGHNY", "KXHIGHLAX"],
+    }
+    crypto_candidate = {
+        "id": "tsv_crypto_collectable",
+        "family": "crypto_public_data_quality_filtered_momentum",
+        "assets": ["BTC/USD", "ETH/USD"],
+    }
+    write_json_md(
+        {
+            "status": "THOUSAND_STRATEGY_CAMPAIGN_CHECKPOINTED_NOT_COMPLETE",
+            "current_best_candidate": weather_candidate,
+            "cumulative_leaderboard_top_50": [weather_candidate, crypto_candidate],
+        },
+        output_root=local_project,
+        report_dir="tournament",
+        json_name="latest_tournament.json",
+        md_name="latest_tournament.md",
+        title="Tournament",
+        lines=["fixture"],
+    )
+    write_variant_public_forward_live_sim_summary(
+        output_root=local_project,
+        candidate=crypto_candidate,
+    )
+
+    batch = write_variant_public_forward_batch_cycle(
+        output_root=local_project,
+        public_network_ok=True,
+        public_snapshots=[
+            {
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "fetched_at": "2026-05-19T14:05:00Z",
+                "symbols": {
+                    "BTC/USD": {"book": {"bid": 100.2, "ask": 100.3}},
+                    "ETH/USD": {"book": {"bid": 49.8, "ask": 49.9}},
+                },
+            }
+        ],
+        cycle_count=1,
+        sleep_seconds=0,
+    )
+
+    assert batch["selected_strategy_id"] == crypto_candidate["id"]
+    assert batch["observation_count"] == 2
+    assert batch["collection_blockers"] == []
+
+
 def test_sequence64_public_forward_candidate_archive_separates_rotated_candidates(
     local_project: Path,
 ) -> None:
@@ -1681,6 +1740,115 @@ def test_sequence64_source_backed_tranche_plan_narrows_future_generation(
     assert "PUBLIC_FORWARD_EVIDENCE_NOT_PROVEN" in plan["blockers_addressed"]
     assert plan["next_resume_command"] == ".\\make.cmd thousand-strategy-next-tranche"
     assert plan["order_transmission_enabled"] is False
+
+
+def test_sequence64_next_tranche_uses_source_backed_plan_when_available(
+    local_project: Path,
+) -> None:
+    from quant_os.research.strategy_factory.campaign_common import write_campaign_state
+    from quant_os.research.strategy_factory.source_backed_tranche_plan import (
+        write_source_backed_tranche_plan_report,
+    )
+    from quant_os.research.strategy_factory.source_pack_intake import (
+        write_source_pack_intake_report,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_next_strategy_tranche_report,
+    )
+
+    v4_zip = local_project / "v4_source_pack.zip"
+    with zipfile.ZipFile(v4_zip, "w") as archive:
+        archive.writestr(
+            "github_repo_research/priority_repo_decisions.md",
+            "Polymarket/py-clob-client-v2\nwarproxxx/poly_data\n"
+            "binance/binance-public-data\nccxt/ccxt\nfreqtrade/freq\n",
+        )
+        archive.writestr(
+            "github_repo_research/repo_research_backlog.md",
+            "Add Polymarket read-only data lane design doc\n"
+            "Improve replay realism from external benchmarks\n"
+            "Keep crypto-first data tooling practical\n",
+        )
+    write_campaign_state(
+        output_root=local_project,
+        variants_generated=4000,
+        variants_tested=1000,
+        variants_rejected=996,
+        last_completed_batch_index=4,
+    )
+    write_source_pack_intake_report(output_root=local_project, primary_source_pack=v4_zip)
+    plan = write_source_backed_tranche_plan_report(output_root=local_project)
+
+    tranche = write_next_strategy_tranche_report(output_root=local_project)
+    variants = json.loads(
+        (
+            local_project
+            / "reports/thousand_strategy_campaign/variants/latest_strategy_variants.json"
+        ).read_text(encoding="utf-8")
+    )
+    state = json.loads(
+        (
+            local_project / "reports/thousand_strategy_campaign/state/latest_state.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert tranche["source_backed_plan_applied"] is True
+    assert tranche["variants_generated"] == plan["target_next_variants"]
+    assert tranche["cumulative_variants_generated"] == 4360
+    assert tranche["cumulative_variants_tested"] == 1250
+    assert variants["variant_count"] == plan["target_next_variants"]
+    assert set(variants["source_backed_families"]).issubset(set(plan["families_added"]))
+    assert all(
+        variant["source"] == "source_backed_public_strategy_factory_v1"
+        for variant in variants["variants"]
+    )
+    assert state["variants_generated"] == 4360
+    assert state["source_backed_tranche_plan_status"] == "SOURCE_BACKED_TRANCHE_PLAN_APPLIED"
+
+
+def test_sequence64_next_tranche_does_not_resurrect_public_forward_retired_candidates(
+    local_project: Path,
+) -> None:
+    from quant_os.research.strategy_factory.campaign_common import write_json_md
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_next_strategy_tranche_report,
+        write_strategy_tournament_report,
+    )
+
+    first = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    retired_id = first["current_best_candidate"]["id"]
+    write_json_md(
+        {
+            "status": "VARIANT_PUBLIC_FORWARD_CANDIDATE_ROTATED",
+            "retired_candidate_id": retired_id,
+            "retired_candidates": [
+                {
+                    "candidate_id": retired_id,
+                    "fake_net_pnl": -1.0,
+                    "retirement_reasons": ["PUBLIC_FORWARD_FAKE_NET_PNL_NEGATIVE"],
+                }
+            ],
+            "selected_strategy_id": "next_candidate",
+        },
+        output_root=local_project,
+        report_dir="live_sim",
+        json_name="latest_public_forward_candidate_rotation.json",
+        md_name="latest_public_forward_candidate_rotation.md",
+        title="Rotation",
+        lines=["Retired candidate fixture"],
+    )
+
+    second = write_next_strategy_tranche_report(output_root=local_project)
+    state = json.loads(
+        (
+            local_project / "reports/thousand_strategy_campaign/state/latest_state.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert second["current_best_candidate"]["id"] != retired_id
+    assert retired_id not in {candidate["id"] for candidate in second["cumulative_top_candidates"]}
+    assert retired_id not in {candidate["id"] for candidate in second["cumulative_leaderboard_top_50"]}
+    assert state["current_best_candidate"]["id"] != retired_id
 
 
 def _variant_shape_keys(variants: list[dict[str, object]]) -> set[tuple[object, ...]]:
