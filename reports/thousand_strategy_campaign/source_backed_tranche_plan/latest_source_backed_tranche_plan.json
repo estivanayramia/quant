@@ -11,6 +11,20 @@
   ],
   "checked_account_balance": false,
   "checked_portfolio": false,
+  "executable_signal_families": [
+    "crypto_public_data_quality_filtered_momentum",
+    "volatility_regime_momentum",
+    "range_breakout_cost_filtered",
+    "volatility_compression_breakout",
+    "cross_asset_lead_lag",
+    "volume_impulse_continuation",
+    "volume_impulse_reversal",
+    "trend_pullback_continuation",
+    "extreme_move_snapback",
+    "liquidity_shock_reversion",
+    "spread_normalization_signal",
+    "market_microstructure_no_trade_filter"
+  ],
   "execution_authority": "NONE",
   "families_added": [
     "prediction_market_read_only_clob_replay",
@@ -299,6 +313,13 @@
   ],
   "status": "SOURCE_BACKED_TRANCHE_PLAN_READY",
   "target_next_variants": 360,
+  "validation_overlay_families": [
+    "replay_realism_veto_layer",
+    "source_quality_filtering_and_evidence_pack",
+    "calibration_holdout_walk_forward_protocol",
+    "dependency_license_security_gate",
+    "source_backed_no_trade_veto_behavior"
+  ],
   "variants_should_be_generated_next": [
     {
       "count": 120,

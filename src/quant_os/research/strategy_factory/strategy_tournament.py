@@ -305,7 +305,12 @@ def write_next_strategy_tranche_report(
     )
     next_batch_index = int(state.get("last_completed_batch_index", 0) or 0) + 1
     source_backed = bool(plan.get("status") == "SOURCE_BACKED_TRANCHE_PLAN_READY")
-    plan_families = list(plan.get("families_added") or []) if source_backed else None
+    plan_families = (
+        list(plan.get("executable_signal_families") or plan.get("families_added") or [])
+        if source_backed
+        else None
+    )
+    validation_overlays = list(plan.get("validation_overlay_families") or []) if source_backed else None
     selected_count = int(target_count or plan.get("target_next_variants") or 1000)
     previous_generated = int(state.get("variants_generated", 0) or 0)
     previous_tested = int(state.get("variants_tested", 0) or 0)
@@ -325,6 +330,7 @@ def write_next_strategy_tranche_report(
         batch_index=next_batch_index,
         families=plan_families,
         source_label=source_label,
+        validation_overlays=validation_overlays,
         cumulative_variant_count=cumulative_generated,
         source_backed_plan_applied=source_backed,
     )

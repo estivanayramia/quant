@@ -68,6 +68,7 @@ def generate_strategy_variants(
     batch_index: int = 1,
     families: list[str] | None = None,
     source_label: str = "pre_registered_public_strategy_factory_v1",
+    validation_overlays: list[str] | None = None,
 ) -> list[StrategyVariant]:
     variants: list[StrategyVariant] = []
     seed = 630000 + ((batch_index - 1) * 1_000_000)
@@ -100,6 +101,7 @@ def generate_strategy_variants(
             "family": family,
             "assets": market_assets,
             "source": source_label,
+            "source_backed_validation_overlays": list(validation_overlays or []),
             "lookback": lookback,
             "holding_window": hold,
             "thresholds": {
@@ -139,6 +141,7 @@ def write_strategy_variants_report(
     batch_index: int = 1,
     families: list[str] | None = None,
     source_label: str = "pre_registered_public_strategy_factory_v1",
+    validation_overlays: list[str] | None = None,
     cumulative_variant_count: int | None = None,
     source_backed_plan_applied: bool = False,
 ) -> dict[str, Any]:
@@ -147,6 +150,7 @@ def write_strategy_variants_report(
         batch_index=batch_index,
         families=families,
         source_label=source_label,
+        validation_overlays=validation_overlays,
     )
     total_variant_count = cumulative_variant_count or batch_index * len(variants)
     payload = safe_payload(
@@ -162,6 +166,7 @@ def write_strategy_variants_report(
         asset_count=len({asset for variant in variants for asset in variant["assets"]}),
         source_backed_plan_applied=source_backed_plan_applied,
         source_backed_families=sorted(set(families or [])),
+        source_backed_validation_overlays=sorted(set(validation_overlays or [])),
     )
     write_campaign_state(
         output_root=output_root,

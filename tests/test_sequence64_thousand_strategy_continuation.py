@@ -2271,7 +2271,15 @@ def test_sequence64_next_tranche_uses_source_backed_plan_when_available(
     assert tranche["cumulative_variants_generated"] == 4360
     assert tranche["cumulative_variants_tested"] == 1250
     assert variants["variant_count"] == plan["target_next_variants"]
-    assert set(variants["source_backed_families"]).issubset(set(plan["families_added"]))
+    assert set(variants["source_backed_families"]).issubset(
+        set(plan["executable_signal_families"])
+    )
+    assert not {
+        "source_quality_filtering_and_evidence_pack",
+        "dependency_license_security_gate",
+        "calibration_holdout_walk_forward_protocol",
+    }.intersection({variant["family"] for variant in variants["variants"]})
+    assert all(variant["source_backed_validation_overlays"] for variant in variants["variants"])
     assert all(
         variant["source"] == "source_backed_public_strategy_factory_v1"
         for variant in variants["variants"]

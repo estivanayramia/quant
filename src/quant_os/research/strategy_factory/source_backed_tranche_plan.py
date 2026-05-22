@@ -31,6 +31,23 @@ def build_source_backed_tranche_plan(
             "crypto_public_data_quality_filtered_momentum",
         ]
     families_deferred = [idea["strategy_family"] for idea in deferred]
+    validation_overlay_families = [
+        family
+        for family in families_added
+        if family
+        in {
+            "source_quality_filtering_and_evidence_pack",
+            "calibration_holdout_walk_forward_protocol",
+            "dependency_license_security_gate",
+            "source_backed_no_trade_veto_behavior",
+            "replay_realism_veto_layer",
+        }
+    ] or [
+        "source_quality_filtering_and_evidence_pack",
+        "calibration_holdout_walk_forward_protocol",
+        "source_backed_no_trade_veto_behavior",
+        "replay_realism_veto_layer",
+    ]
     families_removed = sorted(
         {
             "copy_trading_wallet_mirroring",
@@ -57,6 +74,21 @@ def build_source_backed_tranche_plan(
         schema_version="source_backed_tranche_plan_v1",
         proof_status_changed=False,
         target_next_variants=360,
+        executable_signal_families=[
+            "crypto_public_data_quality_filtered_momentum",
+            "volatility_regime_momentum",
+            "range_breakout_cost_filtered",
+            "volatility_compression_breakout",
+            "cross_asset_lead_lag",
+            "volume_impulse_continuation",
+            "volume_impulse_reversal",
+            "trend_pullback_continuation",
+            "extreme_move_snapback",
+            "liquidity_shock_reversion",
+            "spread_normalization_signal",
+            "market_microstructure_no_trade_filter",
+        ],
+        validation_overlay_families=validation_overlay_families,
         live_public_market_priority_order=[
             "crypto_public_forward_spot",
             "prediction_market_read_only_clob",
