@@ -593,6 +593,72 @@ def test_sequence64_candidate_public_forward_live_sim_is_selected_and_pending(
     assert "PUBLIC_FORWARD_EVIDENCE_NOT_PROVEN" in evidence["blockers"]
 
 
+def test_sequence64_public_forward_evidence_resolves_selected_pool_candidate(
+    local_project: Path,
+) -> None:
+    from quant_os.proving.thousand_strategy_public_forward_evidence import (
+        write_thousand_strategy_public_forward_evidence_report,
+    )
+    from quant_os.research.strategy_factory.campaign_common import write_json_md
+
+    selected_candidate = {
+        "id": "tsv_pool_selected",
+        "family": "volume_impulse_continuation",
+        "assets": ["BTC/USD"],
+    }
+    write_json_md(
+        {
+            "status": "THOUSAND_STRATEGY_CAMPAIGN_CHECKPOINTED_NOT_COMPLETE",
+            "current_best_candidate": {
+                "id": "tsv_stale_current_best",
+                "family": "session_effect_filter",
+                "assets": ["BTC/USD"],
+            },
+            "public_forward_candidate_pool": [selected_candidate],
+        },
+        output_root=local_project,
+        report_dir="tournament",
+        json_name="latest_tournament.json",
+        md_name="latest_tournament.md",
+        title="Tournament",
+        lines=["fixture"],
+    )
+    write_json_md(
+        {
+            "status": "VARIANT_LIVE_SIM_SUMMARY_READY",
+            "selected_strategy_id": selected_candidate["id"],
+            "data_sources": ["kraken_public_rest_unauthenticated_forward"],
+            "observation_count": 1000,
+            "eligible_intent_count": 300,
+            "completed_mark_count": 150,
+            "fake_net_pnl": 1.0,
+            "public_forward_evidence_proven": True,
+            "evidence_source": "public_forward_live_sim",
+        },
+        output_root=local_project,
+        report_dir="live_sim",
+        json_name="latest_live_sim_summary.json",
+        md_name="latest_live_sim_summary.md",
+        title="Live Sim",
+        lines=["fixture"],
+    )
+    write_json_md(
+        {"status": "VARIANT_LIVE_SIM_RECONCILIATION_PASSED"},
+        output_root=local_project,
+        report_dir="live_sim",
+        json_name="latest_reconciliation.json",
+        md_name="latest_reconciliation.md",
+        title="Reconciliation",
+        lines=["fixture"],
+    )
+
+    evidence = write_thousand_strategy_public_forward_evidence_report(output_root=local_project)
+
+    assert evidence["candidate_id"] == selected_candidate["id"]
+    assert evidence["selected_strategy_id"] == selected_candidate["id"]
+    assert "SELECTED_STRATEGY_ID_MISMATCH" not in evidence["blockers"]
+
+
 def test_sequence64_candidate_public_forward_observations_accumulate_without_proof(
     local_project: Path,
 ) -> None:

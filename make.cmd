@@ -3,6 +3,19 @@ setlocal EnableDelayedExpansion
 set TARGET=%1
 if "%TARGET%"=="" set TARGET=help
 set "REPO_ROOT=%~dp0"
+set "BUNDLED_PYTHON=%USERPROFILE%\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe"
+if defined PYTHON (
+  set "PYTHON_EXE=%PYTHON%"
+) else if exist "%REPO_ROOT%.venv\Scripts\python.exe" (
+  set "PYTHON_EXE=%REPO_ROOT%.venv\Scripts\python.exe"
+) else if exist "%BUNDLED_PYTHON%" (
+  set "PYTHON_EXE=%BUNDLED_PYTHON%"
+) else (
+  set "PYTHON_EXE=python"
+)
+if not "%PYTHON_EXE%"=="python" (
+  for %%I in ("%PYTHON_EXE%") do set "PATH=%%~dpI;%PATH%"
+)
 set "PYTHONPATH=%REPO_ROOT%src;%PYTHONPATH%"
 
 if "%TARGET%"=="install" (

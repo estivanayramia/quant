@@ -98,8 +98,14 @@ def write_thousand_strategy_public_forward_evidence_report(
         report_dir="live_sim",
         json_name="latest_reconciliation.json",
     )
+    selected_strategy_id = str(live_sim_summary.get("selected_strategy_id") or "")
+    resolved_candidate = candidate
+    if resolved_candidate is None and selected_strategy_id:
+        resolved_candidate = _candidate_from_tournament_selection(tournament, selected_strategy_id)
+    if resolved_candidate is None:
+        resolved_candidate = tournament.get("current_best_candidate")
     payload = build_thousand_strategy_public_forward_evidence(
-        candidate=candidate or tournament.get("current_best_candidate"),
+        candidate=resolved_candidate,
         live_sim_summary=live_sim_summary,
         reconciliation=reconciliation,
     )
@@ -117,3 +123,21 @@ def write_thousand_strategy_public_forward_evidence_report(
             f"Fake net PnL: {payload['fake_net_pnl']}",
         ],
     )
+
+
+def _candidate_from_tournament_selection(
+    tournament: dict[str, Any],
+    selected_strategy_id: str,
+) -> dict[str, Any]:
+    candidates = [
+        tournament.get("current_best_candidate"),
+        tournament.get("latest_batch_best_candidate"),
+        *(tournament.get("cumulative_leaderboard_top_50") or []),
+        *(tournament.get("public_forward_candidate_pool") or []),
+        *(tournament.get("leaderboard_top_50") or []),
+        *(tournament.get("top_candidates") or []),
+    ]
+    for candidate in candidates:
+        if isinstance(candidate, dict) and str(candidate.get("id") or "") == selected_strategy_id:
+            return dict(candidate)
+    return {"id": selected_strategy_id}
