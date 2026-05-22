@@ -2354,6 +2354,24 @@ def test_sequence64_next_tranche_uses_source_backed_plan_when_available(
     assert state["source_backed_tranche_plan_status"] == "SOURCE_BACKED_TRANCHE_PLAN_APPLIED"
 
 
+def test_sequence64_schedule_includes_longer_public_forward_collection_command(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.thousand_strategy_campaign_schedule import (
+        write_thousand_strategy_campaign_schedule_report,
+    )
+
+    schedule = write_thousand_strategy_campaign_schedule_report(output_root=local_project)
+
+    assert "variant-public-forward-batch-cycle" in schedule["public_forward_collection_command"]
+    assert "--public-network-ok" in schedule["public_forward_collection_command"]
+    assert "--cycle-count 50" in schedule["public_forward_collection_command"]
+    assert "--sleep-seconds 60" in schedule["public_forward_collection_command"]
+    assert schedule["public_forward_collection_interval"] == "hourly_data_only_until_1000_observations"
+    assert schedule["no_credentials"] is True
+    assert schedule["no_orders"] is True
+
+
 def test_sequence64_next_tranche_does_not_resurrect_public_forward_retired_candidates(
     local_project: Path,
 ) -> None:
