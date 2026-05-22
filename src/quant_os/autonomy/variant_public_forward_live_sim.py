@@ -684,26 +684,44 @@ def write_variant_public_forward_candidate_rotation(
                 "retirement_reasons": reasons,
             }
 
-    candidates = list(
-        [
-            *(tournament.get("cumulative_leaderboard_top_50") or []),
-            *(tournament.get("public_forward_candidate_pool") or []),
-            *(tournament.get("leaderboard_top_50") or []),
-            *(tournament.get("top_candidates") or []),
-        ]
-    )
-    candidates = _dedup_public_forward_candidates(candidates)
+    candidate_groups = [
+        _rank_public_forward_rotation_candidates(
+            list(tournament.get("cumulative_leaderboard_top_50") or [])
+        ),
+        _rank_public_forward_rotation_candidates(
+            list(tournament.get("public_forward_candidate_pool") or [])
+        ),
+        _rank_public_forward_rotation_candidates(list(tournament.get("leaderboard_top_50") or [])),
+        _rank_public_forward_rotation_candidates(list(tournament.get("top_candidates") or [])),
+    ]
+    seen_candidate_ids: set[str] = set()
     skipped_uncollectable: list[str] = []
     selected: dict[str, Any] | None = None
-    for candidate in candidates:
-        candidate_id = str(candidate.get("id"))
-        if candidate_id in retired:
-            continue
-        if not _is_public_forward_collectable_candidate(candidate):
-            skipped_uncollectable.append(candidate_id)
-            continue
-        selected = dict(candidate)
-        break
+    for group in candidate_groups:
+        group_candidates = [
+            candidate
+            for candidate in group
+            if str(candidate.get("id") or "")
+            and str(candidate.get("id") or "") not in seen_candidate_ids
+        ]
+        group_skipped = [
+            str(candidate.get("id"))
+            for candidate in group_candidates
+            if str(candidate.get("id") or "") not in retired
+            and not _is_public_forward_collectable_candidate(candidate)
+        ]
+        for candidate in group_candidates:
+            candidate_id = str(candidate.get("id") or "")
+            seen_candidate_ids.add(candidate_id)
+            if candidate_id in retired:
+                continue
+            if not _is_public_forward_collectable_candidate(candidate):
+                continue
+            selected = dict(candidate)
+            skipped_uncollectable = group_skipped
+            break
+        if selected is not None:
+            break
     blockers: list[str] = []
     if not retired:
         blockers.append("NO_PUBLIC_FORWARD_RETIREMENT_TRIGGER")
@@ -1054,6 +1072,26 @@ def _dedup_public_forward_candidates(candidates: list[dict[str, Any]]) -> list[d
     return deduped
 
 
+def _rank_public_forward_rotation_candidates(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(candidates, key=_public_forward_rotation_priority, reverse=True)
+
+
+def _public_forward_rotation_priority(candidate: dict[str, Any]) -> tuple[int, int, int, float, float]:
+    eligible_intents = int(candidate.get("eligible_intents") or 0)
+    completed_marks = int(candidate.get("completed_marks") or 0)
+    fake_net_pnl = float(candidate.get("fake_net_pnl") or 0.0)
+    score = float(candidate.get("score") or 0.0)
+    crypto_collectable = 1 if _is_public_forward_collectable_candidate(candidate) else 0
+    historically_executable = 1 if eligible_intents >= 300 and completed_marks >= 150 else 0
+    return (
+        crypto_collectable,
+        historically_executable,
+        eligible_intents,
+        fake_net_pnl,
+        score,
+    )
+
+
 def _is_public_forward_collectable_candidate(candidate: dict[str, Any]) -> bool:
     return (
         any(str(asset) in KRAKEN_PAIRS for asset in candidate.get("assets", []) or [])
@@ -1160,6 +1198,7 @@ def _public_forward_family_signal_mode(candidate: dict[str, Any]) -> str | None:
             "source_quality",
             "quality_filtered",
             "no_trade_veto",
+            "moving_average",
         )
     ):
         return "momentum"

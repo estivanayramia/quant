@@ -2431,7 +2431,17 @@ def test_sequence64_public_forward_rotation_uses_broader_candidate_pool_when_top
     top50_ids = {candidate["id"] for candidate in tournament["cumulative_leaderboard_top_50"]}
     pool_only_candidate = next(
         candidate
-        for candidate in tournament["public_forward_candidate_pool"]
+        for candidate in sorted(
+            tournament["public_forward_candidate_pool"],
+            key=lambda item: (
+                int(item.get("eligible_intents") or 0) >= 300
+                and int(item.get("completed_marks") or 0) >= 150,
+                int(item.get("eligible_intents") or 0),
+                float(item.get("fake_net_pnl") or 0.0),
+                float(item.get("score") or 0.0),
+            ),
+            reverse=True,
+        )
         if candidate["id"] not in top50_ids
     )
     live_sim_dir = local_project / "reports/thousand_strategy_campaign/live_sim"
@@ -2482,6 +2492,73 @@ def test_sequence64_public_forward_rotation_uses_broader_candidate_pool_when_top
     assert rotation["status"] == "VARIANT_PUBLIC_FORWARD_CANDIDATE_ROTATED"
     assert rotation["selected_strategy_id"] == pool_only_candidate["id"]
     assert rotation["selected_strategy_id"] not in top50_ids
+
+
+def test_sequence64_public_forward_rotation_prefers_historically_executable_candidate(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_candidate_rotation,
+    )
+    from quant_os.research.strategy_factory.campaign_common import write_json_md
+
+    low_intent_candidate = {
+        "id": "tsv_low_intent_crypto",
+        "family": "volume_impulse_continuation",
+        "assets": ["BTC/USD", "ETH/USD"],
+        "score": 99.0,
+        "fake_net_pnl": 20.0,
+        "eligible_intents": 12,
+        "completed_marks": 6,
+    }
+    executable_candidate = {
+        "id": "tsv_executable_crypto",
+        "family": "moving_average_slope_filter",
+        "assets": ["BTC/USD", "ETH/USD"],
+        "score": 1.0,
+        "fake_net_pnl": 10.0,
+        "eligible_intents": 420,
+        "completed_marks": 210,
+    }
+    write_json_md(
+        {
+            "status": "THOUSAND_STRATEGY_CAMPAIGN_CHECKPOINTED_NOT_COMPLETE",
+            "current_best_candidate": {
+                "id": "tsv_retired_current",
+                "family": "volume_impulse_reversal",
+                "assets": ["BTC/USD"],
+            },
+            "public_forward_candidate_pool": [low_intent_candidate, executable_candidate],
+        },
+        output_root=local_project,
+        report_dir="tournament",
+        json_name="latest_tournament.json",
+        md_name="latest_tournament.md",
+        title="Tournament",
+        lines=["fixture"],
+    )
+    write_json_md(
+        {
+            "selected_strategy_id": "tsv_retired_current",
+            "selected_strategy_family": "volume_impulse_reversal",
+            "selected_strategy_assets": ["BTC/USD"],
+            "observation_count": 160,
+            "eligible_intent_count": 0,
+            "completed_mark_count": 0,
+            "fake_net_pnl": 0.0,
+        },
+        output_root=local_project,
+        report_dir="live_sim",
+        json_name="latest_live_sim_summary.json",
+        md_name="latest_live_sim_summary.md",
+        title="Live Sim",
+        lines=["fixture"],
+    )
+
+    rotation = write_variant_public_forward_candidate_rotation(output_root=local_project)
+
+    assert rotation["status"] == "VARIANT_PUBLIC_FORWARD_CANDIDATE_ROTATED"
+    assert rotation["selected_strategy_id"] == executable_candidate["id"]
 
 
 def test_sequence64_tournament_normalizes_cumulative_candidate_without_blockers(
