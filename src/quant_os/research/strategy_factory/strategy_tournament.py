@@ -46,6 +46,7 @@ def run_strategy_tournament(
         "MANUAL_CANARY_PACKET_BLOCKED",
     ]
     leaderboard = _dedup_ranked([*stage1, *stage2, *stage3])[:50]
+    public_forward_candidate_pool = _dedup_ranked(stage1)[:250]
     retired = [
         {
             "family": family,
@@ -78,6 +79,7 @@ def run_strategy_tournament(
             "stage4": "NOT_PROMOTED_TO_CANARY_GRADE",
         },
         leaderboard_top_50=leaderboard,
+        public_forward_candidate_pool=public_forward_candidate_pool,
         top_candidates=stage3_survivors,
         current_best_candidate=best,
         eliminated_by_reason={
@@ -148,6 +150,7 @@ def write_strategy_tournament_report(
         current_best_candidate=payload["current_best_candidate"],
         latest_batch_best_candidate=payload["latest_batch_best_candidate"],
         cumulative_leaderboard_top_50=payload["cumulative_leaderboard_top_50"],
+        public_forward_candidate_pool=payload.get("public_forward_candidate_pool", []),
         cumulative_top_candidates=payload["cumulative_top_candidates"],
         blockers=payload["current_best_candidate"]["blockers"],
         manual_canary_packet_status="FIRST_TINY_MANUAL_CANARY_PACKET_BLOCKED",
@@ -190,6 +193,7 @@ def _add_cumulative_leaderboard(
     latest_best = dict(payload["current_best_candidate"])
     prior_leaderboard: list[dict[str, Any]] = []
     prior_candidates: list[dict[str, Any]] = []
+    prior_public_forward_pool: list[dict[str, Any]] = []
     if int(previous.get("batch_index", 0) or 0) == int(payload["batch_index"]) - 1:
         prior_leaderboard = list(
             previous.get("cumulative_leaderboard_top_50")
@@ -201,6 +205,7 @@ def _add_cumulative_leaderboard(
             or previous.get("top_candidates")
             or []
         )
+        prior_public_forward_pool = list(previous.get("public_forward_candidate_pool") or [])
 
     cumulative_leaderboard = _dedup_ranked(
         _exclude_retired([*prior_leaderboard, *payload["leaderboard_top_50"]], retired_candidate_ids),
@@ -208,6 +213,16 @@ def _add_cumulative_leaderboard(
     cumulative_candidates = _dedup_ranked(
         _exclude_retired([*prior_candidates, *payload["top_candidates"]], retired_candidate_ids),
     )[:10]
+    public_forward_candidate_pool = _dedup_ranked(
+        _exclude_retired(
+            [
+                *prior_public_forward_pool,
+                *payload.get("public_forward_candidate_pool", []),
+                *payload["leaderboard_top_50"],
+            ],
+            retired_candidate_ids,
+        ),
+    )[:250]
     if latest_best.get("id") in retired_candidate_ids:
         eligible_latest = _dedup_ranked(
             _exclude_retired(payload["leaderboard_top_50"], retired_candidate_ids)
@@ -225,6 +240,9 @@ def _add_cumulative_leaderboard(
 
     payload["latest_batch_best_candidate"] = latest_best
     payload["cumulative_leaderboard_top_50"] = cumulative_leaderboard
+    payload["public_forward_candidate_pool"] = [
+        _with_default_candidate_blockers(candidate) for candidate in public_forward_candidate_pool
+    ]
     payload["cumulative_top_candidates"] = cumulative_candidates
     payload["current_best_candidate"] = cumulative_best
     payload["best_fake_pnl"] = cumulative_best["fake_net_pnl"]

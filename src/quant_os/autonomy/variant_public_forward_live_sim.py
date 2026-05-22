@@ -685,11 +685,14 @@ def write_variant_public_forward_candidate_rotation(
             }
 
     candidates = list(
-        tournament.get("cumulative_leaderboard_top_50")
-        or tournament.get("leaderboard_top_50")
-        or tournament.get("top_candidates")
-        or []
+        [
+            *(tournament.get("cumulative_leaderboard_top_50") or []),
+            *(tournament.get("public_forward_candidate_pool") or []),
+            *(tournament.get("leaderboard_top_50") or []),
+            *(tournament.get("top_candidates") or []),
+        ]
     )
+    candidates = _dedup_public_forward_candidates(candidates)
     skipped_uncollectable: list[str] = []
     selected: dict[str, Any] | None = None
     for candidate in candidates:
@@ -1007,10 +1010,14 @@ def _resolve_public_forward_collectable_candidate(output_root: str | Path) -> di
             return summary_candidate
 
     for candidate in (
-        tournament.get("cumulative_leaderboard_top_50")
-        or tournament.get("leaderboard_top_50")
-        or tournament.get("top_candidates")
-        or []
+        _dedup_public_forward_candidates(
+            [
+                *(tournament.get("cumulative_leaderboard_top_50") or []),
+                *(tournament.get("public_forward_candidate_pool") or []),
+                *(tournament.get("leaderboard_top_50") or []),
+                *(tournament.get("top_candidates") or []),
+            ]
+        )
     ):
         if _is_public_forward_collectable_candidate(candidate):
             return dict(candidate)
@@ -1025,6 +1032,7 @@ def _candidate_from_tournament(
         tournament.get("current_best_candidate"),
         tournament.get("latest_batch_best_candidate"),
         *(tournament.get("cumulative_leaderboard_top_50") or []),
+        *(tournament.get("public_forward_candidate_pool") or []),
         *(tournament.get("leaderboard_top_50") or []),
         *(tournament.get("top_candidates") or []),
     ]
@@ -1032,6 +1040,18 @@ def _candidate_from_tournament(
         if isinstance(candidate, dict) and str(candidate.get("id")) == candidate_id:
             return dict(candidate)
     return None
+
+
+def _dedup_public_forward_candidates(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    deduped: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for candidate in candidates:
+        candidate_id = str(candidate.get("id") or "")
+        if not candidate_id or candidate_id in seen:
+            continue
+        seen.add(candidate_id)
+        deduped.append(candidate)
+    return deduped
 
 
 def _is_public_forward_collectable_candidate(candidate: dict[str, Any]) -> bool:

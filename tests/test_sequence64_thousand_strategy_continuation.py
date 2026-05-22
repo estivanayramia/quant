@@ -2333,6 +2333,91 @@ def test_sequence64_next_tranche_does_not_resurrect_public_forward_retired_candi
     assert state["current_best_candidate"]["id"] != retired_id
 
 
+def test_sequence64_public_forward_rotation_uses_broader_candidate_pool_when_top50_exhausted(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_candidate_rotation,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    tournament = write_strategy_tournament_report(
+        output_root=local_project,
+        target_count=360,
+        batch_index=1,
+        families=[
+            "crypto_public_data_quality_filtered_momentum",
+            "volatility_regime_momentum",
+            "range_breakout_cost_filtered",
+            "cross_asset_lead_lag",
+            "volume_impulse_continuation",
+            "volume_impulse_reversal",
+            "trend_pullback_continuation",
+            "extreme_move_snapback",
+            "liquidity_shock_reversion",
+            "spread_normalization_signal",
+            "market_microstructure_no_trade_filter",
+        ],
+        source_backed_plan_applied=True,
+    )
+    top50_ids = {candidate["id"] for candidate in tournament["cumulative_leaderboard_top_50"]}
+    pool_only_candidate = next(
+        candidate
+        for candidate in tournament["public_forward_candidate_pool"]
+        if candidate["id"] not in top50_ids
+    )
+    live_sim_dir = local_project / "reports/thousand_strategy_campaign/live_sim"
+    live_sim_dir.mkdir(parents=True, exist_ok=True)
+    (live_sim_dir / "latest_live_sim_summary.json").write_text(
+        json.dumps(
+            {
+                "selected_strategy_id": tournament["current_best_candidate"]["id"],
+                "selected_strategy_family": tournament["current_best_candidate"]["family"],
+                "selected_strategy_assets": tournament["current_best_candidate"]["assets"],
+                "observation_count": 160,
+                "eligible_intent_count": 0,
+                "completed_mark_count": 0,
+                "fake_net_pnl": 0.0,
+            },
+            indent=2,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    for candidate in tournament["cumulative_leaderboard_top_50"]:
+        if candidate["id"] == pool_only_candidate["id"]:
+            continue
+        (live_sim_dir / "latest_public_forward_candidate_archive.json").write_text(
+            json.dumps(
+                {
+                    "candidate_evidence": {
+                        candidate["id"]: {
+                            "selected_strategy_id": candidate["id"],
+                            "selected_strategy_family": candidate["family"],
+                            "selected_strategy_assets": candidate["assets"],
+                            "observation_count": 160,
+                            "eligible_intent_count": 0,
+                            "completed_mark_count": 0,
+                            "fake_net_pnl": 0.0,
+                        }
+                        for candidate in tournament["cumulative_leaderboard_top_50"]
+                    }
+                },
+                indent=2,
+                sort_keys=True,
+            ),
+            encoding="utf-8",
+        )
+
+    rotation = write_variant_public_forward_candidate_rotation(output_root=local_project)
+
+    assert rotation["status"] == "VARIANT_PUBLIC_FORWARD_CANDIDATE_ROTATED"
+    assert rotation["selected_strategy_id"] == pool_only_candidate["id"]
+    assert rotation["selected_strategy_id"] not in top50_ids
+
+
 def test_sequence64_tournament_normalizes_cumulative_candidate_without_blockers(
     local_project: Path,
 ) -> None:
