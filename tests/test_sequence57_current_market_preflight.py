@@ -150,6 +150,30 @@ def test_sequence57_current_market_discovery_is_public_get_only(local_project: P
     assert (local_project / "reports/first_dollar_preflight/current_market_discovery/latest_current_market_discovery.json").exists()
 
 
+def test_sequence57_current_market_discovery_can_exclude_seen_tickers(local_project: Path) -> None:
+    from quant_os.data.weather.current_weather_market_discovery import (
+        evaluate_current_weather_market_discovery,
+    )
+
+    first = _market(ticker="KXHIGHNY-26MAY18-B83.5")
+    second = _market(ticker="KXHIGHNY-26MAY19-B83.5", event_ticker="KXHIGHNY-26MAY19")
+    payload = evaluate_current_weather_market_discovery(
+        output_root=local_project,
+        markets_payload={"markets": [first, second]},
+        series_payload={"series": {"ticker": "KXHIGHNY", "title": "Highest temperature in NYC"}},
+        orderbook_payloads={
+            "KXHIGHNY-26MAY18-B83.5": {"orderbook_fp": {"yes": [["0.25", "3.00"]]}},
+            "KXHIGHNY-26MAY19-B83.5": {"orderbook_fp": {"yes": [["0.25", "3.00"]]}},
+        },
+        captured_at=NOW,
+        excluded_market_tickers=["KXHIGHNY-26MAY18-B83.5"],
+    )
+
+    assert payload["status"] == "CURRENT_MARKET_FOUND"
+    assert payload["selected_market"]["ticker"] == "KXHIGHNY-26MAY19-B83.5"
+    assert payload["excluded_market_tickers"] == ["KXHIGHNY-26MAY18-B83.5"]
+
+
 def test_sequence57_no_current_market_keeps_structural_no_current_status(local_project: Path) -> None:
     from quant_os.data.weather.current_weather_market_discovery import (
         evaluate_current_weather_market_discovery,

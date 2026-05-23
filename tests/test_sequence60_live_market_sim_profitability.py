@@ -59,6 +59,17 @@ def _forecast(index: int = 0, **overrides: object) -> dict[str, object]:
     return payload
 
 
+def _public_label(label: str, *, index: int = 0) -> dict[str, object]:
+    return {
+        "outcome_label": label,
+        "source_kind": "kalshi_public_market_data_fixture",
+        "source_url": f"https://external-api.kalshi.com/trade-api/v2/markets/KXHIGHNY-26MAY{18 + index:02d}-B83.5",
+        "settlement_ts": f"2026-05-{19 + index:02d}T14:01:00Z",
+        "market_status": "finalized",
+        "expiration_value": "83.00",
+    }
+
+
 def _eligible_payload(index: int = 0, **market_overrides: object) -> dict[str, object]:
     return {
         "status": "CURRENT_MARKET_ELIGIBILITY_PASSED",
@@ -195,6 +206,37 @@ def test_sequence60_intents_block_near_certain_opposite_side(local_project: Path
     assert "OPPOSITE_SIDE_EFFECTIVELY_CERTAIN" in payload["blockers"]
 
 
+def test_sequence60_intents_block_duplicate_market_ticker_exposure(local_project: Path) -> None:
+    from quant_os.autonomy.live_market_profit_observer import (
+        write_live_market_profit_observer_report,
+    )
+    from quant_os.autonomy.live_market_sim_fill_model import write_live_market_sim_fill_report
+    from quant_os.autonomy.live_market_sim_intents import write_live_market_sim_intents_report
+    from quant_os.autonomy.live_market_sim_ledger import write_live_market_sim_ledger_report
+
+    write_live_market_profit_observer_report(
+        output_root=local_project,
+        now_ts=NOW,
+        current_market_payload=_eligible_payload(),
+        preflight_payload={"status": "FIRST_DOLLAR_PREFLIGHT_READY", "blockers": []},
+    )
+    first = write_live_market_sim_intents_report(output_root=local_project)
+    write_live_market_sim_fill_report(output_root=local_project)
+    write_live_market_sim_ledger_report(output_root=local_project)
+    write_live_market_profit_observer_report(
+        output_root=local_project,
+        now_ts="2026-05-18T16:05:00Z",
+        current_market_payload=_eligible_payload(),
+        preflight_payload={"status": "FIRST_DOLLAR_PREFLIGHT_READY", "blockers": []},
+    )
+    duplicate = write_live_market_sim_intents_report(output_root=local_project)
+
+    assert first["status"] == "LIVE_SIM_INTENT_READY"
+    assert duplicate["status"] == "LIVE_SIM_INTENT_NO_TRADE"
+    assert "DUPLICATE_MARKET_TICKER_EXPOSURE" in duplicate["blockers"]
+    assert duplicate["intent"] is None
+
+
 def test_sequence60_fake_fill_model_is_conservative_and_never_guaranteed(
     local_project: Path,
 ) -> None:
@@ -242,7 +284,7 @@ def test_sequence60_ledger_tracks_pending_and_resolved_outcomes(local_project: P
     pending = write_live_market_sim_outcomes_report(output_root=local_project)
     resolved = write_live_market_sim_outcomes_report(
         output_root=local_project,
-        public_outcome_labels={run["observer"]["observation_id"]: "yes"},
+        public_outcome_labels={run["observer"]["observation_id"]: _public_label("yes")},
     )
 
     assert run["ledger"]["status"] == "LIVE_SIM_LEDGER_UPDATED"
@@ -294,7 +336,7 @@ def test_sequence60_pnl_uses_real_outcome_labels_and_blocks_guesses(
     blocked = write_live_market_sim_pnl_report(output_root=local_project)
     resolved = write_live_market_sim_outcomes_report(
         output_root=local_project,
-        public_outcome_labels={run["observer"]["observation_id"]: "yes"},
+        public_outcome_labels={run["observer"]["observation_id"]: _public_label("yes")},
     )
     pnl = write_live_market_sim_pnl_report(output_root=local_project)
 
@@ -304,6 +346,38 @@ def test_sequence60_pnl_uses_real_outcome_labels_and_blocks_guesses(
     assert resolved["status"] == "LIVE_SIM_OUTCOME_RESOLVED"
     assert pnl["status"] == "LIVE_SIM_PNL_READY"
     assert pnl["fake_net_pnl"] > 0
+
+
+def test_sequence60_pnl_reports_resolved_market_concentration(local_project: Path) -> None:
+    from quant_os.autonomy.live_market_sim_pnl import write_live_market_sim_pnl_report
+
+    _write_json(
+        local_project,
+        "reports/live_market_sim_profitability/outcomes/latest_outcomes.json",
+        {
+            "status": "LIVE_SIM_OUTCOME_RESOLVED",
+            "outcomes": [
+                {
+                    "observation_id": f"obs-{index}",
+                    "market_ticker": "KXHIGHCHI-26MAY24-T72",
+                    "fake_entry_price": 0.03,
+                    "fake_contracts": 1,
+                    "outcome_status": "RESOLVED",
+                    "outcome_label": "yes",
+                }
+                for index in range(3)
+            ],
+        },
+    )
+
+    payload = write_live_market_sim_pnl_report(output_root=local_project)
+
+    assert payload["status"] == "LIVE_SIM_PNL_READY"
+    assert payload["unique_resolved_market_count"] == 1
+    assert payload["unique_resolution_event_count"] == 1
+    assert payload["resolved_fill_count_by_market"] == {"KXHIGHCHI-26MAY24-T72": 3}
+    assert payload["pnl_by_market"]["KXHIGHCHI-26MAY24-T72"] > 0
+    assert payload["max_single_market_resolved_fill_share"] == 1.0
 
 
 def test_sequence60_baseline_and_placebo_comparison_can_block_success(
@@ -321,6 +395,34 @@ def test_sequence60_baseline_and_placebo_comparison_can_block_success(
     assert placebo_block["status"] == "LIVE_SIM_PLACEBO_NOT_BEATEN"
     assert baseline_pass["status"] == "LIVE_SIM_BASELINES_BEATEN"
     assert placebo_pass["status"] == "LIVE_SIM_BASELINES_BEATEN"
+
+
+def test_sequence60_comparison_blocks_single_market_concentration(local_project: Path) -> None:
+    from quant_os.proving.live_market_sim_comparison_report import (
+        write_live_market_sim_comparison_report,
+    )
+
+    _write_json(
+        local_project,
+        "reports/live_market_sim_profitability/pnl/latest_pnl.json",
+        {
+            "status": "LIVE_SIM_PNL_READY",
+            "fake_net_pnl": 2.5,
+            "resolved_outcome_count": 11,
+            "unique_resolved_market_count": 1,
+            "unique_resolution_event_count": 1,
+            "resolved_fill_count_by_market": {"KXHIGHCHI-26MAY24-T72": 11},
+            "pnl_by_market": {"KXHIGHCHI-26MAY24-T72": 2.5},
+            "max_single_market_resolved_fill_share": 1.0,
+        },
+    )
+
+    payload = write_live_market_sim_comparison_report(output_root=local_project)
+
+    assert payload["status"] == "LIVE_SIM_COMPARISON_PENDING"
+    assert "MIN_UNIQUE_RESOLVED_MARKETS_NOT_MET" in payload["blockers"]
+    assert "SINGLE_MARKET_RESOLUTION_CONCENTRATION" in payload["blockers"]
+    assert payload["concentration_guard"]["passed"] is False
 
 
 def test_sequence60_reconciliation_detects_missing_evidence_hashes(local_project: Path) -> None:
@@ -394,7 +496,13 @@ def test_sequence60_readiness_requires_counts_outcomes_profit_and_comparisons(
             "intents": [{"fake_client_order_id": f"intent-{i}"} for i in range(3)],
             "fills": [{"fake_fill_id": "fill-1"}],
         },
-        pnl={"status": "LIVE_SIM_PNL_READY", "fake_net_pnl": -0.01, "resolved_outcome_count": 3},
+        pnl={
+            "status": "LIVE_SIM_PNL_READY",
+            "fake_net_pnl": -0.01,
+            "resolved_outcome_count": 3,
+            "unique_resolved_market_count": 3,
+            "max_single_market_resolved_fill_share": 0.34,
+        },
         comparison={"status": "LIVE_SIM_BASELINES_BEATEN"},
         reconciliation={"status": "LIVE_SIM_RECONCILIATION_PASSED"},
     )
@@ -404,6 +512,39 @@ def test_sequence60_readiness_requires_counts_outcomes_profit_and_comparisons(
     assert pending["status"] == "LIVE_MARKET_SIMULATED_PROFITABILITY_PENDING_OUTCOMES"
     assert not_proven["status"] == "LIVE_MARKET_SIMULATED_PROFITABILITY_NOT_PROVEN"
     assert "FAKE_NET_PNL_NOT_POSITIVE" in not_proven["blockers"]
+
+
+def test_sequence60_readiness_requires_distinct_resolved_markets(local_project: Path) -> None:
+    from quant_os.readiness.live_market_sim_profitability import (
+        build_live_market_sim_profitability_readiness,
+    )
+
+    payload = build_live_market_sim_profitability_readiness(
+        output_root=local_project,
+        state={
+            "observations": [{"observation_id": f"obs-{i}"} for i in range(11)],
+            "intents": [{"fake_client_order_id": f"intent-{i}"} for i in range(11)],
+            "fills": [{"fake_fill_id": f"fill-{i}"} for i in range(11)],
+        },
+        pnl={
+            "status": "LIVE_SIM_PNL_READY",
+            "fake_net_pnl": 10.32,
+            "resolved_outcome_count": 11,
+            "pending_outcome_count": 0,
+            "unique_resolved_market_count": 1,
+            "unique_resolution_event_count": 1,
+            "resolved_fill_count_by_market": {"KXHIGHCHI-26MAY24-T72": 11},
+            "pnl_by_market": {"KXHIGHCHI-26MAY24-T72": 10.32},
+            "max_single_market_resolved_fill_share": 1.0,
+        },
+        comparison={"status": "LIVE_SIM_COMPARISON_PENDING"},
+        reconciliation={"status": "LIVE_SIM_RECONCILIATION_PASSED"},
+    )
+
+    assert payload["status"] == "LIVE_MARKET_SIMULATED_PROFITABILITY_NEEDS_MORE_OBSERVATIONS"
+    assert "MIN_UNIQUE_RESOLVED_MARKETS_NOT_MET" in payload["blockers"]
+    assert "SINGLE_MARKET_RESOLUTION_CONCENTRATION" in payload["blockers"]
+    assert payload["fake_net_pnl"] > 0
 
 
 def test_sequence60_readiness_can_prove_positive_reconciled_profitability(
@@ -418,9 +559,26 @@ def test_sequence60_readiness_can_prove_positive_reconciled_profitability(
         state={
             "observations": [{"observation_id": f"obs-{i}"} for i in range(10)],
             "intents": [{"fake_client_order_id": f"intent-{i}"} for i in range(3)],
-            "fills": [{"fake_fill_id": "fill-1"}],
+            "fills": [{"fake_fill_id": f"fill-{i}"} for i in range(3)],
         },
-        pnl={"status": "LIVE_SIM_PNL_READY", "fake_net_pnl": 1.5, "resolved_outcome_count": 3},
+        pnl={
+            "status": "LIVE_SIM_PNL_READY",
+            "fake_net_pnl": 1.5,
+            "resolved_outcome_count": 3,
+            "unique_resolved_market_count": 3,
+            "unique_resolution_event_count": 3,
+            "resolved_fill_count_by_market": {
+                "KXHIGHNY-26MAY18-B83.5": 1,
+                "KXHIGHCHI-26MAY19-T72": 1,
+                "KXHIGHMIA-26MAY20-T90": 1,
+            },
+            "pnl_by_market": {
+                "KXHIGHNY-26MAY18-B83.5": 0.5,
+                "KXHIGHCHI-26MAY19-T72": 0.5,
+                "KXHIGHMIA-26MAY20-T90": 0.5,
+            },
+            "max_single_market_resolved_fill_share": 0.34,
+        },
         comparison={"status": "LIVE_SIM_BASELINES_BEATEN", "baseline_beaten": True, "placebo_beaten": True},
         reconciliation={"status": "LIVE_SIM_RECONCILIATION_PASSED"},
     )
@@ -452,10 +610,40 @@ def test_sequence60_scheduler_is_data_only(local_project: Path) -> None:
     assert payload["request_signing_enabled"] is False
     assert payload["max_runs"] == 20
     assert payload["exact_resume_command"] == ".\\make.cmd live-market-sim-profitability-public-run"
+    assert payload["exact_outcome_recheck_command"] == ".\\make.cmd live-market-sim-profitability-outcome-recheck"
     assert "'live-market-profit-observer','--public-network-ok'" in payload["exact_powershell_command"]
     assert "foreach ($cmd in $commands)" in payload["exact_powershell_command"]
     assert "for ($i = 1; $i -le 20; $i++)" in payload["exact_powershell_command"]
+    assert "'live-market-sim-outcomes','--public-network-ok'" in payload["outcome_recheck_powershell_command"]
+    assert "'live-market-sim-pnl'" in payload["outcome_recheck_powershell_command"]
+    assert "'live-market-sim-comparison'" in payload["outcome_recheck_powershell_command"]
+    assert "'live-market-profit-observer'" not in payload["outcome_recheck_powershell_command"]
+    assert "'live-market-sim-intents'" not in payload["outcome_recheck_powershell_command"]
+    assert "'live-market-sim-fill'" not in payload["outcome_recheck_powershell_command"]
+    assert "'live-market-sim-ledger'" not in payload["outcome_recheck_powershell_command"]
     assert "&&" not in payload["exact_powershell_command"]
+
+
+def test_sequence60_scheduler_switches_pending_runs_to_outcome_only(local_project: Path) -> None:
+    from quant_os.autonomy.live_market_sim_profitability_schedule import (
+        write_live_market_sim_profitability_schedule_report,
+    )
+
+    _write_json(
+        local_project,
+        "reports/live_market_sim_profitability/final/latest_live_market_sim_profitability.json",
+        {
+            "status": "LIVE_MARKET_SIMULATED_PROFITABILITY_PENDING_OUTCOMES",
+            "observation_count": 10,
+            "eligible_intent_count": 3,
+            "fake_fill_count": 1,
+        },
+    )
+
+    payload = write_live_market_sim_profitability_schedule_report(output_root=local_project)
+
+    assert payload["outcome_only_ready"] is True
+    assert payload["exact_resume_command"] == ".\\make.cmd live-market-sim-profitability-outcome-recheck"
 
 
 def test_sequence60_start_new_run_archives_failed_batch_and_resets_state(local_project: Path) -> None:
@@ -521,6 +709,7 @@ def test_sequence60_cli_make_target_and_no_auth_order_path(local_project: Path) 
         [sys.executable, "-m", "quant_os.cli", "autonomy", "live-market-sim-reconciliation"],
         [sys.executable, "-m", "quant_os.cli", "readiness", "live-market-sim-profitability"],
         [sys.executable, "-m", "quant_os.cli", "autonomy", "live-market-sim-profitability-schedule"],
+        [sys.executable, "-m", "quant_os.cli", "autonomy", "live-market-sim-profitability-outcome-recheck"],
         [sys.executable, "-m", "quant_os.cli", "autonomy", "live-market-sim-start-new-run"],
     ]
     for command in commands:
@@ -533,6 +722,7 @@ def test_sequence60_cli_make_target_and_no_auth_order_path(local_project: Path) 
     assert 'if "%TARGET%"=="sequence60-smoke"' in make_cmd
     assert 'if "%TARGET%"=="live-market-sim-profitability-smoke"' in make_cmd
     assert 'if "%TARGET%"=="live-market-sim-profitability-public-run"' in make_cmd
+    assert 'if "%TARGET%"=="live-market-sim-profitability-outcome-recheck"' in make_cmd
     assert 'if "%TARGET%"=="live-market-sim-profitability-start-new-run"' in make_cmd
     for path in [
         "src/quant_os/autonomy/live_market_profit_observer.py",

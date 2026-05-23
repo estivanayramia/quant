@@ -32,6 +32,12 @@ def build_live_market_sim_pnl(*, output_root: str | Path = ".") -> dict[str, Any
     net = 0.0
     pending = 0
     resolved = 0
+    resolved_fill_count_by_market: dict[str, int] = {}
+    pnl_by_market: dict[str, float] = {}
+    proof_rows = []
+    proof_gross = 0.0
+    proof_net = 0.0
+    proof_markets_seen: set[str] = set()
     for outcome in outcomes:
         if outcome.get("outcome_status") == "PENDING":
             pending += 1
@@ -52,6 +58,14 @@ def build_live_market_sim_pnl(*, output_root: str | Path = ".") -> dict[str, Any
         rows.append({**outcome, "fake_gross_pnl": round(realized, 6), "fake_net_pnl": round(realized - conservative_cost, 6)})
         gross += realized
         net += realized - conservative_cost
+        market = str(outcome.get("market_ticker") or "UNKNOWN")
+        resolved_fill_count_by_market[market] = resolved_fill_count_by_market.get(market, 0) + 1
+        pnl_by_market[market] = pnl_by_market.get(market, 0.0) + realized - conservative_cost
+        if market not in proof_markets_seen:
+            proof_markets_seen.add(market)
+            proof_rows.append(rows[-1])
+            proof_gross += realized
+            proof_net += realized - conservative_cost
     if blockers:
         status = "LIVE_SIM_PNL_BLOCKED"
     elif pending:
@@ -65,8 +79,27 @@ def build_live_market_sim_pnl(*, output_root: str | Path = ".") -> dict[str, Any
         pnl_rows=rows,
         fake_gross_pnl=round(gross, 6),
         fake_net_pnl=round(net, 6),
+        proof_gross_pnl=round(proof_gross, 6),
+        proof_net_pnl=round(proof_net, 6),
+        proof_pnl_rows=proof_rows,
         resolved_outcome_count=resolved,
         pending_outcome_count=pending,
+        unique_resolved_market_count=len(resolved_fill_count_by_market),
+        unique_resolution_event_count=len(resolved_fill_count_by_market),
+        resolved_fill_count_by_market=dict(sorted(resolved_fill_count_by_market.items())),
+        pnl_by_market={key: round(value, 6) for key, value in sorted(pnl_by_market.items())},
+        proof_resolved_market_count=len(proof_markets_seen),
+        proof_resolved_fill_count_by_market={key: 1 for key in sorted(proof_markets_seen)},
+        duplicate_resolved_fill_count_excluded_from_proof=max(resolved - len(proof_markets_seen), 0),
+        proof_max_single_market_resolved_fill_share=round(1 / len(proof_markets_seen), 6)
+        if proof_markets_seen
+        else 0.0,
+        max_single_market_resolved_fill_share=round(
+            max(resolved_fill_count_by_market.values()) / resolved,
+            6,
+        )
+        if resolved
+        else 0.0,
         blockers=list(dict.fromkeys(blockers)),
         next_action="Run baseline/placebo comparison." if status == "LIVE_SIM_PNL_READY" else "Continue public outcome checks.",
     )

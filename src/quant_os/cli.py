@@ -5632,6 +5632,56 @@ def autonomy_live_market_sim_profitability_schedule() -> None:
     )
 
 
+def _run_live_market_sim_outcome_recheck(*, public_network_ok: bool) -> None:
+    from quant_os.autonomy.live_market_sim_outcomes import write_live_market_sim_outcomes_report
+    from quant_os.autonomy.live_market_sim_pnl import write_live_market_sim_pnl_report
+    from quant_os.autonomy.live_market_sim_profitability_schedule import (
+        write_live_market_sim_profitability_schedule_report,
+    )
+    from quant_os.autonomy.live_market_sim_reconciliation import (
+        write_live_market_sim_reconciliation_report,
+    )
+    from quant_os.proving.live_market_sim_comparison_report import (
+        write_live_market_sim_comparison_report,
+    )
+    from quant_os.readiness.live_market_sim_profitability import (
+        write_live_market_sim_profitability_report,
+    )
+
+    write_live_market_sim_outcomes_report(output_root=Path("."), public_network_ok=public_network_ok)
+    write_live_market_sim_pnl_report(output_root=Path("."))
+    write_live_market_sim_comparison_report(output_root=Path("."))
+    write_live_market_sim_reconciliation_report(output_root=Path("."))
+    final = write_live_market_sim_profitability_report(output_root=Path("."))
+    schedule = write_live_market_sim_profitability_schedule_report(output_root=Path("."))
+    print(
+        {
+            "status": final["status"],
+            "fake_net_pnl": final["fake_net_pnl"],
+            "resolved_outcome_count": final["resolved_outcome_count"],
+            "pending_outcome_count": final["pending_outcome_count"],
+            "exact_resume_command": schedule["exact_resume_command"],
+            "report": "reports/live_market_sim_profitability/final/latest_live_market_sim_profitability.json",
+            "live_trading_enabled": final["live_trading_enabled"],
+            "execution_authority": final["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-sim-profitability-outcome-recheck")
+def autonomy_live_market_sim_profitability_outcome_recheck(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    _run_live_market_sim_outcome_recheck(public_network_ok=public_network_ok)
+
+
+@autonomy_app.command("live-market-sim-outcome-recheck")
+def autonomy_live_market_sim_outcome_recheck(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    _run_live_market_sim_outcome_recheck(public_network_ok=public_network_ok)
+
+
 @autonomy_app.command("live-market-sim-start-new-run")
 def autonomy_live_market_sim_start_new_run() -> None:
     from quant_os.autonomy.live_market_sim_run_manager import (

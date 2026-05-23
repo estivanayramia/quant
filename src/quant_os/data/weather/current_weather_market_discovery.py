@@ -29,6 +29,7 @@ def evaluate_current_weather_market_discovery(
     captured_at: str | None = None,
     public_network_ok: bool = False,
     series_tickers: list[str] | None = None,
+    excluded_market_tickers: list[str] | None = None,
 ) -> dict[str, Any]:
     captured_at = captured_at or utc_now()
     source_urls: list[str] = []
@@ -37,7 +38,8 @@ def evaluate_current_weather_market_discovery(
         try:
             series_payload, markets_payload, orderbook_payloads, source_urls = (
                 fetch_public_kalshi_current_weather_payloads(
-                    series_tickers=series_tickers or DEFAULT_SERIES_TICKERS
+                    series_tickers=series_tickers or DEFAULT_SERIES_TICKERS,
+                    excluded_market_tickers=excluded_market_tickers,
                 )
             )
         except OSError:
@@ -59,10 +61,16 @@ def evaluate_current_weather_market_discovery(
         for market in markets
     ]
     candidates = [candidate for candidate in candidates if candidate["candidate_rule_match"]]
+    excluded_market_tickers = sorted({str(ticker) for ticker in excluded_market_tickers or [] if ticker})
+    candidates = [
+        {**candidate, "excluded_existing_run_ticker": False}
+        for candidate in candidates
+        if str(candidate.get("ticker") or "") not in excluded_market_tickers
+    ]
     candidates.sort(key=lambda item: _candidate_sort_key(item, captured_at))
     selected = candidates[0] if candidates else None
     status = "CURRENT_MARKET_FOUND" if selected else "NO_CURRENT_ELIGIBLE_MARKET"
-    blockers = [] if selected else ["NO_CURRENT_PUBLIC_WEATHER_MARKET_FOUND"]
+    blockers = [] if selected else ["NO_NEW_PUBLIC_WEATHER_MARKET_FOUND" if excluded_market_tickers else "NO_CURRENT_PUBLIC_WEATHER_MARKET_FOUND"]
     if discovery_blocked:
         status = "CURRENT_MARKET_DISCOVERY_BLOCKED"
         blockers = ["PUBLIC_MARKET_DISCOVERY_FAILED"]
@@ -81,6 +89,7 @@ def evaluate_current_weather_market_discovery(
         candidates=candidates,
         market_count=len(markets),
         candidate_count=len(candidates),
+        excluded_market_tickers=excluded_market_tickers,
         public_read_only=True,
         request_methods=["GET"],
         authenticated_endpoint_called=False,
@@ -110,16 +119,19 @@ def write_current_weather_market_discovery_report(
     *,
     output_root: str | Path = ".",
     public_network_ok: bool = False,
+    excluded_market_tickers: list[str] | None = None,
 ) -> dict[str, Any]:
     return evaluate_current_weather_market_discovery(
         output_root=output_root,
         public_network_ok=public_network_ok,
+        excluded_market_tickers=excluded_market_tickers,
     )
 
 
 def fetch_public_kalshi_current_weather_payloads(
     *,
     series_tickers: list[str],
+    excluded_market_tickers: list[str] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, dict[str, Any]], list[str]]:
     all_series: list[dict[str, Any]] = []
     all_markets: list[dict[str, Any]] = []
@@ -139,7 +151,13 @@ def fetch_public_kalshi_current_weather_payloads(
         for market in markets_payload.get("markets", []):
             market["series_ticker"] = series_ticker
             all_markets.append(market)
-    for market in _orderbook_candidate_markets(all_markets)[:150]:
+    excluded = {str(ticker) for ticker in excluded_market_tickers or [] if ticker}
+    orderbook_candidates = [
+        market
+        for market in _orderbook_candidate_markets(all_markets)
+        if str(market.get("ticker") or "") not in excluded
+    ]
+    for market in orderbook_candidates[:150]:
         ticker = str(market.get("ticker") or "")
         if not ticker:
             continue

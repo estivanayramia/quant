@@ -7,6 +7,7 @@ from quant_os.autonomy.live_market_sim_common import (
     ACTIVE_POLICY_VERSION,
     hash_payload,
     load_json,
+    load_state,
     sim_safety_payload,
     write_state,
 )
@@ -23,6 +24,7 @@ def build_live_market_sim_intents(*, output_root: str | Path = ".") -> dict[str,
     ) or {}
     observation = observer.get("observation") or {}
     market = observation.get("market") or {}
+    market_ticker = str(market.get("ticker") or "")
     blockers: list[str] = []
     if observer.get("status") != "LIVE_PROFIT_OBSERVER_READY":
         status = "LIVE_SIM_INTENT_NO_TRADE"
@@ -39,6 +41,10 @@ def build_live_market_sim_intents(*, output_root: str | Path = ".") -> dict[str,
         status = "LIVE_SIM_INTENT_NO_TRADE"
         blockers.append("OPPOSITE_SIDE_EFFECTIVELY_CERTAIN")
         intent = None
+    elif _ticker_already_exposed(output_root=output_root, market_ticker=market_ticker):
+        status = "LIVE_SIM_INTENT_NO_TRADE"
+        blockers.append("DUPLICATE_MARKET_TICKER_EXPOSURE")
+        intent = None
     elif _expected_net_edge(market, observation.get("forecast_evidence") or {}) <= 0:
         status = "LIVE_SIM_INTENT_NO_TRADE"
         blockers.append("EXPECTED_EDGE_AFTER_COST_NOT_POSITIVE")
@@ -52,7 +58,7 @@ def build_live_market_sim_intents(*, output_root: str | Path = ".") -> dict[str,
             "policy_version": ACTIVE_POLICY_VERSION,
             "expected_net_edge": round(expected_net_edge, 6),
             "observation_id": observation.get("observation_id"),
-            "market_ticker": market.get("ticker"),
+            "market_ticker": market_ticker,
             "side": "yes",
             "action": "buy",
             "limit_price": round(limit_price, 6),
@@ -118,3 +124,14 @@ def _expected_net_edge(market: dict[str, Any], forecast: dict[str, Any]) -> floa
     yes_ask = float(market.get("yes_ask") or 0.0)
     forecast_probability = 0.68 if forecast.get("bucket_match") else 0.50
     return forecast_probability - yes_ask - CONSERVATIVE_COST_PER_CONTRACT
+
+
+def _ticker_already_exposed(*, output_root: str | Path, market_ticker: str) -> bool:
+    if not market_ticker:
+        return False
+    state = load_state(output_root=output_root)
+    for collection_name in ("intents", "fills", "ledger_entries", "outcomes"):
+        for item in state.get(collection_name, []) or []:
+            if str(item.get("market_ticker") or "") == market_ticker:
+                return True
+    return False

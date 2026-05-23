@@ -1623,6 +1623,10 @@ if "%TARGET%"=="live-market-sim-profitability-public-run" (
   python -m quant_os.cli autonomy live-market-sim-profitability-schedule
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="live-market-sim-profitability-outcome-recheck" (
+  python -m quant_os.cli autonomy live-market-sim-profitability-outcome-recheck --public-network-ok
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="live-market-sim-profitability-start-new-run" (
   python -m quant_os.cli autonomy live-market-sim-start-new-run
   exit /b !ERRORLEVEL!

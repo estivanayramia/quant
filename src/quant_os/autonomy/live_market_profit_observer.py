@@ -3,7 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from quant_os.autonomy.live_market_sim_common import hash_payload, sim_safety_payload, write_state
+from quant_os.autonomy.live_market_sim_common import (
+    hash_payload,
+    load_state,
+    sim_safety_payload,
+    write_state,
+)
 from quant_os.data.weather.current_weather_forecast_match import write_current_forecast_match_report
 from quant_os.data.weather.current_weather_market_discovery import (
     write_current_weather_market_discovery_report,
@@ -29,7 +34,12 @@ def build_live_market_profit_observer(
 ) -> dict[str, Any]:
     now_ts = now_ts or utc_now()
     if public_network_ok and current_market_payload is None:
-        write_current_weather_market_discovery_report(output_root=output_root, public_network_ok=True)
+        excluded_market_tickers = _existing_exposure_tickers(output_root=output_root)
+        write_current_weather_market_discovery_report(
+            output_root=output_root,
+            public_network_ok=True,
+            excluded_market_tickers=excluded_market_tickers,
+        )
         write_current_forecast_match_report(output_root=output_root, public_network_ok=True)
         current_market_payload = write_current_market_eligibility_report(output_root=output_root)
         preflight_payload = write_first_dollar_preflight_report(output_root=output_root)
@@ -167,3 +177,14 @@ def _blocked_kind(blockers: list[str]) -> str:
     if "PRICE_DISCIPLINE_BLOCKED" in blockers:
         return "PRICE_DISCIPLINE_BLOCKED"
     return "CLOSED_OR_BLOCKED"
+
+
+def _existing_exposure_tickers(*, output_root: str | Path) -> list[str]:
+    state = load_state(output_root=output_root)
+    tickers = set()
+    for collection_name in ("intents", "fills", "ledger_entries", "outcomes"):
+        for item in state.get(collection_name, []) or []:
+            ticker = item.get("market_ticker")
+            if ticker:
+                tickers.add(str(ticker))
+    return sorted(tickers)

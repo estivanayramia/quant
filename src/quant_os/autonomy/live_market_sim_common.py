@@ -13,6 +13,7 @@ STATE_DIR = ROOT / "state"
 STATE_JSON = STATE_DIR / "latest_state.json"
 STATE_MD = STATE_DIR / "latest_state.md"
 RESUME_COMMAND = ".\\make.cmd live-market-sim-profitability-public-run"
+OUTCOME_RECHECK_COMMAND = ".\\make.cmd live-market-sim-profitability-outcome-recheck"
 ACTIVE_POLICY_VERSION = "strict_weather_yes_v3_public_l2_costed_no_near_certain_opposite"
 
 
