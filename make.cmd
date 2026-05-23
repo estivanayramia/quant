@@ -1610,7 +1610,7 @@ if "%TARGET%"=="live-market-sim-profitability-public-run" (
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomy live-market-sim-ledger
   if errorlevel 1 exit /b !ERRORLEVEL!
-  python -m quant_os.cli autonomy live-market-sim-outcomes
+  python -m quant_os.cli autonomy live-market-sim-outcomes --public-network-ok
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomy live-market-sim-pnl
   if errorlevel 1 exit /b !ERRORLEVEL!
@@ -1621,6 +1621,10 @@ if "%TARGET%"=="live-market-sim-profitability-public-run" (
   python -m quant_os.cli readiness live-market-sim-profitability
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli autonomy live-market-sim-profitability-schedule
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="live-market-sim-profitability-start-new-run" (
+  python -m quant_os.cli autonomy live-market-sim-start-new-run
   exit /b !ERRORLEVEL!
 )
 if "%TARGET%"=="sequence60-smoke" (

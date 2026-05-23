@@ -37,6 +37,7 @@ def _market(**overrides: object) -> dict[str, object]:
         "spread": 0.02,
         "liquidity": 15.0,
         "volume": 251.91,
+        "orderbook_available": True,
         "orderbook_ts": FRESH_ORDERBOOK_TS,
         "source_url": "https://external-api.kalshi.com/trade-api/v2/markets?series_ticker=KXHIGHNY&status=open",
         "orderbook_url": "https://external-api.kalshi.com/trade-api/v2/markets/KXHIGHNY-26MAY18-B83.5/orderbook",
@@ -211,7 +212,7 @@ def test_sequence57_forecast_matching_blocks_ambiguous_location_mapping(
 
     payload = evaluate_current_forecast_match(
         output_root=local_project,
-        market=_market(location="Miami, Florida", ticker="KXHIGHMIA-26MAY18-T84"),
+        market=_market(location="London, United Kingdom", ticker="KXHIGHLON-26MAY18-T84"),
         forecast_payload=_forecast(),
         known_at_ts=FORECAST_TS,
         orderbook_ts=FRESH_ORDERBOOK_TS,
@@ -219,6 +220,63 @@ def test_sequence57_forecast_matching_blocks_ambiguous_location_mapping(
 
     assert payload["status"] == "FORECAST_MAPPING_AMBIGUOUS"
     assert "FORECAST_SOURCE_LOCATION_UNSUPPORTED" in payload["blockers"]
+
+
+def test_sequence57_forecast_matching_scans_supported_locations_and_prefers_price_discipline(
+    local_project: Path,
+) -> None:
+    from quant_os.data.weather.current_weather_forecast_match import evaluate_current_forecast_match
+
+    _write_json(
+        local_project,
+        "reports/first_dollar_preflight/current_market_discovery/latest_current_market_discovery.json",
+        {
+            "candidates": [
+                _market(
+                    ticker="KXHIGHNY-26MAY18-T60",
+                    title="Will the high temp in NYC be <60 deg on May 18, 2026?",
+                    threshold_bucket="less_than_60_f",
+                    floor_strike=None,
+                    cap_strike=60,
+                    strike_type="less",
+                    yes_ask=0.78,
+                    yes_bid=0.75,
+                    no_bid=0.22,
+                    no_ask=0.25,
+                ),
+                _market(
+                    ticker="KXHIGHMIA-26MAY18-T84",
+                    event_ticker="KXHIGHMIA-26MAY18",
+                    series_ticker="KXHIGHMIA",
+                    title="Will the high temp in Miami be <84 deg on May 18, 2026?",
+                    location="Miami, Florida",
+                    threshold_bucket="less_than_84_f",
+                    floor_strike=None,
+                    cap_strike=84,
+                    strike_type="less",
+                    yes_ask=0.31,
+                    yes_bid=0.29,
+                    no_bid=0.69,
+                    no_ask=0.71,
+                ),
+            ]
+        },
+    )
+
+    payload = evaluate_current_forecast_match(
+        output_root=local_project,
+        forecast_payloads_by_location={
+            "Central Park, New York": _forecast(forecast_value=58),
+            "Miami, Florida": _forecast(forecast_value=83),
+        },
+        known_at_ts=FORECAST_TS,
+        orderbook_ts=FRESH_ORDERBOOK_TS,
+    )
+
+    assert payload["status"] == "CURRENT_FORECAST_MATCHED"
+    assert payload["match_count"] == 2
+    assert payload["market"]["location"] == "Miami, Florida"
+    assert payload["market"]["yes_ask"] == 0.31
 
 
 def test_sequence57_eligibility_blocks_closed_markets(local_project: Path) -> None:
@@ -247,6 +305,20 @@ def test_sequence57_eligibility_blocks_wide_spreads(local_project: Path) -> None
 
     assert payload["status"] == "CURRENT_MARKET_ELIGIBILITY_BLOCKED"
     assert "SPREAD_ABOVE_CAP" in payload["blockers"]
+
+
+def test_sequence57_eligibility_requires_public_l2_orderbook(local_project: Path) -> None:
+    from quant_os.readiness.current_market_eligibility import evaluate_current_market_eligibility
+
+    payload = evaluate_current_market_eligibility(
+        output_root=local_project,
+        current_public_market=_market(orderbook_available=False),
+        forecast_evidence=_forecast(),
+        now_ts=NOW,
+    )
+
+    assert payload["status"] == "CURRENT_MARKET_ELIGIBILITY_BLOCKED"
+    assert "ORDERBOOK_PUBLIC_DATA_MISSING" in payload["blockers"]
 
 
 def test_sequence57_eligibility_blocks_stale_data(local_project: Path) -> None:

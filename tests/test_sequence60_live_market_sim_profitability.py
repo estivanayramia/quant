@@ -31,6 +31,7 @@ def _market(index: int = 0, **overrides: object) -> dict[str, object]:
         "no_ask": 0.81,
         "spread": 0.02,
         "liquidity": 12.0,
+        "orderbook_available": True,
         "orderbook_ts": BOOK_TS,
         "resolution_ts": f"2026-05-{19 + index:02d}T14:00:00Z",
         "market_evidence_hash": f"market-hash-{index}",
@@ -169,9 +170,29 @@ def test_sequence60_fake_intents_are_no_transmit_fake_money_and_unsigned(
     assert intent["authenticated_requests_enabled"] is False
     assert intent["request_signing_enabled"] is False
     assert intent["contains_signed_headers"] is False
+    assert intent["policy_version"] == "strict_weather_yes_v3_public_l2_costed_no_near_certain_opposite"
+    assert intent["expected_net_edge"] > 0
     text = json.dumps(payload, sort_keys=True)
     assert "/portfolio/orders" not in text
     assert "KALSHI-ACCESS-SIGNATURE" not in text
+
+
+def test_sequence60_intents_block_near_certain_opposite_side(local_project: Path) -> None:
+    from quant_os.autonomy.live_market_profit_observer import (
+        write_live_market_profit_observer_report,
+    )
+    from quant_os.autonomy.live_market_sim_intents import write_live_market_sim_intents_report
+
+    write_live_market_profit_observer_report(
+        output_root=local_project,
+        now_ts=NOW,
+        current_market_payload=_eligible_payload(yes_ask=0.01, yes_bid=0.0, no_bid=0.99, no_ask=1.0),
+        preflight_payload={"status": "FIRST_DOLLAR_PREFLIGHT_READY", "blockers": []},
+    )
+    payload = write_live_market_sim_intents_report(output_root=local_project)
+
+    assert payload["status"] == "LIVE_SIM_INTENT_NO_TRADE"
+    assert "OPPOSITE_SIDE_EFFECTIVELY_CERTAIN" in payload["blockers"]
 
 
 def test_sequence60_fake_fill_model_is_conservative_and_never_guaranteed(
@@ -201,6 +222,19 @@ def test_sequence60_fake_fill_model_is_conservative_and_never_guaranteed(
     assert no_fill["status"] == "LIVE_SIM_NO_FILL"
 
 
+def test_sequence60_fake_fill_model_requires_public_l2_orderbook(local_project: Path) -> None:
+    from quant_os.autonomy.live_market_sim_fill_model import apply_live_market_sim_fill_model
+
+    payload = apply_live_market_sim_fill_model(
+        intent={"fake_client_order_id": "sim-l2", "market_ticker": "T", "limit_price": 0.24, "fake_contracts": 1},
+        observation={"market": _market(orderbook_available=False)},
+    )
+
+    assert payload["status"] == "LIVE_SIM_FILL_BLOCKED"
+    assert "ORDERBOOK_PUBLIC_DATA_MISSING" in payload["blockers"]
+    assert payload["fake_fill"] is None
+
+
 def test_sequence60_ledger_tracks_pending_and_resolved_outcomes(local_project: Path) -> None:
     from quant_os.autonomy.live_market_sim_outcomes import write_live_market_sim_outcomes_report
 
@@ -217,6 +251,33 @@ def test_sequence60_ledger_tracks_pending_and_resolved_outcomes(local_project: P
     assert resolved["status"] == "LIVE_SIM_OUTCOME_RESOLVED"
     assert resolved["resolved_outcome_count"] == 1
     assert resolved["outcomes"][0]["outcome_label"] == "yes"
+
+
+def test_sequence60_outcomes_resolve_from_public_kalshi_market_payload(local_project: Path) -> None:
+    from quant_os.autonomy.live_market_sim_outcomes import write_live_market_sim_outcomes_report
+
+    run = _run_filled_position(local_project, index=0)
+    ticker = run["ledger"]["ledger_entries"][0]["market_ticker"]
+    resolved = write_live_market_sim_outcomes_report(
+        output_root=local_project,
+        public_market_payloads={
+            ticker: {
+                "market": {
+                    "ticker": ticker,
+                    "status": "finalized",
+                    "result": "no",
+                    "settlement_ts": "2026-05-18T12:02:21.644124Z",
+                    "expiration_value": "87.00",
+                }
+            }
+        },
+    )
+
+    assert resolved["status"] == "LIVE_SIM_OUTCOME_RESOLVED"
+    assert resolved["resolved_outcome_count"] == 1
+    assert resolved["outcomes"][0]["outcome_label"] == "no"
+    assert resolved["outcomes"][0]["public_resolution"]["public_read_only"] is True
+    assert resolved["outcomes"][0]["public_resolution"]["request_method"] == "GET"
 
 
 def test_sequence60_pnl_uses_real_outcome_labels_and_blocks_guesses(
@@ -391,8 +452,61 @@ def test_sequence60_scheduler_is_data_only(local_project: Path) -> None:
     assert payload["request_signing_enabled"] is False
     assert payload["max_runs"] == 20
     assert payload["exact_resume_command"] == ".\\make.cmd live-market-sim-profitability-public-run"
-    assert "live-market-profit-observer --public-network-ok" in payload["exact_powershell_command"]
+    assert "'live-market-profit-observer','--public-network-ok'" in payload["exact_powershell_command"]
+    assert "foreach ($cmd in $commands)" in payload["exact_powershell_command"]
     assert "for ($i = 1; $i -le 20; $i++)" in payload["exact_powershell_command"]
+    assert "&&" not in payload["exact_powershell_command"]
+
+
+def test_sequence60_start_new_run_archives_failed_batch_and_resets_state(local_project: Path) -> None:
+    from quant_os.autonomy.live_market_sim_common import (
+        ACTIVE_POLICY_VERSION,
+        write_state,
+    )
+    from quant_os.autonomy.live_market_sim_run_manager import (
+        write_live_market_sim_start_new_run_report,
+    )
+
+    write_state(
+        output_root=local_project,
+        observations=[{"observation_id": "old_obs"}],
+        intents=[{"fake_client_order_id": "old_intent"}],
+        fills=[{"fake_fill_id": "old_fill"}],
+        outcomes=[{"observation_id": "old_obs", "outcome_status": "RESOLVED"}],
+        fake_net_pnl=-0.8,
+        current_blockers=["FAKE_NET_PNL_NOT_POSITIVE"],
+    )
+    _write_json(
+        local_project,
+        "reports/live_market_sim_profitability/final/latest_live_market_sim_profitability.json",
+        {
+            "status": "LIVE_MARKET_SIMULATED_PROFITABILITY_NOT_PROVEN",
+            "fake_net_pnl": -0.8,
+            "observation_count": 1,
+            "eligible_intent_count": 1,
+            "fake_fill_count": 1,
+            "resolved_outcome_count": 1,
+            "pending_outcome_count": 0,
+            "blockers": ["FAKE_NET_PNL_NOT_POSITIVE"],
+        },
+    )
+
+    payload = write_live_market_sim_start_new_run_report(output_root=local_project)
+    state = json.loads(
+        (local_project / "reports/live_market_sim_profitability/state/latest_state.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert payload["status"] == "LIVE_MARKET_SIM_NEW_RUN_STARTED"
+    assert payload["archived_run_status"] == "LIVE_MARKET_SIMULATED_PROFITABILITY_NOT_PROVEN"
+    assert (local_project / payload["archived_run_path"]).exists()
+    assert state["observations_count"] == 0
+    assert state["eligible_intent_count"] == 0
+    assert state["fake_fill_count"] == 0
+    assert state["resolved_outcome_count"] == 0
+    assert state["active_policy_version"] == ACTIVE_POLICY_VERSION
+    assert state["previous_run_archive"] == payload["archived_run_path"]
 
 
 def test_sequence60_cli_make_target_and_no_auth_order_path(local_project: Path) -> None:
@@ -407,6 +521,7 @@ def test_sequence60_cli_make_target_and_no_auth_order_path(local_project: Path) 
         [sys.executable, "-m", "quant_os.cli", "autonomy", "live-market-sim-reconciliation"],
         [sys.executable, "-m", "quant_os.cli", "readiness", "live-market-sim-profitability"],
         [sys.executable, "-m", "quant_os.cli", "autonomy", "live-market-sim-profitability-schedule"],
+        [sys.executable, "-m", "quant_os.cli", "autonomy", "live-market-sim-start-new-run"],
     ]
     for command in commands:
         result = subprocess.run(command, cwd=local_project, capture_output=True, text=True, check=False)
@@ -418,6 +533,7 @@ def test_sequence60_cli_make_target_and_no_auth_order_path(local_project: Path) 
     assert 'if "%TARGET%"=="sequence60-smoke"' in make_cmd
     assert 'if "%TARGET%"=="live-market-sim-profitability-smoke"' in make_cmd
     assert 'if "%TARGET%"=="live-market-sim-profitability-public-run"' in make_cmd
+    assert 'if "%TARGET%"=="live-market-sim-profitability-start-new-run"' in make_cmd
     for path in [
         "src/quant_os/autonomy/live_market_profit_observer.py",
         "src/quant_os/autonomy/live_market_sim_intents.py",

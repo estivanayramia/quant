@@ -28,6 +28,10 @@ def apply_live_market_sim_fill_model(
     if not intent:
         status = "LIVE_SIM_NO_FILL"
         fill = None
+    elif not market.get("orderbook_available"):
+        status = "LIVE_SIM_FILL_BLOCKED"
+        blockers.append("ORDERBOOK_PUBLIC_DATA_MISSING")
+        fill = None
     elif spread > max_spread:
         status = "LIVE_SIM_FILL_BLOCKED"
         blockers.append("SPREAD_TOO_WIDE")

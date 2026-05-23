@@ -139,7 +139,7 @@ def fetch_public_kalshi_current_weather_payloads(
         for market in markets_payload.get("markets", []):
             market["series_ticker"] = series_ticker
             all_markets.append(market)
-    for market in all_markets[:25]:
+    for market in _orderbook_candidate_markets(all_markets)[:150]:
         ticker = str(market.get("ticker") or "")
         if not ticker:
             continue
@@ -159,10 +159,11 @@ def _candidate_from_market(
     title = str(market.get("title") or "")
     location = _location_from_title(title)
     weather_variable = "temperature_max_f" if "high temp" in title.lower() else None
-    yes_bid = _float(market.get("yes_bid_dollars", market.get("yes_bid")))
-    yes_ask = _float(market.get("yes_ask_dollars", market.get("yes_ask")))
-    no_bid = _float(market.get("no_bid_dollars", market.get("no_bid")))
-    no_ask = _float(market.get("no_ask_dollars", market.get("no_ask")))
+    book_top = _top_of_book_from_orderbook(orderbook)
+    yes_bid = book_top.get("yes_bid") or _float(market.get("yes_bid_dollars", market.get("yes_bid")))
+    yes_ask = book_top.get("yes_ask") or _float(market.get("yes_ask_dollars", market.get("yes_ask")))
+    no_bid = book_top.get("no_bid") or _float(market.get("no_bid_dollars", market.get("no_bid")))
+    no_ask = book_top.get("no_ask") or _float(market.get("no_ask_dollars", market.get("no_ask")))
     bid_size = _float(market.get("yes_bid_size_fp", market.get("yes_bid_size")))
     ask_size = _float(market.get("yes_ask_size_fp", market.get("yes_ask_size")))
     floor = market.get("floor_strike")
@@ -206,7 +207,9 @@ def _candidate_from_market(
         "spread": round(spread, 6),
         "liquidity": liquidity,
         "volume": _float(market.get("volume_fp", market.get("volume"))),
-        "orderbook_available": bool(orderbook),
+        "orderbook_available": bool(book_top),
+        "orderbook_level_count": book_top.get("level_count", 0),
+        "orderbook_snapshot_source": "kalshi_public_l2_orderbook" if book_top else None,
         "orderbook_ts": captured_at,
         "source_url": market_url,
         "orderbook_url": orderbook_url,
@@ -233,6 +236,17 @@ def _candidate_sort_key(candidate: dict[str, Any], captured_at: str) -> tuple[in
         -float(candidate.get("volume") or 0),
         str(candidate.get("ticker") or ""),
     )
+
+
+def _orderbook_candidate_markets(markets: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    candidates = [
+        market
+        for market in markets
+        if _location_from_title(str(market.get("title") or ""))
+        and "high temp" in str(market.get("title") or "").lower()
+        and _bucket_from_market(market)
+    ]
+    return candidates or markets
 
 
 def _location_from_title(title: str) -> str | None:
@@ -297,6 +311,32 @@ def _orderbook_liquidity(orderbook: dict[str, Any]) -> float:
             if len(level) >= 2:
                 total += _float(level[1])
     return total
+
+
+def _top_of_book_from_orderbook(orderbook: dict[str, Any]) -> dict[str, float]:
+    book = orderbook.get("orderbook_fp", orderbook)
+    yes_levels = [*_levels(book.get("yes", [])), *_levels(book.get("yes_dollars", []))]
+    no_levels = [*_levels(book.get("no", [])), *_levels(book.get("no_dollars", []))]
+    yes_bid = max((price for price, _size in yes_levels), default=0.0)
+    no_bid = max((price for price, _size in no_levels), default=0.0)
+    result: dict[str, float] = {}
+    if yes_bid:
+        result["yes_bid"] = round(yes_bid, 6)
+        result["no_ask"] = round(max(1.0 - yes_bid, 0.0), 6)
+    if no_bid:
+        result["no_bid"] = round(no_bid, 6)
+        result["yes_ask"] = round(max(1.0 - no_bid, 0.0), 6)
+    if result:
+        result["level_count"] = float(len(yes_levels) + len(no_levels))
+    return result
+
+
+def _levels(levels: list[Any]) -> list[tuple[float, float]]:
+    normalized = []
+    for level in levels or []:
+        if len(level) >= 2:
+            normalized.append((_float(level[0]), _float(level[1])))
+    return normalized
 
 
 def _default_source_urls(candidates: list[dict[str, Any]]) -> list[str]:

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from quant_os.autonomy.live_market_sim_common import (
+    ACTIVE_POLICY_VERSION,
     hash_payload,
     load_json,
     sim_safety_payload,
@@ -12,6 +13,7 @@ from quant_os.autonomy.live_market_sim_common import (
 from quant_os.readiness.canary_readiness_common import write_json_markdown_report
 
 REPORT_DIR = Path("reports/live_market_sim_profitability/intents")
+CONSERVATIVE_COST_PER_CONTRACT = 0.03
 
 
 def build_live_market_sim_intents(*, output_root: str | Path = ".") -> dict[str, Any]:
@@ -29,11 +31,26 @@ def build_live_market_sim_intents(*, output_root: str | Path = ".") -> dict[str,
         status = "LIVE_SIM_INTENT_BLOCKED"
         blockers.append("MISSING_EVIDENCE_HASH")
         intent = None
+    elif str(market.get("status") or "").lower() not in {"", "active", "open"}:
+        status = "LIVE_SIM_INTENT_BLOCKED"
+        blockers.append("MARKET_NOT_ACTIVE")
+        intent = None
+    elif _opposite_side_effectively_certain(market):
+        status = "LIVE_SIM_INTENT_NO_TRADE"
+        blockers.append("OPPOSITE_SIDE_EFFECTIVELY_CERTAIN")
+        intent = None
+    elif _expected_net_edge(market, observation.get("forecast_evidence") or {}) <= 0:
+        status = "LIVE_SIM_INTENT_NO_TRADE"
+        blockers.append("EXPECTED_EDGE_AFTER_COST_NOT_POSITIVE")
+        intent = None
     else:
-        limit_price = float(market.get("yes_ask") or 0.0) + 0.03
+        expected_net_edge = _expected_net_edge(market, observation.get("forecast_evidence") or {})
+        limit_price = float(market.get("yes_ask") or 0.0) + CONSERVATIVE_COST_PER_CONTRACT
         status = "LIVE_SIM_INTENT_READY"
         intent = {
             "fake_client_order_id": f"lmsi_{hash_payload(observation, length=18)}",
+            "policy_version": ACTIVE_POLICY_VERSION,
+            "expected_net_edge": round(expected_net_edge, 6),
             "observation_id": observation.get("observation_id"),
             "market_ticker": market.get("ticker"),
             "side": "yes",
@@ -91,3 +108,13 @@ def write_live_market_sim_intents_report(*, output_root: str | Path = ".") -> di
     else:
         write_state(output_root=output_root, next_action=payload["next_action"])
     return payload
+
+
+def _opposite_side_effectively_certain(market: dict[str, Any]) -> bool:
+    return float(market.get("no_bid") or 0.0) >= 0.98 and float(market.get("yes_ask") or 0.0) <= 0.02
+
+
+def _expected_net_edge(market: dict[str, Any], forecast: dict[str, Any]) -> float:
+    yes_ask = float(market.get("yes_ask") or 0.0)
+    forecast_probability = 0.68 if forecast.get("bucket_match") else 0.50
+    return forecast_probability - yes_ask - CONSERVATIVE_COST_PER_CONTRACT

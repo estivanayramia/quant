@@ -56,7 +56,7 @@ def build_canary_grade_manual_packet(*, output_root: str | Path = ".") -> dict[s
             "credentials_required_separately": True,
         },
         kill_switch="manual_canary_kill_switch_required_before_any_separate_human_action",
-        post_canary_reconciliation_command="python -m quant_os.cli execution weather-canary-reconciliation",
+        post_canary_reconciliation_command=".\\make.cmd canary-grade-live-sim-public-run",
         blockers=[] if proven else ["CANARY_GRADE_READINESS_NOT_PROVEN"],
         next_action="Human may review packet; no order is authorized or placed by this report."
         if proven

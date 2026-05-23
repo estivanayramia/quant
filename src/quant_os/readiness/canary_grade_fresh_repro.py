@@ -41,6 +41,9 @@ def build_canary_grade_fresh_repro(
     return canary_safe_payload(
         schema_version="canary_grade_fresh_repro_v1",
         status=status,
+        attestation_scope="same_worktree_command_completion",
+        independent_clean_checkout_verified=False,
+        independent_clean_checkout_required_for_merge=True,
         proof_command=proof_command,
         proof_command_passed=proof_command_passed,
         required_reports=REQUIRED_REPORTS,

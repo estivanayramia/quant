@@ -96,10 +96,13 @@ def test_sequence62_canary_grade_pipeline_proves_large_fixture(local_project: Pa
     assert repeatability["placebo_beaten"] is True
     assert capacity["status"] == "CAPACITY_TINY_CANARY_PASSED"
     assert fresh_repro["status"] == "FRESH_REPRO_PASSED"
+    assert fresh_repro["attestation_scope"] == "same_worktree_command_completion"
+    assert fresh_repro["independent_clean_checkout_verified"] is False
     assert readiness["status"] == "CANARY_GRADE_LIVE_SIM_PROFITABILITY_PROVEN"
     assert readiness["validation_status"] == readiness["status"]
     assert readiness["venues_tested"] == observer["venues_tested"]
     assert packet["status"] == "FIRST_TINY_MANUAL_CANARY_PACKET_READY"
+    assert packet["post_canary_reconciliation_command"] == ".\\make.cmd canary-grade-live-sim-public-run"
     assert packet["order_transmission_enabled"] is False
     assert packet["actual_order_count"] == 0
 

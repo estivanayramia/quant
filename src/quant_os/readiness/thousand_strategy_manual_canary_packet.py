@@ -20,6 +20,7 @@ def write_thousand_strategy_manual_canary_packet(
 ) -> dict[str, Any]:
     readiness = write_money_worthy_strategy_readiness_report(output_root=output_root)
     ready = readiness["status"] == SUCCESS
+    blockers = [] if ready else list(readiness.get("blockers", []) or ["MONEY_WORTHY_READINESS_NOT_PASSED"])
     payload = safe_payload(
         status=(
             "FIRST_TINY_MANUAL_CANARY_PACKET_READY"
@@ -28,6 +29,7 @@ def write_thousand_strategy_manual_canary_packet(
         ),
         selected_strategy_id=(readiness.get("current_best_candidate") or {}).get("id"),
         readiness_status=readiness["status"],
+        blockers=blockers,
         risk_envelope={"max_manual_canary_usd": 1.0, "human_only": True},
         no_transmit_preview=None,
         kill_switch="manual_stop_no_automation",

@@ -16,7 +16,14 @@ from quant_os.readiness.canary_readiness_common import (
 )
 
 REPORT_DIR = Path("reports/first_dollar_preflight/current_forecast")
-NWS_NYC_HOURLY_URL = "https://api.weather.gov/gridpoints/OKX/34,45/forecast/hourly"
+NWS_HOURLY_URLS_BY_LOCATION = {
+    "Central Park, New York": "https://api.weather.gov/gridpoints/OKX/34,45/forecast/hourly",
+    "Austin, Texas": "https://api.weather.gov/gridpoints/EWX/156,91/forecast/hourly",
+    "Chicago, Illinois": "https://api.weather.gov/gridpoints/LOT/76,73/forecast/hourly",
+    "Miami, Florida": "https://api.weather.gov/gridpoints/MFL/110,50/forecast/hourly",
+    "Los Angeles, California": "https://api.weather.gov/gridpoints/LOX/155,45/forecast/hourly",
+}
+NWS_NYC_HOURLY_URL = NWS_HOURLY_URLS_BY_LOCATION["Central Park, New York"]
 
 
 def evaluate_current_forecast_match(
@@ -24,6 +31,7 @@ def evaluate_current_forecast_match(
     output_root: str | Path = ".",
     market: dict[str, Any] | None = None,
     forecast_payload: dict[str, Any] | None = None,
+    forecast_payloads_by_location: dict[str, dict[str, Any]] | None = None,
     known_at_ts: str | None = None,
     orderbook_ts: str | None = None,
     public_network_ok: bool = False,
@@ -37,41 +45,47 @@ def evaluate_current_forecast_match(
         candidates = list(discovery.get("candidates", []) or [])
     else:
         candidates = [market]
-    if public_network_ok and forecast_payload is None:
-        try:
-            forecast_payload = _fetch_json(NWS_NYC_HOURLY_URL)
-        except OSError:
-            forecast_payload = None
-            blockers.append("PUBLIC_FORECAST_FETCH_FAILED")
     if not candidates:
         blockers.append("NO_CURRENT_PUBLIC_MARKET_SUPPLIED")
-    if forecast_payload is None:
+    forecast_payloads_by_location = dict(forecast_payloads_by_location or {})
+    if public_network_ok and forecast_payload is None:
+        forecast_payloads_by_location.update(
+            _fetch_forecasts_by_location(candidate.get("location") for candidate in candidates)
+        )
+    if forecast_payload is None and not forecast_payloads_by_location:
         blockers.append("CURRENT_FORECAST_SOURCE_MISSING")
     matches = []
     for candidate in candidates:
+        candidate_forecast = forecast_payload or forecast_payloads_by_location.get(
+            str(candidate.get("location") or "")
+        )
         result = _match_one(
             candidate,
-            forecast_payload=forecast_payload or {},
+            forecast_payload=candidate_forecast or {},
             known_at_ts=known_at_ts,
             orderbook_ts=orderbook_ts,
         )
         if result["bucket_match"]:
             matches.append(result)
+    matches.sort(key=_match_sort_key)
     selected = matches[0] if matches else None
     if selected:
         status = "CURRENT_FORECAST_MATCHED"
         blockers = []
     elif any("LOOKAHEAD" in item for item in blockers):
         status = "LOOKAHEAD_RISK_BLOCKED"
-    elif blockers:
+    elif blockers and not matches:
         status = "CURRENT_FORECAST_BLOCKED"
     else:
         status = "FORECAST_MAPPING_AMBIGUOUS"
         blockers = ["NO_FORECAST_BUCKET_MATCH"]
-    if selected is None and candidates and forecast_payload:
+    if selected is None and candidates and (forecast_payload or forecast_payloads_by_location):
+        fallback_forecast = forecast_payload or forecast_payloads_by_location.get(
+            str(candidates[0].get("location") or "")
+        )
         selected = _match_one(
             candidates[0],
-            forecast_payload=forecast_payload,
+            forecast_payload=fallback_forecast or {},
             known_at_ts=known_at_ts,
             orderbook_ts=orderbook_ts,
         )
@@ -102,6 +116,8 @@ def evaluate_current_forecast_match(
         forecast_value=(selected or {}).get("forecast_value"),
         forecast_bucket=(selected or {}).get("forecast_bucket"),
         bucket_match=(selected or {}).get("bucket_match", False),
+        match_count=len(matches),
+        matched_locations=sorted({str(item.get("market", {}).get("location") or "") for item in matches}),
         evidence_hash=(selected or {}).get("evidence_hash"),
         public_read_only=True,
         realized_weather_used_as_forecast=False,
@@ -145,7 +161,7 @@ def _match_one(
 ) -> dict[str, Any]:
     normalized = _normalize_forecast_payload(market, forecast_payload)
     blockers = list(normalized.pop("blockers"))
-    if market.get("location") != "Central Park, New York":
+    if _forecast_url_for_location(str(market.get("location") or "")) is None:
         blockers.append("FORECAST_SOURCE_LOCATION_UNSUPPORTED")
     forecast_ts = normalized.get("forecast_issue_ts")
     known_at = known_at_ts or normalized.get("known_at_ts") or forecast_ts
@@ -188,10 +204,23 @@ def _normalize_forecast_payload(
     market: dict[str, Any],
     forecast_payload: dict[str, Any],
 ) -> dict[str, Any]:
+    source_url = _forecast_url_for_location(str(market.get("location") or "")) or NWS_NYC_HOURLY_URL
+    if not forecast_payload:
+        return {
+            "source_id": "nws_api",
+            "source_url": source_url,
+            "source_kind": "forecast",
+            "forecast_issue_ts": "",
+            "forecast_valid_ts": None,
+            "known_at_ts": "",
+            "forecast_value": None,
+            "resolution_ts": market.get("resolution_ts"),
+            "blockers": ["CURRENT_FORECAST_SOURCE_MISSING"],
+        }
     if "forecast_value" in forecast_payload:
         return {
             "source_id": str(forecast_payload.get("source_id") or "nws_api"),
-            "source_url": str(forecast_payload.get("source_url") or NWS_NYC_HOURLY_URL),
+            "source_url": str(forecast_payload.get("source_url") or source_url),
             "source_kind": str(forecast_payload.get("source_kind") or "forecast"),
             "forecast_issue_ts": _normalize_ts(str(forecast_payload.get("forecast_issue_ts"))),
             "forecast_valid_ts": forecast_payload.get("forecast_valid_ts"),
@@ -213,7 +242,7 @@ def _normalize_forecast_payload(
     if not matching:
         return {
             "source_id": "nws_api",
-            "source_url": NWS_NYC_HOURLY_URL,
+            "source_url": source_url,
             "source_kind": "forecast",
             "forecast_issue_ts": _normalize_ts(str(props.get("generatedAt") or props.get("updateTime"))),
             "forecast_valid_ts": None,
@@ -226,7 +255,7 @@ def _normalize_forecast_payload(
     issue = _normalize_ts(str(props.get("generatedAt") or props.get("updateTime")))
     return {
         "source_id": "nws_api",
-        "source_url": NWS_NYC_HOURLY_URL,
+        "source_url": source_url,
         "source_kind": "forecast",
         "forecast_issue_ts": issue,
         "forecast_valid_ts": peak.get("startTime"),
@@ -266,6 +295,40 @@ def _fetch_json(url: str) -> dict[str, Any]:
     )
     with urllib.request.urlopen(request, timeout=30) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def _fetch_forecasts_by_location(locations: Any) -> dict[str, dict[str, Any]]:
+    forecasts: dict[str, dict[str, Any]] = {}
+    for location in sorted({str(item or "") for item in locations}):
+        url = _forecast_url_for_location(location)
+        if not url:
+            continue
+        try:
+            forecasts[location] = _fetch_json(url)
+        except OSError:
+            continue
+    return forecasts
+
+
+def _forecast_url_for_location(location: str) -> str | None:
+    return NWS_HOURLY_URLS_BY_LOCATION.get(location)
+
+
+def _match_sort_key(match: dict[str, Any]) -> tuple[int, int, float, float, str]:
+    market = match.get("market") or {}
+    yes_ask = _float(market.get("yes_ask"))
+    no_bid = _float(market.get("no_bid"))
+    price_discipline_rank = 0 if yes_ask <= 0.49 else 1
+    opposite_certain_rank = 1 if no_bid >= 0.98 and yes_ask <= 0.02 else 0
+    expected_net_edge = 0.68 - yes_ask - 0.03
+    volume = _float(market.get("volume"))
+    return (
+        price_discipline_rank,
+        opposite_certain_rank,
+        -expected_net_edge,
+        -volume,
+        str(market.get("ticker") or ""),
+    )
 
 
 def _date_from_ticker(ticker: str) -> Any:

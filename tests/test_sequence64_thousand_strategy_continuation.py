@@ -2767,6 +2767,18 @@ def test_sequence64_tournament_normalizes_cumulative_candidate_without_blockers(
     assert state["blockers"] == tournament["current_best_candidate"]["blockers"]
 
 
+def test_sequence64_manual_canary_packet_includes_blockers_when_blocked(local_project: Path) -> None:
+    from quant_os.readiness.thousand_strategy_manual_canary_packet import (
+        write_thousand_strategy_manual_canary_packet,
+    )
+
+    payload = write_thousand_strategy_manual_canary_packet(output_root=local_project)
+
+    assert payload["status"] == "FIRST_TINY_MANUAL_CANARY_PACKET_BLOCKED"
+    assert payload["blockers"]
+    assert payload["live_order_authorized_or_placed"] is False
+
+
 def _variant_shape_keys(variants: list[dict[str, object]]) -> set[tuple[object, ...]]:
     return {
         (

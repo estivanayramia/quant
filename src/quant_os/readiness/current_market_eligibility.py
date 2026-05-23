@@ -89,6 +89,7 @@ def evaluate_current_market_eligibility(
             "forecast_matched": bool(forecast_evidence)
             and forecast_evidence.get("status") == "CURRENT_FORECAST_MATCHED",
             "orderbook_public_data_available": bool(current_public_market)
+            and bool(current_public_market.get("orderbook_available"))
             and bool(current_public_market.get("orderbook_ts")),
             "spread_under_cap": bool(current_public_market)
             and float(current_public_market.get("spread") or 0) <= max_spread,
@@ -147,7 +148,7 @@ def _collect_market_blockers(
         blockers.append("CANDIDATE_RULE_MISMATCH")
     if (forecast_evidence or {}).get("status") != "CURRENT_FORECAST_MATCHED":
         blockers.append("CURRENT_FORECAST_MATCHED_MISSING")
-    if not current_public_market.get("orderbook_ts"):
+    if not current_public_market.get("orderbook_available") or not current_public_market.get("orderbook_ts"):
         blockers.append("ORDERBOOK_PUBLIC_DATA_MISSING")
     elif _age_minutes(str(current_public_market["orderbook_ts"]), now_ts) > max_staleness_minutes:
         blockers.append("ORDERBOOK_DATA_STALE")

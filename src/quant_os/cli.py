@@ -5541,10 +5541,15 @@ def autonomy_live_market_sim_ledger() -> None:
 
 
 @autonomy_app.command("live-market-sim-outcomes")
-def autonomy_live_market_sim_outcomes() -> None:
+def autonomy_live_market_sim_outcomes(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
     from quant_os.autonomy.live_market_sim_outcomes import write_live_market_sim_outcomes_report
 
-    payload = write_live_market_sim_outcomes_report(output_root=Path("."))
+    payload = write_live_market_sim_outcomes_report(
+        output_root=Path("."),
+        public_network_ok=public_network_ok,
+    )
     print(
         {
             "status": payload["status"],
@@ -5621,6 +5626,26 @@ def autonomy_live_market_sim_profitability_schedule() -> None:
             "status": payload["status"],
             "data_only": payload["data_only"],
             "report": "reports/live_market_sim_profitability/schedule/latest_schedule.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-sim-start-new-run")
+def autonomy_live_market_sim_start_new_run() -> None:
+    from quant_os.autonomy.live_market_sim_run_manager import (
+        write_live_market_sim_start_new_run_report,
+    )
+
+    payload = write_live_market_sim_start_new_run_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "archived_run_status": payload["archived_run_status"],
+            "archived_fake_net_pnl": payload["archived_fake_net_pnl"],
+            "new_policy_version": payload["new_policy_version"],
+            "report": "reports/live_market_sim_profitability/runs/latest_start_new_run.json",
             "live_trading_enabled": payload["live_trading_enabled"],
             "execution_authority": payload["execution_authority"],
         }
