@@ -32,7 +32,10 @@ def build_crypto_canary_grade_pnl(
         quantity = float(entry.get("quantity") or 0.0)
         entry_price = float(entry.get("entry_price") or 0.0)
         mark_price = float(entry.get("mark_price") or 0.0)
+        side = str(entry.get("side") or "buy")
         gross_row = (mark_price - entry_price) * quantity
+        if side == "sell":
+            gross_row = (entry_price - mark_price) * quantity
         costs = (
             float(entry.get("spread_cost") or 0.0)
             + float(entry.get("slippage_cost") or 0.0)

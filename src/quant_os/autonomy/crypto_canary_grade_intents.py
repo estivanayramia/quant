@@ -29,6 +29,16 @@ def build_crypto_canary_grade_intents(
     for observation in list(observer.get("observations", []) or []):
         if not observation.get("eligible"):
             continue
+        if not _passes_canary_signal_quality_gate(observation):
+            continue
+        side = _canary_side_for_observation(observation)
+        if side is None:
+            continue
+        notional_usd = 1.0
+        entry_price = float(observation["entry_price"])
+        quantity = round(notional_usd / entry_price, 8) if entry_price > 0.0 else 0.0
+        if quantity <= 0.0:
+            continue
         intents.append(
             {
                 "fake_client_order_id": f"cgint_{cg_hash(observation)}",
@@ -36,8 +46,9 @@ def build_crypto_canary_grade_intents(
                 "symbol": observation["symbol"],
                 "strategy": observation["strategy"],
                 "venue": observation["venue"],
-                "side": "buy",
-                "quantity": 1.0,
+                "side": side,
+                "quantity": quantity,
+                "notional_usd": notional_usd,
                 "limit_price": round(float(observation["entry_price"]) + float(observation["spread"]) / 2, 8),
                 "entry_timestamp": observation["entry_timestamp"],
                 "mark_timestamp": observation["mark_timestamp"],
@@ -47,6 +58,7 @@ def build_crypto_canary_grade_intents(
                 "session_bucket": observation["session_bucket"],
                 "fake_money": True,
                 "no_transmit": True,
+                "signal_quality_gate": "spot_long_only_reversion_cost_hurdled_return_1m",
                 "dry_run_only": True,
                 "order_transmission_enabled": False,
                 "authenticated_requests_enabled": False,
@@ -74,6 +86,35 @@ def build_crypto_canary_grade_intents(
         blockers=[],
         next_action="Apply canary-grade conservative fake fill model.",
     )
+
+
+def _passes_canary_signal_quality_gate(observation: dict[str, Any]) -> bool:
+    horizon = int(observation.get("mark_horizon_minutes") or 0)
+    ret = abs(float(observation.get("return_1m") or 0.0))
+    if horizon <= 0 or ret <= 0.0:
+        return False
+    entry = float(observation.get("entry_price") or 0.0)
+    if entry <= 0.0:
+        return False
+    notional_usd = 1.0
+    quantity = notional_usd / entry
+    spread = float(observation.get("spread") or 0.0)
+    spread_cost = spread * 1.5 * quantity
+    slippage_cost = entry * quantity * 0.5 / 10000.0
+    fee_cost = entry * quantity * 0.5 / 10000.0
+    cost_hurdle = spread_cost + slippage_cost + fee_cost
+    expected_move_notional = ret * notional_usd
+    return expected_move_notional > cost_hurdle
+
+
+def _canary_side_for_observation(observation: dict[str, Any]) -> str | None:
+    strategy = str(observation.get("strategy") or "").lower()
+    ret = float(observation.get("return_1m") or 0.0)
+    if ret == 0.0:
+        return None
+    if "reversion" in strategy or "reversal" in strategy or "snapback" in strategy:
+        return "buy" if ret < 0.0 else None
+    return None
 
 
 def write_crypto_canary_grade_intents_report(*, output_root: str | Path = ".") -> dict[str, Any]:

@@ -12,5 +12,6 @@
 - Telegram/Discord alerts later for human visibility only, never order authority.
 - AI provider mesh later through LiteLLM or equivalent, research/reporting only.
 - Prediction-market, GDELT, FRED, and SEC EDGAR adapters later as research and event features only.
+- PMXT can be considered for read-only prediction-market order book evidence, but only under the constraints in `docs/data_sources/pmxt_readonly_adapter.md`; hosted/API-key, paid SQL, credentials, and trading methods are not proof-grade for the autonomous campaign.
 
 None of these integrations are implemented in Milestone 1.

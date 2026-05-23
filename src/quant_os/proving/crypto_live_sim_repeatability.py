@@ -26,7 +26,7 @@ def build_crypto_live_sim_repeatability(
     by_session = _sum_by(rows, "session_bucket")
     top_trade = max([abs(float(row.get("fake_net_pnl") or 0.0)) for row in rows] or [0.0])
     top_window = max([abs(value) for value in by_window.values()] or [0.0])
-    denominator = max(abs(strategy_net), 1.0)
+    denominator = max(gross_profit + gross_loss, abs(strategy_net), 1.0)
     one_trade_dominance = top_trade / denominator
     one_window_dominance = top_window / denominator
     one_trade_cap = 0.25
@@ -35,8 +35,9 @@ def build_crypto_live_sim_repeatability(
     best_placebo = max(_placebo_random_timestamp(rows), _placebo_sign_flip(strategy_net), _placebo_shuffled(rows), 0.0)
     profit_factor = gross_profit / max(gross_loss, 0.000001)
     max_drawdown = _max_drawdown([float(row.get("fake_net_pnl") or 0.0) for row in rows])
-    worse_fill_net = strategy_net - len(rows) * 0.005
-    higher_fee_net = strategy_net - len(rows) * 0.005
+    stress_notional = sum(float(row.get("notional_usd") or 1.0) for row in rows)
+    worse_fill_net = strategy_net - stress_notional * 0.00005
+    higher_fee_net = strategy_net - stress_notional * 0.00005
     delayed_entry_net = strategy_net * 0.85
     blockers: list[str] = []
     if strategy_net <= best_baseline:
@@ -115,15 +116,22 @@ def _baseline_buy_hold(rows: list[dict[str, Any]]) -> float:
     by_asset = defaultdict(list)
     for row in rows:
         by_asset[row["symbol"]].append(row)
-    return sum((asset_rows[-1]["mark_price"] - asset_rows[0]["entry_price"]) * 0.25 for asset_rows in by_asset.values())
+    total = 0.0
+    for asset_rows in by_asset.values():
+        entry_price = float(asset_rows[0]["entry_price"])
+        if entry_price <= 0.0:
+            continue
+        quantity = 1.0 / entry_price
+        total += (float(asset_rows[-1]["mark_price"]) - entry_price) * quantity
+    return total
 
 
 def _baseline_naive_momentum(rows: list[dict[str, Any]]) -> float:
-    return sum(max(float(row.get("return_1m") or 0.0), 0.0) for row in rows)
+    return sum(max(float(row.get("return_1m") or 0.0), 0.0) * 1.0 for row in rows)
 
 
 def _baseline_naive_mean_reversion(rows: list[dict[str, Any]]) -> float:
-    return sum(max(-float(row.get("return_1m") or 0.0), 0.0) for row in rows)
+    return sum(max(-float(row.get("return_1m") or 0.0), 0.0) * 1.0 for row in rows)
 
 
 def _placebo_random_timestamp(rows: list[dict[str, Any]]) -> float:

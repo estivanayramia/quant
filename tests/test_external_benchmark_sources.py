@@ -99,7 +99,16 @@ def test_pmxt_and_reference_dataset_manifest_readers_are_local_only() -> None:
     assert pmxt["status"] == "PASS"
     assert pmxt["source_id"] == "pmxt_orderbook_archives"
     assert pmxt["internet_required"] is False
+    assert pmxt["api_key_required"] is False
+    assert pmxt["hosted_api_used"] is False
+    assert pmxt["credential_sources_used"] == []
+    assert pmxt["execution_authority_added"] is False
+    assert "submitOrder" in pmxt["forbidden_surfaces"]
     assert pmxt["files_by_kind"] == {"market": 1, "orderbook": 1}
+    assert pmxt["orderbook_rows"] == 12
+    assert pmxt["proof_grade_ready"] is False
+    assert "PMXT_ORDERBOOK_ROWS_BELOW_PROOF_GRADE_MINIMUM" in pmxt["proof_grade_blockers"]
+    assert pmxt["depth_ready_orderbook_files"] == ["cache/pmxt/orderbooks/sample.parquet"]
     assert datasets["status"] == "PASS"
     assert datasets["internet_required"] is False
     assert datasets["datasets_by_source"] == {

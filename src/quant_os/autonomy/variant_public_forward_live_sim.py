@@ -1123,6 +1123,7 @@ def _build_public_forward_intent(
         "side": side,
         "reference_price": round(price, 8),
         "notional_usd": 1.0,
+        "holding_window_observations": _public_forward_holding_window_observations(candidate),
         "source_observation_hash": observation.get("evidence_hash"),
         "fake_money": True,
         "no_transmit": True,
@@ -1195,9 +1196,6 @@ def _public_forward_family_signal_mode(candidate: dict[str, Any]) -> str | None:
             "breakout",
             "continuation",
             "relative_strength",
-            "source_quality",
-            "quality_filtered",
-            "no_trade_veto",
             "moving_average",
         )
     ):
@@ -1239,6 +1237,15 @@ def _public_forward_signal_lookback_observations(candidate: dict[str, Any]) -> i
     return max(1, min(60, int(configured or 1)))
 
 
+def _public_forward_holding_window_observations(candidate: dict[str, Any]) -> int:
+    variant_configuration = candidate.get("variant_configuration", {}) or {}
+    configured = variant_configuration.get(
+        "holding_window",
+        candidate.get("holding_window", 1),
+    )
+    return max(1, min(240, int(configured or 1)))
+
+
 def _find_future_observation(
     *,
     intent: dict[str, Any],
@@ -1251,7 +1258,11 @@ def _find_future_observation(
         for row in observations
         if str(row.get("asset") or "") == asset and str(row.get("timestamp") or "") > timestamp
     ]
-    return sorted(future_rows, key=lambda row: str(row.get("timestamp") or ""))[0] if future_rows else None
+    sorted_future_rows = sorted(future_rows, key=lambda row: str(row.get("timestamp") or ""))
+    holding_window = max(1, int(intent.get("holding_window_observations") or 1))
+    if len(sorted_future_rows) < holding_window:
+        return None
+    return sorted_future_rows[holding_window - 1]
 
 
 def _build_public_forward_fill_and_mark(

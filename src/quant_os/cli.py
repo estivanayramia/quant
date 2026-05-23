@@ -6539,6 +6539,31 @@ def readiness_canary_grade_live_sim() -> None:
     )
 
 
+@readiness_app.command("canary-grade-fresh-repro")
+def readiness_canary_grade_fresh_repro(
+    proof_command_passed: bool = typer.Option(False, "--proof-command-passed"),
+    proof_command: str = typer.Option(".\\make.cmd canary-grade-live-sim-smoke", "--proof-command"),
+) -> None:
+    from quant_os.readiness.canary_grade_fresh_repro import (
+        write_canary_grade_fresh_repro_report,
+    )
+
+    payload = write_canary_grade_fresh_repro_report(
+        output_root=Path("."),
+        proof_command_passed=proof_command_passed,
+        proof_command=proof_command,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "blockers": payload["blockers"],
+            "report": "reports/canary_grade_live_sim/fresh_repro/latest_fresh_repro.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @readiness_app.command("canary-grade-manual-packet")
 def readiness_canary_grade_manual_packet() -> None:
     from quant_os.readiness.canary_grade_manual_packet import (

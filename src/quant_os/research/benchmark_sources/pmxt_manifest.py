@@ -8,6 +8,17 @@ from typing import Any
 import yaml
 
 REQUIRED_ORDERBOOK_COLUMNS = ("market_id", "token_id", "timestamp", "bid_price", "ask_price")
+OPTIONAL_DEPTH_COLUMNS = ("bid_size", "ask_size")
+FORBIDDEN_PMXT_SURFACES = (
+    "createOrder",
+    "buildOrder",
+    "submitOrder",
+    "cancelOrder",
+    "fetchBalance",
+    "fetchPositions",
+    "fetchOpenOrders",
+)
+MIN_PROOF_GRADE_ORDERBOOK_ROWS = 1000
 
 
 def summarize_pmxt_manifest(manifest_path: str | Path | None) -> dict[str, Any]:
@@ -30,17 +41,39 @@ def summarize_pmxt_manifest(manifest_path: str | Path | None) -> dict[str, Any]:
         for item in orderbook_files
     }
     missing_columns = {path_key: cols for path_key, cols in missing_columns.items() if cols}
+    orderbook_rows = sum(int(item.get("rows", 0) or 0) for item in orderbook_files)
+    depth_ready_files = [
+        str(item.get("path", "unknown"))
+        for item in orderbook_files
+        if all(column in item.get("columns", []) for column in OPTIONAL_DEPTH_COLUMNS)
+    ]
+    proof_grade_ready = (
+        not missing_columns
+        and bool(orderbook_files)
+        and orderbook_rows >= MIN_PROOF_GRADE_ORDERBOOK_ROWS
+    )
     status = "PASS" if not missing_columns and files else "WARN"
     return {
         "source_id": "pmxt_orderbook_archives",
         "status": status,
         "path": str(path),
         "internet_required": False,
+        "api_key_required": False,
+        "hosted_api_used": False,
+        "credential_sources_used": [],
+        "forbidden_surfaces": list(FORBIDDEN_PMXT_SURFACES),
+        "proof_grade_ready": proof_grade_ready,
+        "proof_grade_blockers": []
+        if proof_grade_ready
+        else _proof_grade_blockers(missing_columns=missing_columns, orderbook_rows=orderbook_rows),
         "execution_authority_added": False,
         "files_count": len(files),
         "files_by_kind": files_by_kind,
         "rows": sum(int(item.get("rows", 0) or 0) for item in files),
+        "orderbook_rows": orderbook_rows,
+        "depth_ready_orderbook_files": depth_ready_files,
         "required_orderbook_columns": list(REQUIRED_ORDERBOOK_COLUMNS),
+        "optional_depth_columns": list(OPTIONAL_DEPTH_COLUMNS),
         "missing_orderbook_columns": missing_columns,
     }
 
@@ -56,13 +89,31 @@ def _empty(status: str, path: Path | None = None) -> dict[str, Any]:
         "source_id": "pmxt_orderbook_archives",
         "status": status,
         "internet_required": False,
+        "api_key_required": False,
+        "hosted_api_used": False,
+        "credential_sources_used": [],
+        "forbidden_surfaces": list(FORBIDDEN_PMXT_SURFACES),
+        "proof_grade_ready": False,
+        "proof_grade_blockers": ["PMXT_MANIFEST_NOT_AVAILABLE"],
         "execution_authority_added": False,
         "files_count": 0,
         "files_by_kind": {},
         "rows": 0,
+        "orderbook_rows": 0,
+        "depth_ready_orderbook_files": [],
         "required_orderbook_columns": list(REQUIRED_ORDERBOOK_COLUMNS),
+        "optional_depth_columns": list(OPTIONAL_DEPTH_COLUMNS),
         "missing_orderbook_columns": {},
     }
     if path is not None:
         payload["path"] = str(path)
     return payload
+
+
+def _proof_grade_blockers(*, missing_columns: dict[str, list[str]], orderbook_rows: int) -> list[str]:
+    blockers: list[str] = []
+    if missing_columns:
+        blockers.append("PMXT_ORDERBOOK_REQUIRED_COLUMNS_MISSING")
+    if orderbook_rows < MIN_PROOF_GRADE_ORDERBOOK_ROWS:
+        blockers.append("PMXT_ORDERBOOK_ROWS_BELOW_PROOF_GRADE_MINIMUM")
+    return blockers

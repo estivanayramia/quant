@@ -31,13 +31,23 @@ def apply_crypto_canary_grade_fill_model(
         if not observation:
             no_fills.append({"fake_client_order_id": intent["fake_client_order_id"], "status": "MISSING_OBSERVATION"})
             continue
+        if intent.get("side") != "buy":
+            no_fills.append(
+                {
+                    "fake_client_order_id": intent["fake_client_order_id"],
+                    "status": "SPOT_LONG_ONLY_NO_SHORT_OR_INVENTORY",
+                }
+            )
+            continue
         entry = float(observation["entry_price"])
         spread = float(observation.get("spread") or 0.0) * spread_multiplier
         ask_size = float(observation.get("ask_size") or 0.0)
         if ask_size <= 0:
             no_fills.append({"fake_client_order_id": intent["fake_client_order_id"], "status": "NO_PUBLIC_LIQUIDITY"})
             continue
-        quantity = min(float(intent.get("quantity") or 1.0), max(ask_size / 10.0, 0.0), 1.0)
+        notional_usd = float(intent.get("notional_usd") or 1.0)
+        requested_quantity = notional_usd / entry if entry > 0.0 else 0.0
+        quantity = min(requested_quantity, max(ask_size / 10.0, 0.0))
         if quantity <= 0:
             no_fills.append({"fake_client_order_id": intent["fake_client_order_id"], "status": "ZERO_CONSERVATIVE_SIZE"})
             continue
@@ -51,6 +61,7 @@ def apply_crypto_canary_grade_fill_model(
                 "venue": intent["venue"],
                 "side": intent["side"],
                 "quantity": round(quantity, 8),
+                "notional_usd": notional_usd,
                 "entry_timestamp": intent["entry_timestamp"],
                 "entry_price": entry,
                 "mark_timestamp": intent["mark_timestamp"],

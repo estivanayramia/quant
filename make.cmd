@@ -1658,6 +1658,8 @@ if "%TARGET%"=="canary-grade-live-sim-smoke" (
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli proving crypto-live-sim-capacity
   if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness canary-grade-fresh-repro --proof-command-passed --proof-command ".\make.cmd canary-grade-live-sim-smoke"
+  if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli readiness canary-grade-live-sim
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli readiness canary-grade-manual-packet
@@ -1681,6 +1683,8 @@ if "%TARGET%"=="canary-grade-live-sim-public-run" (
   python -m quant_os.cli proving crypto-live-sim-repeatability
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli proving crypto-live-sim-capacity
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness canary-grade-fresh-repro --proof-command-passed --proof-command ".\make.cmd canary-grade-live-sim-public-run"
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli readiness canary-grade-live-sim
   if errorlevel 1 exit /b !ERRORLEVEL!

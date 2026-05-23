@@ -36,7 +36,7 @@ def build_crypto_live_sim_capacity(
         status = "CAPACITY_BLOCKED_BY_LIQUIDITY"
     elif blockers:
         status = "CAPACITY_BLOCKED_BY_SPREAD"
-    elif capacity_by_size["10_usd"]["supported"]:
+    elif capacity_by_size["1_usd"]["supported"]:
         status = "CAPACITY_TINY_CANARY_PASSED"
     else:
         status = "CAPACITY_LIMITED"

@@ -1214,6 +1214,81 @@ def test_sequence64_candidate_public_forward_fills_and_marks_use_later_observati
     assert "PUBLIC_FORWARD_EVIDENCE_NOT_PROVEN" in evidence["blockers"]
 
 
+def test_sequence64_public_forward_fills_mark_configured_holding_window(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        append_variant_public_forward_observations,
+        write_variant_public_forward_fills_and_marks_report,
+        write_variant_public_forward_intents_report,
+    )
+
+    candidate = {
+        "id": "tsv_holding_window_signal",
+        "family": "crypto_public_data_quality_filtered_momentum",
+        "assets": ["BTC/USD"],
+        "variant_configuration": {
+            "holding_window": 3,
+            "thresholds": {"no_trade_edge_bps": 1.0},
+        },
+    }
+    append_variant_public_forward_observations(
+        output_root=local_project,
+        observations=[
+            {
+                "asset": "BTC/USD",
+                "bid": 100.0,
+                "ask": 100.1,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-19T12:00:00Z",
+            },
+            {
+                "asset": "BTC/USD",
+                "bid": 101.0,
+                "ask": 101.1,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-19T12:05:00Z",
+            },
+            {
+                "asset": "BTC/USD",
+                "bid": 101.2,
+                "ask": 101.3,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-19T12:10:00Z",
+            },
+            {
+                "asset": "BTC/USD",
+                "bid": 101.4,
+                "ask": 101.5,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-19T12:15:00Z",
+            },
+            {
+                "asset": "BTC/USD",
+                "bid": 101.6,
+                "ask": 101.7,
+                "source": "kraken_public_rest_unauthenticated_forward",
+                "timestamp": "2026-05-19T12:20:00Z",
+            },
+        ],
+    )
+
+    intents = write_variant_public_forward_intents_report(
+        output_root=local_project,
+        candidate=candidate,
+    )
+    fills_marks = write_variant_public_forward_fills_and_marks_report(
+        output_root=local_project,
+        candidate=candidate,
+    )
+
+    assert intents["intents"][0]["holding_window_observations"] == 3
+    assert fills_marks["fake_fill_count"] == 1
+    assert fills_marks["completed_mark_count"] == 1
+    assert fills_marks["mark_rows"][0]["entry_timestamp"] == "2026-05-19T12:05:00Z"
+    assert fills_marks["mark_rows"][0]["mark_timestamp"] == "2026-05-19T12:20:00Z"
+
+
 def test_sequence64_public_forward_collection_cycle_preserves_and_extends_observations(
     local_project: Path,
 ) -> None:
@@ -1705,6 +1780,69 @@ def test_sequence64_public_forward_rotation_skips_validation_only_crypto_candida
     assert rotation["status"] == "VARIANT_PUBLIC_FORWARD_CANDIDATE_ROTATED"
     assert rotation["selected_strategy_id"] == "tsv_signal_collectable"
     assert "tsv_validation_only" in rotation["skipped_uncollectable_candidate_ids"]
+
+
+def test_sequence64_public_forward_rotation_skips_governance_only_crypto_candidates(
+    local_project: Path,
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_candidate_rotation,
+    )
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    tournament = write_strategy_tournament_report(output_root=local_project, batch_index=1)
+    first_candidate = tournament["current_best_candidate"]
+    governance_only_candidate = {
+        "id": "tsv_governance_only",
+        "family": "source_backed_no_trade_veto_behavior",
+        "assets": ["BTC/USD", "ETH/USD"],
+        "fake_net_pnl": 50.0,
+        "baseline_beaten": True,
+        "placebo_beaten": True,
+        "score": 9.0,
+    }
+    signal_candidate = {
+        "id": "tsv_signal_after_governance",
+        "family": "range_breakout_cost_filtered",
+        "assets": ["BTC/USD", "ETH/USD"],
+        "fake_net_pnl": 20.0,
+        "baseline_beaten": True,
+        "placebo_beaten": True,
+        "score": 2.0,
+    }
+    tournament["cumulative_leaderboard_top_50"] = [
+        first_candidate,
+        governance_only_candidate,
+        signal_candidate,
+    ]
+    tournament_path = (
+        local_project / "reports/thousand_strategy_campaign/tournament/latest_tournament.json"
+    )
+    tournament_path.write_text(json.dumps(tournament, indent=2, sort_keys=True), encoding="utf-8")
+    live_sim_dir = local_project / "reports/thousand_strategy_campaign/live_sim"
+    live_sim_dir.mkdir(parents=True, exist_ok=True)
+    (live_sim_dir / "latest_live_sim_summary.json").write_text(
+        json.dumps(
+            {
+                "selected_strategy_id": first_candidate["id"],
+                "selected_strategy_family": first_candidate["family"],
+                "selected_strategy_assets": first_candidate["assets"],
+                "completed_mark_count": 10,
+                "fake_net_pnl": -0.1,
+            },
+            indent=2,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+
+    rotation = write_variant_public_forward_candidate_rotation(output_root=local_project)
+
+    assert rotation["status"] == "VARIANT_PUBLIC_FORWARD_CANDIDATE_ROTATED"
+    assert rotation["selected_strategy_id"] == "tsv_signal_after_governance"
+    assert "tsv_governance_only" in rotation["skipped_uncollectable_candidate_ids"]
 
 
 def test_sequence64_public_forward_rotation_retires_zero_intent_candidate_after_min_observations(

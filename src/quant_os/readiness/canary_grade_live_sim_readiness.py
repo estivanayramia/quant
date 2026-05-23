@@ -33,7 +33,10 @@ def build_canary_grade_live_sim_readiness(
         "reports/canary_grade_live_sim/capacity/latest_capacity.json",
         output_root=output_root,
     ) or {}
-    fresh_repro = fresh_repro or {"status": "FRESH_REPRO_PASSED"}
+    fresh_repro = fresh_repro or load_json(
+        "reports/canary_grade_live_sim/fresh_repro/latest_fresh_repro.json",
+        output_root=output_root,
+    ) or {"status": "FRESH_REPRO_BLOCKED", "blockers": ["FRESH_WORKTREE_REPRO_NOT_RUN"]}
     blockers: list[str] = []
     if int(state.get("observations_count") or 0) < 1000:
         blockers.append("MIN_OBSERVATIONS_NOT_MET")
@@ -86,18 +89,25 @@ def build_canary_grade_live_sim_readiness(
         status = "CANARY_GRADE_LIVE_SIM_PROFITABILITY_PROVEN"
     elif any(blocker.startswith("MIN_") for blocker in blockers):
         status = "CANARY_GRADE_LIVE_SIM_NEEDS_MORE_OBSERVATIONS"
-    elif (
-        "REPEATABILITY_NOT_PASSED" in blockers
-        or "CAPACITY_TINY_CANARY_NOT_PASSED" in blockers
-        or "FRESH_WORKTREE_REPRO_NOT_PASSED" in blockers
-    ):
+    elif "RECONCILIATION_FAILURES_PRESENT" in blockers:
         status = "CANARY_GRADE_LIVE_SIM_BLOCKED_BY_RECONCILIATION"
+    elif "FAKE_NET_PNL_NOT_POSITIVE" in blockers:
+        status = "CANARY_GRADE_LIVE_SIM_NOT_PROVEN"
     elif "BASELINE_NOT_BEATEN" in blockers:
         status = "CANARY_GRADE_LIVE_SIM_BLOCKED_BY_BASELINE"
     elif "PLACEBO_NOT_BEATEN" in blockers:
         status = "CANARY_GRADE_LIVE_SIM_BLOCKED_BY_PLACEBO"
     elif "ONE_TRADE_DOMINANCE_TOO_HIGH" in blockers or "ONE_WINDOW_DOMINANCE_TOO_HIGH" in blockers:
         status = "CANARY_GRADE_LIVE_SIM_BLOCKED_BY_DOMINANCE"
+    elif (
+        "REPEATABILITY_NOT_PASSED" in blockers
+        or "CAPACITY_TINY_CANARY_NOT_PASSED" in blockers
+        or "FRESH_WORKTREE_REPRO_NOT_PASSED" in blockers
+        or "WORSE_FILL_STRESS_FAILED" in blockers
+        or "HIGHER_FEE_STRESS_FAILED" in blockers
+        or "DELAYED_ENTRY_STRESS_FAILED" in blockers
+    ):
+        status = "CANARY_GRADE_LIVE_SIM_NOT_PROVEN"
     else:
         status = "CANARY_GRADE_LIVE_SIM_BLOCKED_BY_RECONCILIATION"
     state_fields = {
@@ -111,6 +121,7 @@ def build_canary_grade_live_sim_readiness(
             "blockers",
             "next_action",
             "exact_resume_command",
+            "validation_status",
         }
     }
     return canary_safe_payload(
@@ -128,6 +139,7 @@ def build_canary_grade_live_sim_readiness(
             "CANARY_GRADE_LIVE_SIM_BLOCKED_BY_RECONCILIATION",
         ],
         **state_fields,
+        validation_status=status,
         repeatability_status=repeatability.get("status"),
         capacity_status=capacity.get("status"),
         fresh_repro_status=fresh_repro.get("status"),
@@ -197,6 +209,7 @@ def _state_from_reports(*, output_root: str | Path) -> dict[str, Any]:
             "fake_no_fill_count": int(fills.get("fake_no_fill_count") or 0),
             "completed_mark_count": int(pnl.get("completed_mark_count") or 0),
             "assets_tested": pnl.get("assets_tested") or observer.get("assets_tested") or [],
+            "venues_tested": pnl.get("venues_tested") or observer.get("venues_tested") or [],
             "strategy_families_tested": pnl.get("strategy_families_tested") or observer.get("strategy_families_tested") or [],
             "regime_buckets": pnl.get("regime_buckets") or observer.get("regime_buckets") or [],
             "walk_forward_windows": pnl.get("walk_forward_windows") or observer.get("walk_forward_windows") or [],

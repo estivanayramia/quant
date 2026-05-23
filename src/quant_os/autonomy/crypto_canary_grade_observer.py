@@ -22,6 +22,14 @@ KRAKEN_PAIRS = {
     "ETH/USD": "XETHZUSD",
     "SOL/USD": "SOLUSD",
     "XRP/USD": "XXRPZUSD",
+    "ADA/USD": "ADAUSD",
+    "DOGE/USD": "XDGUSD",
+    "LTC/USD": "LTCUSD",
+    "XLM/USD": "XLMUSD",
+    "XTZ/USD": "XTZUSD",
+    "DOT/USD": "DOTUSD",
+    "AVAX/USD": "AVAXUSD",
+    "LINK/USD": "LINKUSD",
 }
 
 
@@ -29,7 +37,7 @@ def build_crypto_canary_grade_observer(
     *,
     public_snapshot: dict[str, Any] | None = None,
     public_network_ok: bool = False,
-    max_observations: int = 1500,
+    max_observations: int = 8000,
 ) -> dict[str, Any]:
     blockers: list[str] = []
     if public_snapshot is None:
@@ -71,7 +79,7 @@ def write_crypto_canary_grade_observer_report(
     output_root: str | Path = ".",
     public_snapshot: dict[str, Any] | None = None,
     public_network_ok: bool = False,
-    max_observations: int = 1500,
+    max_observations: int = 8000,
 ) -> dict[str, Any]:
     payload = build_crypto_canary_grade_observer(
         public_snapshot=public_snapshot,
@@ -126,12 +134,12 @@ def fetch_kraken_canary_snapshot() -> dict[str, Any]:
 
 def fixture_canary_snapshot() -> dict[str, Any]:
     symbols: dict[str, Any] = {}
-    bases = {"BTC/USD": 100.0, "ETH/USD": 60.0, "SOL/USD": 30.0}
+    bases = {"BTC/USD": 100.0, "ETH/USD": 60.0, "SOL/USD": 30.0, "XRP/USD": 10.0}
     for asset_index, (symbol, base) in enumerate(bases.items()):
         candles = []
-        for idx in range(430):
+        for idx in range(900):
             drift = idx * (0.035 + asset_index * 0.004)
-            cycle = ((idx % 9) - 4) * 0.012
+            cycle = ((idx % 10) - 5) * 0.012
             price = round(base + drift + cycle, 6)
             candles.append(
                 {
@@ -161,7 +169,7 @@ def _observations_from_snapshot(snapshot: dict[str, Any], *, max_observations: i
     mark_horizons = [1, 5, 15, 60]
     strategy_cycle = [
         "crypto_spot_momentum_reversion_intraday",
-        "crypto_volatility_compression_breakout_spot_only",
+        "crypto_spot_liquidity_shock_reversion_long_only",
     ]
     for asset_index, (symbol, payload) in enumerate(sorted(symbols.items())):
         candles = list(payload.get("candles", []) or [])
@@ -174,7 +182,7 @@ def _observations_from_snapshot(snapshot: dict[str, Any], *, max_observations: i
             ret = (current - prev) / prev if prev else 0.0
             horizon = mark_horizons[(idx + asset_index) % len(mark_horizons)]
             strategy = strategy_cycle[(idx + asset_index) % len(strategy_cycle)]
-            window = f"window_{idx % 3 + 1}"
+            window = f"window_{((idx // len(mark_horizons)) + asset_index) % 3 + 1}"
             regime = "high_vol" if idx % 4 in {0, 1} else "low_vol"
             mark_price = float(candles[idx + horizon]["close"])
             spread = float(book.get("spread") or 0.02)
@@ -195,6 +203,7 @@ def _observations_from_snapshot(snapshot: dict[str, Any], *, max_observations: i
                     "session_bucket": f"session_{idx % 6}",
                     "bid": float(book.get("bid") or current - spread / 2),
                     "ask": float(book.get("ask") or current + spread / 2),
+                    "bid_size": float(book.get("bid_size") or book.get("ask_size") or 1.0),
                     "spread": spread,
                     "ask_size": float(book.get("ask_size") or 1.0),
                     "public_depth_notional": float(book.get("ask_size") or 1.0) * current,
