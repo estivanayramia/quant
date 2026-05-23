@@ -390,7 +390,8 @@ def test_sequence60_scheduler_is_data_only(local_project: Path) -> None:
     assert payload["authenticated_requests_enabled"] is False
     assert payload["request_signing_enabled"] is False
     assert payload["max_runs"] == 20
-    assert "live-market-profit-observer --public-network-ok" in payload["exact_resume_command"]
+    assert payload["exact_resume_command"] == ".\\make.cmd live-market-sim-profitability-public-run"
+    assert "live-market-profit-observer --public-network-ok" in payload["exact_powershell_command"]
     assert "for ($i = 1; $i -le 20; $i++)" in payload["exact_powershell_command"]
 
 
@@ -416,6 +417,7 @@ def test_sequence60_cli_make_target_and_no_auth_order_path(local_project: Path) 
     make_cmd = (repo_root / "make.cmd").read_text(encoding="utf-8")
     assert 'if "%TARGET%"=="sequence60-smoke"' in make_cmd
     assert 'if "%TARGET%"=="live-market-sim-profitability-smoke"' in make_cmd
+    assert 'if "%TARGET%"=="live-market-sim-profitability-public-run"' in make_cmd
     for path in [
         "src/quant_os/autonomy/live_market_profit_observer.py",
         "src/quant_os/autonomy/live_market_sim_intents.py",

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from quant_os.autonomy.live_market_sim_common import (
+    RESUME_COMMAND,
     load_json,
     load_state,
     sim_safety_payload,
@@ -91,7 +92,7 @@ def build_live_market_sim_profitability_readiness(
         next_action="Run scheduler/resume loop for more observations or pending outcomes."
         if status != "LIVE_MARKET_SIMULATED_PROFITABILITY_PROVEN"
         else "Profitability proven in fake-money live-market simulation; live trading remains disabled.",
-        exact_resume_command=state.get("exact_resume_command"),
+        exact_resume_command=RESUME_COMMAND,
     )
 
 
@@ -106,5 +107,10 @@ def write_live_market_sim_profitability_report(*, output_root: str | Path = ".")
         title="Live Market Simulated Profitability",
         summary="Final fake-money live-market simulated profitability readiness gate.",
     )
-    write_state(output_root=output_root, current_blockers=payload["blockers"], next_action=payload["next_action"])
+    write_state(
+        output_root=output_root,
+        current_blockers=payload["blockers"],
+        next_action=payload["next_action"],
+        exact_resume_command=RESUME_COMMAND,
+    )
     return payload

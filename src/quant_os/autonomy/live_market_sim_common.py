@@ -12,18 +12,7 @@ ROOT = Path("reports/live_market_sim_profitability")
 STATE_DIR = ROOT / "state"
 STATE_JSON = STATE_DIR / "latest_state.json"
 STATE_MD = STATE_DIR / "latest_state.md"
-RESUME_COMMAND = (
-    "python -m quant_os.cli autonomy live-market-profit-observer --public-network-ok && "
-    "python -m quant_os.cli autonomy live-market-sim-intents && "
-    "python -m quant_os.cli autonomy live-market-sim-fill && "
-    "python -m quant_os.cli autonomy live-market-sim-ledger && "
-    "python -m quant_os.cli autonomy live-market-sim-outcomes && "
-    "python -m quant_os.cli autonomy live-market-sim-pnl && "
-    "python -m quant_os.cli proving live-market-sim-comparison && "
-    "python -m quant_os.cli autonomy live-market-sim-reconciliation && "
-    "python -m quant_os.cli readiness live-market-sim-profitability && "
-    "python -m quant_os.cli autonomy live-market-sim-profitability-schedule"
-)
+RESUME_COMMAND = ".\\make.cmd live-market-sim-profitability-public-run"
 
 
 def sim_safety_payload(**overrides: Any) -> dict[str, Any]:
