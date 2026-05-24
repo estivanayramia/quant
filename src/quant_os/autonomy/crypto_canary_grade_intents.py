@@ -53,12 +53,14 @@ def build_crypto_canary_grade_intents(
                 "entry_timestamp": observation["entry_timestamp"],
                 "mark_timestamp": observation["mark_timestamp"],
                 "mark_price": observation["mark_price"],
+                "mark_horizon_minutes": observation.get("mark_horizon_minutes"),
+                "return_1m": observation.get("return_1m"),
                 "regime": observation["regime"],
                 "walk_forward_window": observation["walk_forward_window"],
                 "session_bucket": observation["session_bucket"],
                 "fake_money": True,
                 "no_transmit": True,
-                "signal_quality_gate": "spot_long_only_reversion_cost_hurdled_return_1m",
+                "signal_quality_gate": "spot_long_only_directional_cost_hurdled_return_1m",
                 "dry_run_only": True,
                 "order_transmission_enabled": False,
                 "authenticated_requests_enabled": False,
@@ -112,6 +114,10 @@ def _canary_side_for_observation(observation: dict[str, Any]) -> str | None:
     ret = float(observation.get("return_1m") or 0.0)
     if ret == 0.0:
         return None
+    if "liquidity_shock_reversion" in strategy:
+        return "buy" if ret < 0.0 else None
+    if "momentum" in strategy:
+        return "buy" if ret > 0.0 else None
     if "reversion" in strategy or "reversal" in strategy or "snapback" in strategy:
         return "buy" if ret < 0.0 else None
     return None

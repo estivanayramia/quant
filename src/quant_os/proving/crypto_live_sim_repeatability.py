@@ -31,7 +31,16 @@ def build_crypto_live_sim_repeatability(
     one_window_dominance = top_window / denominator
     one_trade_cap = 0.25
     one_window_cap = 0.35
-    best_baseline = max(0.0, _baseline_buy_hold(rows), _baseline_naive_momentum(rows), _baseline_naive_mean_reversion(rows))
+    baseline_pnls = {
+        "no_trade": 0.0,
+        "buy_hold": _baseline_buy_hold(rows),
+        "same_cost_momentum": _baseline_naive_momentum(rows),
+        "same_cost_mean_reversion": _baseline_naive_mean_reversion(rows),
+    }
+    best_baseline_name, best_baseline = max(
+        baseline_pnls.items(),
+        key=lambda item: item[1],
+    )
     best_placebo = max(_placebo_random_timestamp(rows), _placebo_sign_flip(strategy_net), _placebo_shuffled(rows), 0.0)
     profit_factor = gross_profit / max(gross_loss, 0.000001)
     max_drawdown = _max_drawdown([float(row.get("fake_net_pnl") or 0.0) for row in rows])
@@ -63,6 +72,8 @@ def build_crypto_live_sim_repeatability(
         sample_count=len(rows),
         fake_net_pnl=round(strategy_net, 8),
         baseline_pnl=round(best_baseline, 8),
+        baseline_pnls={key: round(value, 8) for key, value in sorted(baseline_pnls.items())},
+        best_baseline_name=best_baseline_name,
         placebo_pnl=round(best_placebo, 8),
         baseline_beaten=strategy_net > best_baseline,
         placebo_beaten=strategy_net > best_placebo,
@@ -127,11 +138,11 @@ def _baseline_buy_hold(rows: list[dict[str, Any]]) -> float:
 
 
 def _baseline_naive_momentum(rows: list[dict[str, Any]]) -> float:
-    return sum(max(float(row.get("return_1m") or 0.0), 0.0) * 1.0 for row in rows)
+    return sum(float(row.get("fake_net_pnl") or 0.0) for row in rows if float(row.get("return_1m") or 0.0) > 0)
 
 
 def _baseline_naive_mean_reversion(rows: list[dict[str, Any]]) -> float:
-    return sum(max(-float(row.get("return_1m") or 0.0), 0.0) * 1.0 for row in rows)
+    return sum(float(row.get("fake_net_pnl") or 0.0) for row in rows if float(row.get("return_1m") or 0.0) < 0)
 
 
 def _placebo_random_timestamp(rows: list[dict[str, Any]]) -> float:

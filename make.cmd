@@ -1723,6 +1723,28 @@ if "%TARGET%"=="canary-grade-live-sim-public-run" (
   python -m quant_os.cli autonomy canary-grade-live-sim-schedule
   exit /b !ERRORLEVEL!
 )
+if "%TARGET%"=="money-worthy-canary-grade-smoke" (
+  call "%~f0" canary-grade-live-sim-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" autonomous-live-fire-drill-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness autonomous-no-transmit-execution-rehearsal
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness money-worthy-canary-grade
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence65_money_worthy_canary_grade.py
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="money-worthy-canary-grade-public-run" (
+  call "%~f0" canary-grade-live-sim-public-run
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" autonomous-live-fire-drill-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness autonomous-no-transmit-execution-rehearsal
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness money-worthy-canary-grade
+  exit /b !ERRORLEVEL!
+)
 if "%TARGET%"=="sequence62-smoke" (
   call "%~f0" sequence61-smoke
   if errorlevel 1 exit /b !ERRORLEVEL!
@@ -1865,6 +1887,10 @@ if "%TARGET%"=="sequence64-smoke" (
   python -m quant_os.cli autonomy thousand-strategy-schedule
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m pytest tests/test_sequence64_thousand_strategy_continuation.py
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence65-smoke" (
+  call "%~f0" money-worthy-canary-grade-smoke
   exit /b !ERRORLEVEL!
 )
 if "%TARGET%"=="venue-capture" (

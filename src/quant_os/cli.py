@@ -6656,6 +6656,49 @@ def readiness_canary_grade_manual_packet() -> None:
     )
 
 
+@readiness_app.command("autonomous-no-transmit-execution-rehearsal")
+def readiness_autonomous_no_transmit_execution_rehearsal() -> None:
+    from quant_os.readiness.autonomous_no_transmit_execution_rehearsal import (
+        write_autonomous_no_transmit_execution_rehearsal_report,
+    )
+
+    payload = write_autonomous_no_transmit_execution_rehearsal_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_execution_status": payload["fake_execution_status"],
+            "report": (
+                "reports/autonomous_live_fire_drill/no_transmit_execution_rehearsal/"
+                "latest_no_transmit_execution_rehearsal.json"
+            ),
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("money-worthy-canary-grade")
+def readiness_money_worthy_canary_grade() -> None:
+    from quant_os.readiness.money_worthy_canary_grade import (
+        write_money_worthy_canary_grade_report,
+    )
+
+    payload = write_money_worthy_canary_grade_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_net_pnl": payload["fake_net_pnl"],
+            "manual_packet_status": payload["manual_packet_status"],
+            "no_transmit_execution_rehearsal_status": payload[
+                "no_transmit_execution_rehearsal_status"
+            ],
+            "report": "reports/canary_grade_live_sim/money_worthy/latest_money_worthy_canary_grade.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @research_app.command("x-quant-hypothesis-intake")
 def research_x_quant_hypothesis_intake(
     zip_path: Annotated[Path | None, typer.Option("--zip-path")] = None,

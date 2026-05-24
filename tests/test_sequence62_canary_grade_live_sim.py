@@ -275,6 +275,45 @@ def test_sequence62_repeatability_stress_scales_with_fake_notional() -> None:
     assert "HIGHER_FEE_STRESS_FAILED" not in payload["blockers"]
 
 
+def test_sequence62_repeatability_reports_same_cost_baseline_winner() -> None:
+    from quant_os.proving.crypto_live_sim_repeatability import build_crypto_live_sim_repeatability
+
+    rows = [
+        {
+            "symbol": "BTC/USD",
+            "entry_price": 100.0,
+            "mark_price": 101.0,
+            "return_1m": 0.01,
+            "fake_net_pnl": 0.10,
+            "walk_forward_window": "window_1",
+            "strategy": "crypto_spot_momentum_reversion_intraday",
+            "regime": "high_vol",
+            "session_bucket": "session_0",
+            "notional_usd": 1.0,
+        },
+        {
+            "symbol": "ETH/USD",
+            "entry_price": 50.0,
+            "mark_price": 49.5,
+            "return_1m": -0.01,
+            "fake_net_pnl": 0.04,
+            "walk_forward_window": "window_2",
+            "strategy": "crypto_spot_liquidity_shock_reversion_long_only",
+            "regime": "low_vol",
+            "session_bucket": "session_1",
+            "notional_usd": 1.0,
+        },
+    ]
+
+    payload = build_crypto_live_sim_repeatability(
+        pnl={"pnl_rows": rows, "fake_net_pnl": 0.14, "gross_profit": 0.2, "gross_loss": 0.06}
+    )
+
+    assert payload["baseline_pnls"]["same_cost_momentum"] == 0.1
+    assert payload["baseline_pnls"]["same_cost_mean_reversion"] == 0.04
+    assert payload["best_baseline_name"] in payload["baseline_pnls"]
+
+
 def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() -> None:
     from quant_os.autonomy.crypto_canary_grade_fill import apply_crypto_canary_grade_fill_model
     from quant_os.autonomy.crypto_canary_grade_intents import build_crypto_canary_grade_intents
@@ -282,7 +321,7 @@ def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() ->
     observer = {
         "observations": [
             {
-                "observation_id": "obs_reversion_down",
+                "observation_id": "obs_momentum_down",
                 "symbol": "BTC/USD",
                 "strategy": "crypto_spot_momentum_reversion_intraday",
                 "venue": "kraken_public",
@@ -300,7 +339,7 @@ def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() ->
                 "eligible": True,
             },
             {
-                "observation_id": "obs_reversion_up",
+                "observation_id": "obs_momentum_up",
                 "symbol": "BTC/USD",
                 "strategy": "crypto_spot_momentum_reversion_intraday",
                 "venue": "kraken_public",
@@ -346,10 +385,14 @@ def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() ->
 
     sides = {intent["observation_id"]: intent["side"] for intent in intents["intents"]}
     assert sides == {
-        "obs_reversion_down": "buy",
+        "obs_momentum_up": "buy",
         "obs_breakout_down": "buy",
     }
+    assert all("return_1m" in intent for intent in intents["intents"])
+    assert all("mark_horizon_minutes" in intent for intent in intents["intents"])
     assert all(intent["notional_usd"] == 1.0 for intent in intents["intents"])
+    assert all("return_1m" in fill for fill in fills["fake_fills"])
+    assert all("mark_horizon_minutes" in fill for fill in fills["fake_fills"])
     assert fills["fake_fills"][0]["quantity"] == 0.01
     assert fills["fake_fills"][1]["quantity"] == 0.02
     assert fills["fake_fill_count"] == 2
@@ -380,7 +423,7 @@ def test_sequence62_canary_intents_require_signal_quality_gate() -> None:
                 "entry_timestamp": "2026-05-23T10:00:00Z",
                 "mark_timestamp": "2026-05-23T11:00:00Z",
                 "mark_horizon_minutes": 60,
-                "return_1m": -0.01,
+                "return_1m": 0.01,
             },
             {
                 **base,
@@ -396,7 +439,7 @@ def test_sequence62_canary_intents_require_signal_quality_gate() -> None:
     payload = build_crypto_canary_grade_intents(observer=observer)
 
     assert [intent["observation_id"] for intent in payload["intents"]] == ["obs_trade"]
-    assert payload["intents"][0]["signal_quality_gate"] == "spot_long_only_reversion_cost_hurdled_return_1m"
+    assert payload["intents"][0]["signal_quality_gate"] == "spot_long_only_directional_cost_hurdled_return_1m"
 
 
 def test_sequence62_canary_intents_reject_signals_below_conservative_cost_hurdle() -> None:
@@ -423,14 +466,14 @@ def test_sequence62_canary_intents_reject_signals_below_conservative_cost_hurdle
                 "observation_id": "obs_too_small_for_costs",
                 "entry_timestamp": "2026-05-23T10:00:00Z",
                 "mark_timestamp": "2026-05-23T11:00:00Z",
-                "return_1m": -0.00001,
+                "return_1m": 0.00001,
             },
             {
                 **base,
                 "observation_id": "obs_cost_hurdled",
                 "entry_timestamp": "2026-05-23T10:02:00Z",
                 "mark_timestamp": "2026-05-23T11:02:00Z",
-                "return_1m": -0.01,
+                "return_1m": 0.01,
             },
         ]
     }
@@ -438,7 +481,7 @@ def test_sequence62_canary_intents_reject_signals_below_conservative_cost_hurdle
     payload = build_crypto_canary_grade_intents(observer=observer)
 
     assert [intent["observation_id"] for intent in payload["intents"]] == ["obs_cost_hurdled"]
-    assert payload["intents"][0]["signal_quality_gate"] == "spot_long_only_reversion_cost_hurdled_return_1m"
+    assert payload["intents"][0]["signal_quality_gate"] == "spot_long_only_directional_cost_hurdled_return_1m"
 
 
 def test_sequence62_pnl_blocks_lookahead() -> None:

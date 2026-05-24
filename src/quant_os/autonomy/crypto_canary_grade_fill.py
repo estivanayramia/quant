@@ -66,6 +66,8 @@ def apply_crypto_canary_grade_fill_model(
                 "entry_price": entry,
                 "mark_timestamp": intent["mark_timestamp"],
                 "mark_price": float(intent["mark_price"]),
+                "mark_horizon_minutes": intent.get("mark_horizon_minutes"),
+                "return_1m": intent.get("return_1m"),
                 "regime": intent["regime"],
                 "walk_forward_window": intent["walk_forward_window"],
                 "session_bucket": intent["session_bucket"],
