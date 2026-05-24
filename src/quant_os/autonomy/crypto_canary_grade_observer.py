@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -30,6 +31,46 @@ KRAKEN_PAIRS = {
     "DOT/USD": "DOTUSD",
     "AVAX/USD": "AVAXUSD",
     "LINK/USD": "LINKUSD",
+    "2Z/USD": "2ZUSD",
+    "AKT/USD": "AKTUSD",
+    "AVNT/USD": "AVNTUSD",
+    "BCH/USD": "BCHUSD",
+    "BILL/USD": "BILLUSD",
+    "BLEND/USD": "BLENDUSD",
+    "BNB/USD": "BNBUSD",
+    "CC/USD": "CCUSD",
+    "CFG/USD": "CFGUSD",
+    "CHIP/USD": "CHIPUSD",
+    "DASH/USD": "DASHUSD",
+    "EIGEN/USD": "EIGENUSD",
+    "FHE/USD": "FHEUSD",
+    "FUN/USD": "FUNUSD",
+    "GIGA/USD": "GIGAUSD",
+    "HYPE/USD": "HYPEUSD",
+    "ICP/USD": "ICPUSD",
+    "IN/USD": "INUSD",
+    "JTO/USD": "JTOUSD",
+    "KAS/USD": "KASUSD",
+    "MNT/USD": "MNTUSD",
+    "MON/USD": "MONUSD",
+    "MOODENG/USD": "MOODENGUSD",
+    "MORPHO/USD": "MORPHOUSD",
+    "ONDO/USD": "ONDOUSD",
+    "PEAQ/USD": "PEAQUSD",
+    "PENDLE/USD": "PENDLEUSD",
+    "PENGU/USD": "PENGUUSD",
+    "PLUME/USD": "PLUMEUSD",
+    "POL/USD": "POLUSD",
+    "QNT/USD": "QNTUSD",
+    "RED/USD": "REDUSD",
+    "RENDER/USD": "RENDERUSD",
+    "TON/USD": "TONUSD",
+    "TRX/USD": "TRXUSD",
+    "VIRTUAL/USD": "VIRTUALUSD",
+    "VVV/USD": "VVVUSD",
+    "WLD/USD": "WLDUSD",
+    "XMR/USD": "XXMRZUSD",
+    "ZAMA/USD": "ZAMAUSD",
 }
 
 
@@ -37,7 +78,7 @@ def build_crypto_canary_grade_observer(
     *,
     public_snapshot: dict[str, Any] | None = None,
     public_network_ok: bool = False,
-    max_observations: int = 8000,
+    max_observations: int = 50000,
 ) -> dict[str, Any]:
     blockers: list[str] = []
     if public_snapshot is None:
@@ -79,7 +120,7 @@ def write_crypto_canary_grade_observer_report(
     output_root: str | Path = ".",
     public_snapshot: dict[str, Any] | None = None,
     public_network_ok: bool = False,
-    max_observations: int = 8000,
+    max_observations: int = 50000,
 ) -> dict[str, Any]:
     payload = build_crypto_canary_grade_observer(
         public_snapshot=public_snapshot,
@@ -134,13 +175,22 @@ def fetch_kraken_canary_snapshot() -> dict[str, Any]:
 
 def fixture_canary_snapshot() -> dict[str, Any]:
     symbols: dict[str, Any] = {}
-    bases = {"BTC/USD": 100.0, "ETH/USD": 60.0, "SOL/USD": 30.0, "XRP/USD": 10.0}
+    bases = {
+        "BTC/USD": 100.0,
+        "ETH/USD": 60.0,
+        "SOL/USD": 30.0,
+        "XRP/USD": 10.0,
+        "HYPE/USD": 80.0,
+        "ONDO/USD": 40.0,
+        "RENDER/USD": 20.0,
+        "FUN/USD": 20.0,
+    }
     for asset_index, (symbol, base) in enumerate(bases.items()):
         candles = []
         for idx in range(900):
-            drift = idx * (0.035 + asset_index * 0.004)
-            cycle = ((idx % 10) - 5) * 0.012
-            price = round(base + drift + cycle, 6)
+            slow_wave = math.sin(idx / 80 * 2 * math.pi + asset_index) * base * 0.02
+            fast_wave = math.sin(idx / 15 * 2 * math.pi) * base * 0.002
+            price = round(max(base + slow_wave + fast_wave, base * 0.1), 6)
             candles.append(
                 {
                     "timestamp": f"2026-05-17T{idx // 60:02d}:{idx % 60:02d}:00Z",

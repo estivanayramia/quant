@@ -675,7 +675,7 @@ def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() ->
         "observations": [
             {
                 "observation_id": "obs_momentum_down",
-                "symbol": "BTC/USD",
+                "symbol": "HYPE/USD",
                 "strategy": "crypto_spot_momentum_reversion_intraday",
                 "venue": "kraken_public",
                 "entry_timestamp": "2026-05-23T10:00:00Z",
@@ -693,13 +693,13 @@ def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() ->
             },
             {
                 "observation_id": "obs_momentum_up",
-                "symbol": "BTC/USD",
+                "symbol": "HYPE/USD",
                 "strategy": "crypto_spot_momentum_reversion_intraday",
                 "venue": "kraken_public",
                 "entry_timestamp": "2026-05-23T10:01:00Z",
                 "entry_price": 100.0,
-                "mark_timestamp": "2026-05-23T11:01:00Z",
-                "mark_horizon_minutes": 60,
+                "mark_timestamp": "2026-05-23T10:16:00Z",
+                "mark_horizon_minutes": 15,
                 "mark_price": 99.0,
                 "return_1m": 0.01,
                 "spread": 0.02,
@@ -711,13 +711,13 @@ def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() ->
             },
             {
                 "observation_id": "obs_momentum_up_other_session",
-                "symbol": "BTC/USD",
+                "symbol": "HYPE/USD",
                 "strategy": "crypto_spot_momentum_reversion_intraday",
                 "venue": "kraken_public",
                 "entry_timestamp": "2026-05-23T10:01:30Z",
                 "entry_price": 100.0,
-                "mark_timestamp": "2026-05-23T11:01:30Z",
-                "mark_horizon_minutes": 60,
+                "mark_timestamp": "2026-05-23T10:16:30Z",
+                "mark_horizon_minutes": 15,
                 "mark_price": 99.0,
                 "return_1m": 0.0005,
                 "spread": 0.02,
@@ -773,8 +773,9 @@ def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() ->
 def test_sequence62_canary_intents_require_signal_quality_gate() -> None:
     from quant_os.autonomy.crypto_canary_grade_intents import build_crypto_canary_grade_intents
 
+    gate = "broad_kraken_60m_reversion_plus_selected_15m_momentum_cost_hurdled_no_session5"
     base = {
-        "symbol": "BTC/USD",
+        "symbol": "HYPE/USD",
         "strategy": "crypto_spot_momentum_reversion_intraday",
         "venue": "kraken_public",
         "entry_price": 100.0,
@@ -792,24 +793,24 @@ def test_sequence62_canary_intents_require_signal_quality_gate() -> None:
                 **base,
                 "observation_id": "obs_trade",
                 "entry_timestamp": "2026-05-23T10:00:00Z",
-                "mark_timestamp": "2026-05-23T11:00:00Z",
-                "mark_horizon_minutes": 60,
+                "mark_timestamp": "2026-05-23T10:15:00Z",
+                "mark_horizon_minutes": 15,
                 "return_1m": 0.01,
             },
             {
                 **base,
                 "observation_id": "obs_tiny_move",
                 "entry_timestamp": "2026-05-23T10:02:00Z",
-                "mark_timestamp": "2026-05-23T11:02:00Z",
-                "mark_horizon_minutes": 60,
+                "mark_timestamp": "2026-05-23T10:17:00Z",
+                "mark_horizon_minutes": 15,
                 "return_1m": 0.0,
             },
             {
                 **base,
                 "observation_id": "obs_other_session",
                 "entry_timestamp": "2026-05-23T10:03:00Z",
-                "mark_timestamp": "2026-05-23T11:03:00Z",
-                "mark_horizon_minutes": 60,
+                "mark_timestamp": "2026-05-23T10:18:00Z",
+                "mark_horizon_minutes": 15,
                 "return_1m": 0.0005,
                 "session_bucket": "session_1",
             },
@@ -838,15 +839,16 @@ def test_sequence62_canary_intents_require_signal_quality_gate() -> None:
     assert [intent["observation_id"] for intent in payload["intents"]] == ["obs_trade"]
     assert (
         payload["intents"][0]["signal_quality_gate"]
-        == "spot_long_only_directional_cost_hurdled_return_1m_15_60m_no_session5"
+        == gate
     )
 
 
 def test_sequence62_canary_intents_reject_signals_below_conservative_cost_hurdle() -> None:
     from quant_os.autonomy.crypto_canary_grade_intents import build_crypto_canary_grade_intents
 
+    gate = "broad_kraken_60m_reversion_plus_selected_15m_momentum_cost_hurdled_no_session5"
     base = {
-        "symbol": "BTC/USD",
+        "symbol": "HYPE/USD",
         "strategy": "crypto_spot_momentum_reversion_intraday",
         "venue": "kraken_public",
         "entry_price": 100.0,
@@ -856,7 +858,7 @@ def test_sequence62_canary_intents_reject_signals_below_conservative_cost_hurdle
         "regime": "low_vol",
         "walk_forward_window": "window_1",
         "session_bucket": "session_0",
-        "mark_horizon_minutes": 60,
+        "mark_horizon_minutes": 15,
         "eligible": True,
     }
     observer = {
@@ -865,14 +867,14 @@ def test_sequence62_canary_intents_reject_signals_below_conservative_cost_hurdle
                 **base,
                 "observation_id": "obs_too_small_for_costs",
                 "entry_timestamp": "2026-05-23T10:00:00Z",
-                "mark_timestamp": "2026-05-23T11:00:00Z",
+                "mark_timestamp": "2026-05-23T10:15:00Z",
                 "return_1m": 0.00001,
             },
             {
                 **base,
                 "observation_id": "obs_cost_hurdled",
                 "entry_timestamp": "2026-05-23T10:02:00Z",
-                "mark_timestamp": "2026-05-23T11:02:00Z",
+                "mark_timestamp": "2026-05-23T10:17:00Z",
                 "return_1m": 0.01,
             },
         ]
@@ -883,7 +885,7 @@ def test_sequence62_canary_intents_reject_signals_below_conservative_cost_hurdle
     assert [intent["observation_id"] for intent in payload["intents"]] == ["obs_cost_hurdled"]
     assert (
         payload["intents"][0]["signal_quality_gate"]
-        == "spot_long_only_directional_cost_hurdled_return_1m_15_60m_no_session5"
+        == gate
     )
 
 

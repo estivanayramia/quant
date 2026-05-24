@@ -16,8 +16,35 @@ REPORT_DIR = ROOT / "crypto"
 CANARY_PROOF_MARK_HORIZONS = {15, 60}
 CANARY_PROOF_EXCLUDED_SESSION_BUCKETS = {"session_5"}
 CANARY_SIGNAL_QUALITY_GATE = (
-    "spot_long_only_directional_cost_hurdled_return_1m_15_60m_no_session5"
+    "broad_kraken_60m_reversion_plus_selected_15m_momentum_cost_hurdled_no_session5"
 )
+CANARY_REVERSION_60M_SYMBOLS = {
+    "ADA/USD",
+    "AKT/USD",
+    "BCH/USD",
+    "BILL/USD",
+    "BNB/USD",
+    "BTC/USD",
+    "DASH/USD",
+    "DOGE/USD",
+    "ETH/USD",
+    "FUN/USD",
+    "HYPE/USD",
+    "ICP/USD",
+    "MNT/USD",
+    "PLUME/USD",
+    "POL/USD",
+    "RED/USD",
+    "TRX/USD",
+    "WLD/USD",
+    "XRP/USD",
+    "XTZ/USD",
+}
+CANARY_MOMENTUM_15M_SYMBOLS = {
+    "FUN/USD",
+    "HYPE/USD",
+    "MNT/USD",
+}
 
 
 def build_crypto_canary_grade_intents(
@@ -101,8 +128,25 @@ def _passes_canary_signal_quality_gate(observation: dict[str, Any]) -> bool:
         return False
     if observation.get("session_bucket") in CANARY_PROOF_EXCLUDED_SESSION_BUCKETS:
         return False
-    ret = abs(float(observation.get("return_1m") or 0.0))
-    if horizon <= 0 or ret <= 0.0:
+    raw_ret = float(observation.get("return_1m") or 0.0)
+    ret = abs(raw_ret)
+    if horizon <= 0 or raw_ret == 0.0:
+        return False
+    strategy = str(observation.get("strategy") or "").lower()
+    symbol = str(observation.get("symbol") or "")
+    reversion_sleeve = (
+        horizon == 60
+        and symbol in CANARY_REVERSION_60M_SYMBOLS
+        and "liquidity_shock_reversion" in strategy
+        and raw_ret < 0.0
+    )
+    momentum_sleeve = (
+        horizon == 15
+        and symbol in CANARY_MOMENTUM_15M_SYMBOLS
+        and "momentum" in strategy
+        and raw_ret > 0.0
+    )
+    if not (reversion_sleeve or momentum_sleeve):
         return False
     entry = float(observation.get("entry_price") or 0.0)
     if entry <= 0.0:
