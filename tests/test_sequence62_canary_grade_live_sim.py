@@ -105,6 +105,53 @@ def test_sequence62_canary_grade_pipeline_proves_large_fixture(local_project: Pa
     assert packet["post_canary_reconciliation_command"] == ".\\make.cmd canary-grade-live-sim-public-run"
     assert packet["order_transmission_enabled"] is False
     assert packet["actual_order_count"] == 0
+    assert packet["conflict_summary"]["status"] == "CONFLICT_DETECTOR_PASSED"
+    assert packet["conflict_summary"]["veto_reasons"] == []
+    review_pack = packet["final_review_pack"]
+    assert review_pack["sample_size"]["observations"] == observer["observation_count"]
+    assert review_pack["sample_size"]["eligible_intents"] == intents["eligible_intent_count"]
+    assert review_pack["sample_size"]["fake_fills"] == fills["fake_fill_count"]
+    assert review_pack["sample_size"]["completed_marks"] == pnl["completed_mark_count"]
+    assert review_pack["fake_net_pnl_after_costs"]["fake_net_pnl"] == pnl["fake_net_pnl"]
+    assert review_pack["baseline_placebo_comparison"]["baseline_beaten"] is True
+    assert review_pack["baseline_placebo_comparison"]["placebo_beaten"] is True
+    assert review_pack["gates"] == {
+        "repeatability": "REPEATABILITY_PASSED",
+        "reconciliation": "CANARY_GRADE_RECONCILIATION_PASSED",
+        "conflict": "CONFLICT_DETECTOR_PASSED",
+        "capacity": "CAPACITY_TINY_CANARY_PASSED",
+        "readiness": "CANARY_GRADE_LIVE_SIM_PROFITABILITY_PROVEN",
+    }
+    packet_md = (
+        local_project
+        / "reports/canary_grade_live_sim/manual_canary_packet/latest_manual_canary_packet.md"
+    ).read_text(encoding="utf-8")
+    for heading in [
+        "## 1. Selected Strategy/Lane",
+        "## 2. Exact Assets",
+        "## 3. Sample Size",
+        "## 4. Fake Intents/Fills/Marks",
+        "## 5. Fake Net PnL After Costs",
+        "## 6. Baseline/Placebo Comparison",
+        "## 7. Repeatability/Reconciliation/Conflict/Capacity",
+        "## 8. Dominance Checks",
+        "## 9. Risk Envelope",
+        "## 10. Exact Kill-Switch/Block Conditions",
+        "## 11. What Could Still Fail In Real Money",
+        "## 12. Exact Human-Only Arming Boundary",
+        "## 13. Post-Canary Reconciliation Checklist",
+        "## 14. Rollback/Abort Checklist",
+    ]:
+        assert heading in packet_md
+    forbidden_packet_terms = [
+        "POST /portfolio/orders",
+        "DELETE /portfolio/orders",
+        "Authorization:",
+        "Bearer ",
+        "ORDER_READY_TO_SEND",
+        "ORDER_SENT",
+    ]
+    assert not any(term in packet_md for term in forbidden_packet_terms)
 
 
 def test_sequence62_readiness_blocks_baseline_placebo_dominance_stress_and_repro() -> None:
