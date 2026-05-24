@@ -16,27 +16,29 @@ REPORT_DIR = ROOT / "crypto"
 CANARY_PROOF_MARK_HORIZONS = {15, 60}
 CANARY_PROOF_EXCLUDED_SESSION_BUCKETS = {"session_5"}
 CANARY_MIN_PUBLIC_DEPTH_NOTIONAL = 1.0
-CANARY_SIGNAL_QUALITY_GATE = (
-    "public_positive_depth_safe_kraken_three_snapshot_sample_safe_v7"
-)
+CANARY_SIGNAL_QUALITY_GATE = "public_positive_depth_safe_kraken_four_snapshot_window_safe_v8"
 CANARY_REVERSION_60M_SYMBOLS = {
     "AKT/USD",
     "BILL/USD",
     "CC/USD",
-    "DASH/USD",
     "FUN/USD",
     "HYPE/USD",
-    "MOODENG/USD",
+    "MORPHO/USD",
     "ONDO/USD",
     "PLUME/USD",
+    "RENDER/USD",
     "TRX/USD",
     "VVV/USD",
-    "XMR/USD",
 }
 CANARY_MOMENTUM_15M_SYMBOLS = {
     "HYPE/USD",
 }
+CANARY_MOMENTUM_15M_WINDOWS_BY_SYMBOL = {
+    "HYPE/USD": {"window_2", "window_3"},
+}
 CANARY_DIP_REVERSION_15M_SYMBOLS = {
+    "CC/USD",
+    "FHE/USD",
     "FUN/USD",
     "GIGA/USD",
     "PLUME/USD",
@@ -140,6 +142,7 @@ def _passes_canary_signal_quality_gate(observation: dict[str, Any]) -> bool:
     momentum_sleeve = (
         horizon == 15
         and symbol in CANARY_MOMENTUM_15M_SYMBOLS
+        and _momentum_window_allowed(symbol, observation)
         and "momentum" in strategy
         and raw_ret > 0.0
     )
@@ -181,12 +184,24 @@ def _canary_side_for_observation(observation: dict[str, Any]) -> str | None:
         symbol = str(observation.get("symbol") or "")
         if horizon == 15 and symbol in CANARY_DIP_REVERSION_15M_SYMBOLS and ret < 0.0:
             return "buy"
-        if horizon == 15 and symbol in CANARY_MOMENTUM_15M_SYMBOLS and ret > 0.0:
+        if (
+            horizon == 15
+            and symbol in CANARY_MOMENTUM_15M_SYMBOLS
+            and _momentum_window_allowed(symbol, observation)
+            and ret > 0.0
+        ):
             return "buy"
         return None
     if "reversion" in strategy or "reversal" in strategy or "snapback" in strategy:
         return "buy" if ret < 0.0 else None
     return None
+
+
+def _momentum_window_allowed(symbol: str, observation: dict[str, Any]) -> bool:
+    allowed_windows = CANARY_MOMENTUM_15M_WINDOWS_BY_SYMBOL.get(symbol)
+    if not allowed_windows:
+        return True
+    return str(observation.get("walk_forward_window") or "") in allowed_windows
 
 
 def write_crypto_canary_grade_intents_report(*, output_root: str | Path = ".") -> dict[str, Any]:

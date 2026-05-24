@@ -687,7 +687,7 @@ def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() ->
                 "spread": 0.02,
                 "ask_size": 10.0,
                 "regime": "low_vol",
-                "walk_forward_window": "window_1",
+                "walk_forward_window": "window_2",
                 "session_bucket": "session_0",
                 "eligible": True,
             },
@@ -705,7 +705,7 @@ def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() ->
                 "spread": 0.02,
                 "ask_size": 10.0,
                 "regime": "low_vol",
-                "walk_forward_window": "window_1",
+                "walk_forward_window": "window_3",
                 "session_bucket": "session_0",
                 "eligible": True,
             },
@@ -723,7 +723,7 @@ def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() ->
                 "spread": 0.02,
                 "ask_size": 10.0,
                 "regime": "low_vol",
-                "walk_forward_window": "window_1",
+                "walk_forward_window": "window_2",
                 "session_bucket": "session_1",
                 "eligible": True,
             },
@@ -777,7 +777,7 @@ def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() ->
 def test_sequence62_canary_intents_require_signal_quality_gate() -> None:
     from quant_os.autonomy.crypto_canary_grade_intents import build_crypto_canary_grade_intents
 
-    gate = "public_positive_depth_safe_kraken_three_snapshot_sample_safe_v7"
+    gate = "public_positive_depth_safe_kraken_four_snapshot_window_safe_v8"
     base = {
         "symbol": "HYPE/USD",
         "strategy": "crypto_spot_momentum_reversion_intraday",
@@ -787,7 +787,7 @@ def test_sequence62_canary_intents_require_signal_quality_gate() -> None:
         "spread": 0.02,
         "ask_size": 10.0,
         "regime": "low_vol",
-        "walk_forward_window": "window_1",
+        "walk_forward_window": "window_2",
         "session_bucket": "session_0",
         "eligible": True,
     }
@@ -853,7 +853,7 @@ def test_sequence62_canary_intents_require_signal_quality_gate() -> None:
 def test_sequence62_canary_intents_reject_signals_below_conservative_cost_hurdle() -> None:
     from quant_os.autonomy.crypto_canary_grade_intents import build_crypto_canary_grade_intents
 
-    gate = "public_positive_depth_safe_kraken_three_snapshot_sample_safe_v7"
+    gate = "public_positive_depth_safe_kraken_four_snapshot_window_safe_v8"
     base = {
         "symbol": "HYPE/USD",
         "strategy": "crypto_spot_momentum_reversion_intraday",
@@ -863,7 +863,7 @@ def test_sequence62_canary_intents_reject_signals_below_conservative_cost_hurdle
         "spread": 0.02,
         "ask_size": 10.0,
         "regime": "low_vol",
-        "walk_forward_window": "window_1",
+        "walk_forward_window": "window_2",
         "session_bucket": "session_0",
         "mark_horizon_minutes": 15,
         "eligible": True,
