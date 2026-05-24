@@ -1,8 +1,119 @@
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from pathlib import Path
+
+
+def _write_report(root: Path, relative_path: str, payload: dict) -> None:
+    path = root / relative_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def _manual_packet_source_reports() -> dict[str, dict]:
+    safe = {
+        "actual_cancel_count": 0,
+        "actual_order_count": 0,
+        "api_keys_loaded": False,
+        "auth_key_order_attempts": 0,
+        "authenticated_endpoint_called": False,
+        "authenticated_requests_enabled": False,
+        "checked_account_balance": False,
+        "checked_portfolio": False,
+        "execution_authority": "NONE",
+        "live_trading_enabled": False,
+        "order_transmission_enabled": False,
+        "private_keys_loaded": False,
+        "request_signing_enabled": False,
+        "unsafe_action_attempts": 0,
+    }
+    readiness = {
+        **safe,
+        "status": "CANARY_GRADE_LIVE_SIM_PROFITABILITY_PROVEN",
+        "active_market_family": "crypto_spot",
+        "active_strategy": "multi_strategy_canary_grade_crypto_spot",
+        "assets_tested": ["BTC/USD", "ETH/USD", "SOL/USD"],
+        "strategy_families_tested": ["momentum", "reversion"],
+        "venues_tested": ["kraken_public"],
+        "observations_count": 1200,
+        "eligible_intent_count": 400,
+        "fake_fill_count": 200,
+        "completed_mark_count": 200,
+        "fake_gross_pnl": 0.30,
+        "fake_net_pnl": 0.20,
+        "baseline_beaten": True,
+        "placebo_beaten": True,
+        "reconciliation_failures": 0,
+    }
+    return {
+        "readiness": readiness,
+        "repeatability": {
+            **safe,
+            "status": "REPEATABILITY_PASSED",
+            "baseline_pnl": 0.10,
+            "placebo_pnl": 0.01,
+            "best_baseline_name": "same_cost_mean_reversion",
+            "one_trade_dominance": 0.01,
+            "one_trade_dominance_cap": 0.25,
+            "one_window_dominance": 0.02,
+            "one_window_dominance_cap": 0.35,
+            "by_window": {"window_1": 0.05, "window_2": 0.06, "window_3": 0.09},
+            "by_asset": {"BTC/USD": 0.08, "ETH/USD": 0.07, "SOL/USD": 0.05},
+        },
+        "capacity": {
+            **safe,
+            "status": "CAPACITY_TINY_CANARY_PASSED",
+            "max_safe_notional": 4.0,
+            "capacity_by_size": {"1_usd": {"supported": True}},
+        },
+        "observer": {
+            **safe,
+            "status": "CANARY_GRADE_OBSERVER_READY",
+            "source": "kraken_public_rest_unauthenticated_recent_ohlc",
+            "source_policy": "public_read_only_unauthenticated",
+            "venues_tested": ["kraken_public"],
+        },
+        "intents": {**safe, "status": "CANARY_GRADE_INTENTS_READY", "eligible_intent_count": 400},
+        "fills": {**safe, "status": "CANARY_GRADE_FILLS_APPLIED", "fake_fill_count": 200},
+        "pnl": {
+            **safe,
+            "status": "CANARY_GRADE_PNL_READY",
+            "completed_mark_count": 200,
+            "fake_gross_pnl": 0.30,
+            "fake_net_pnl": 0.20,
+            "gross_profit": 0.25,
+            "gross_loss": 0.05,
+        },
+        "reconciliation": {
+            **safe,
+            "status": "CANARY_GRADE_RECONCILIATION_PASSED",
+            "reconciliation_failures": 0,
+        },
+        "fresh_repro": {
+            **safe,
+            "status": "FRESH_REPRO_PASSED",
+            "independent_clean_checkout_verified": True,
+            "attestation_scope": "fresh_worktree_command_completion",
+        },
+    }
+
+
+def _write_manual_packet_source_reports(root: Path, reports: dict[str, dict]) -> None:
+    paths = {
+        "readiness": "reports/canary_grade_live_sim/final/latest_canary_grade_live_sim_readiness.json",
+        "repeatability": "reports/canary_grade_live_sim/repeatability/latest_repeatability.json",
+        "capacity": "reports/canary_grade_live_sim/capacity/latest_capacity.json",
+        "observer": "reports/canary_grade_live_sim/crypto/latest_observer.json",
+        "intents": "reports/canary_grade_live_sim/crypto/latest_intents.json",
+        "fills": "reports/canary_grade_live_sim/crypto/latest_fills.json",
+        "pnl": "reports/canary_grade_live_sim/crypto/latest_pnl.json",
+        "reconciliation": "reports/canary_grade_live_sim/crypto/latest_reconciliation.json",
+        "fresh_repro": "reports/canary_grade_live_sim/fresh_repro/latest_fresh_repro.json",
+    }
+    for name, path in paths.items():
+        _write_report(root, path, reports[name])
 
 
 def test_sequence62_previous_10_intent_result_is_not_canary_grade() -> None:
@@ -74,6 +185,13 @@ def test_sequence62_canary_grade_pipeline_proves_large_fixture(local_project: Pa
         output_root=local_project,
         proof_command_passed=True,
     )
+    fresh_repro["attestation_scope"] = "fresh_worktree_command_completion"
+    fresh_repro["independent_clean_checkout_verified"] = True
+    _write_report(
+        local_project,
+        "reports/canary_grade_live_sim/fresh_repro/latest_fresh_repro.json",
+        fresh_repro,
+    )
     readiness = write_canary_grade_live_sim_readiness_report(output_root=local_project)
     packet = write_canary_grade_manual_packet_report(output_root=local_project)
 
@@ -96,8 +214,8 @@ def test_sequence62_canary_grade_pipeline_proves_large_fixture(local_project: Pa
     assert repeatability["placebo_beaten"] is True
     assert capacity["status"] == "CAPACITY_TINY_CANARY_PASSED"
     assert fresh_repro["status"] == "FRESH_REPRO_PASSED"
-    assert fresh_repro["attestation_scope"] == "same_worktree_command_completion"
-    assert fresh_repro["independent_clean_checkout_verified"] is False
+    assert fresh_repro["attestation_scope"] == "fresh_worktree_command_completion"
+    assert fresh_repro["independent_clean_checkout_verified"] is True
     assert readiness["status"] == "CANARY_GRADE_LIVE_SIM_PROFITABILITY_PROVEN"
     assert readiness["validation_status"] == readiness["status"]
     assert readiness["venues_tested"] == observer["venues_tested"]
@@ -121,6 +239,8 @@ def test_sequence62_canary_grade_pipeline_proves_large_fixture(local_project: Pa
         "conflict": "CONFLICT_DETECTOR_PASSED",
         "capacity": "CAPACITY_TINY_CANARY_PASSED",
         "readiness": "CANARY_GRADE_LIVE_SIM_PROFITABILITY_PROVEN",
+        "fresh_repro": "FRESH_REPRO_PASSED",
+        "independent_fresh_worktree": True,
     }
     packet_md = (
         local_project
@@ -152,6 +272,112 @@ def test_sequence62_canary_grade_pipeline_proves_large_fixture(local_project: Pa
         "ORDER_SENT",
     ]
     assert not any(term in packet_md for term in forbidden_packet_terms)
+
+
+def test_sequence62_manual_packet_requires_direct_gate_statuses(local_project: Path) -> None:
+    from quant_os.readiness.canary_grade_manual_packet import build_canary_grade_manual_packet
+
+    cases = [
+        (
+            "stale_readiness",
+            ("readiness", "status", "CANARY_GRADE_LIVE_SIM_NOT_PROVEN"),
+            "CANARY_GRADE_READINESS_NOT_PROVEN",
+        ),
+        (
+            "capacity_fail",
+            ("capacity", "status", "CAPACITY_BLOCKED_BY_LIQUIDITY"),
+            "CAPACITY_TINY_CANARY_NOT_PASSED",
+        ),
+        (
+            "repeatability_fail",
+            ("repeatability", "status", "REPEATABILITY_BLOCKED"),
+            "REPEATABILITY_NOT_PASSED",
+        ),
+        (
+            "reconciliation_fail",
+            ("reconciliation", "status", "CANARY_GRADE_RECONCILIATION_FAILED"),
+            "CANARY_GRADE_RECONCILIATION_NOT_PASSED",
+        ),
+        (
+            "nonpositive_pnl",
+            ("readiness", "fake_net_pnl", 0.0),
+            "FAKE_NET_PNL_NOT_POSITIVE",
+        ),
+        (
+            "baseline_fail",
+            ("readiness", "baseline_beaten", False),
+            "BASELINE_NOT_BEATEN",
+        ),
+        (
+            "placebo_fail",
+            ("readiness", "placebo_beaten", False),
+            "PLACEBO_NOT_BEATEN",
+        ),
+        (
+            "safety_flag_drift",
+            ("readiness", "live_trading_enabled", True),
+            "UNSAFE_FLAG_TRUE:readiness:live_trading_enabled",
+        ),
+        (
+            "signing_flag_drift",
+            ("pnl", "request_signing_enabled", True),
+            "UNSAFE_FLAG_TRUE:pnl:request_signing_enabled",
+        ),
+        (
+            "order_counter_drift",
+            ("fills", "actual_order_count", 1),
+            "UNSAFE_COUNTER_NONZERO:fills:actual_order_count",
+        ),
+    ]
+    for case_name, mutation, expected_blocker in cases:
+        case_root = local_project / case_name
+        reports = _manual_packet_source_reports()
+        report_name, key, value = mutation
+        reports[report_name][key] = value
+        _write_manual_packet_source_reports(case_root, reports)
+
+        packet = build_canary_grade_manual_packet(output_root=case_root)
+
+        assert packet["status"] == "FIRST_TINY_MANUAL_CANARY_PACKET_BLOCKED"
+        assert expected_blocker in packet["blockers"]
+        assert packet["order_transmission_enabled"] is False
+        assert packet["actual_order_count"] == 0
+
+
+def test_sequence62_manual_packet_blocks_conflict_veto(local_project: Path) -> None:
+    from quant_os.readiness.canary_grade_manual_packet import build_canary_grade_manual_packet
+
+    reports = _manual_packet_source_reports()
+    reports["pnl"]["fake_gross_pnl"] = 5.0
+    reports["pnl"]["fake_net_pnl"] = 0.10
+    reports["readiness"]["fake_gross_pnl"] = 5.0
+    reports["readiness"]["fake_net_pnl"] = 0.10
+    _write_manual_packet_source_reports(local_project, reports)
+
+    packet = build_canary_grade_manual_packet(output_root=local_project)
+
+    assert packet["conflict_summary"]["status"] == "CONFLICT_DETECTOR_VETOED"
+    assert "EDGE_SMALLER_THAN_EXECUTION_UNCERTAINTY" in packet["conflict_summary"]["veto_reasons"]
+    assert packet["status"] == "FIRST_TINY_MANUAL_CANARY_PACKET_BLOCKED"
+    assert "CONFLICT_DETECTOR_NOT_PASSED" in packet["blockers"]
+
+
+def test_sequence62_manual_packet_reports_review_ready_not_armable_without_independent_repro(
+    local_project: Path,
+) -> None:
+    from quant_os.readiness.canary_grade_manual_packet import build_canary_grade_manual_packet
+
+    reports = _manual_packet_source_reports()
+    reports["fresh_repro"]["independent_clean_checkout_verified"] = False
+    reports["fresh_repro"]["attestation_scope"] = "same_worktree_command_completion"
+    _write_manual_packet_source_reports(local_project, reports)
+
+    packet = build_canary_grade_manual_packet(output_root=local_project)
+
+    assert packet["status"] == "REVIEW_READY_NOT_CANARY_ARMABLE"
+    assert packet["review_ready"] is True
+    assert packet["canary_armable"] is False
+    assert "INDEPENDENT_FRESH_WORKTREE_PROOF_NOT_AVAILABLE" in packet["blockers"]
 
 
 def test_sequence62_readiness_blocks_baseline_placebo_dominance_stress_and_repro() -> None:

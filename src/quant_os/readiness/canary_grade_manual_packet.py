@@ -29,8 +29,31 @@ def build_canary_grade_manual_packet(*, output_root: str | Path = ".") -> dict[s
         "reports/canary_grade_live_sim/crypto/latest_reconciliation.json",
         output_root=output_root,
     ) or {}
-    proven = readiness.get("status") == "CANARY_GRADE_LIVE_SIM_PROFITABILITY_PROVEN"
+    fresh_repro = load_json(
+        "reports/canary_grade_live_sim/fresh_repro/latest_fresh_repro.json",
+        output_root=output_root,
+    ) or {}
     conflict = _build_conflict_summary(readiness=readiness, capacity=capacity, pnl=pnl)
+    gate = _build_manual_packet_gate(
+        readiness=readiness,
+        repeatability=repeatability,
+        capacity=capacity,
+        pnl=pnl,
+        reconciliation=reconciliation,
+        conflict=conflict,
+        fresh_repro=fresh_repro,
+        safety_reports={
+            "readiness": readiness,
+            "repeatability": repeatability,
+            "capacity": capacity,
+            "observer": observer,
+            "intents": intents,
+            "fills": fills,
+            "pnl": pnl,
+            "reconciliation": reconciliation,
+            "fresh_repro": fresh_repro,
+        },
+    )
     final_review_pack = _build_final_review_pack(
         readiness=readiness,
         repeatability=repeatability,
@@ -41,10 +64,16 @@ def build_canary_grade_manual_packet(*, output_root: str | Path = ".") -> dict[s
         pnl=pnl,
         reconciliation=reconciliation,
         conflict=conflict,
+        fresh_repro=fresh_repro,
     )
     return canary_safe_payload(
         schema_version="canary_grade_manual_packet_v1",
-        status="FIRST_TINY_MANUAL_CANARY_PACKET_READY" if proven else "FIRST_TINY_MANUAL_CANARY_PACKET_BLOCKED",
+        status=gate["status"],
+        allowed_statuses=[
+            "FIRST_TINY_MANUAL_CANARY_PACKET_READY",
+            "REVIEW_READY_NOT_CANARY_ARMABLE",
+            "FIRST_TINY_MANUAL_CANARY_PACKET_BLOCKED",
+        ],
         candidate_summary={
             "market_family": "crypto_spot",
             "assets_tested": readiness.get("assets_tested", []),
@@ -63,7 +92,14 @@ def build_canary_grade_manual_packet(*, output_root: str | Path = ".") -> dict[s
             "max_safe_notional": capacity.get("max_safe_notional"),
             "capacity_by_size": capacity.get("capacity_by_size", {}),
         },
+        fresh_repro_summary={
+            "status": fresh_repro.get("status", "FRESH_REPRO_MISSING"),
+            "independent_clean_checkout_verified": fresh_repro.get("independent_clean_checkout_verified") is True,
+            "attestation_scope": fresh_repro.get("attestation_scope"),
+        },
         final_review_pack=final_review_pack,
+        review_ready=gate["review_ready"],
+        canary_armable=gate["canary_armable"],
         risk_envelope={
             "tiny_manual_canary_only": True,
             "margin": False,
@@ -80,10 +116,15 @@ def build_canary_grade_manual_packet(*, output_root: str | Path = ".") -> dict[s
         },
         kill_switch="manual_canary_kill_switch_required_before_any_separate_human_action",
         post_canary_reconciliation_command=".\\make.cmd canary-grade-live-sim-public-run",
-        blockers=[] if proven else ["CANARY_GRADE_READINESS_NOT_PROVEN"],
+        blockers=gate["blockers"],
+        exact_resume_command=".\\make.cmd canary-grade-live-sim-public-run",
         next_action="Human may review packet; no order is authorized or placed by this report."
-        if proven
-        else "Continue canary-grade hardening before manual packet review.",
+        if gate["status"] == "FIRST_TINY_MANUAL_CANARY_PACKET_READY"
+        else (
+            "Run independent fresh-worktree proof before any canary arming."
+            if gate["status"] == "REVIEW_READY_NOT_CANARY_ARMABLE"
+            else "Continue canary-grade hardening before manual packet review."
+        ),
     )
 
 
@@ -147,6 +188,7 @@ def _build_final_review_pack(
     pnl: dict[str, Any],
     reconciliation: dict[str, Any],
     conflict: dict[str, Any],
+    fresh_repro: dict[str, Any],
 ) -> dict[str, Any]:
     return {
         "selected_strategy_lane": {
@@ -190,6 +232,8 @@ def _build_final_review_pack(
             "conflict": conflict.get("status"),
             "capacity": capacity.get("status"),
             "readiness": readiness.get("status"),
+            "fresh_repro": fresh_repro.get("status", "FRESH_REPRO_MISSING"),
+            "independent_fresh_worktree": fresh_repro.get("independent_clean_checkout_verified") is True,
         },
         "dominance_checks": {
             "one_trade_dominance": repeatability.get("one_trade_dominance"),
@@ -248,6 +292,94 @@ def _build_final_review_pack(
             "Return to no-action monitoring with .\\make.cmd money-worthy-canary-grade-public-run.",
         ],
     }
+
+
+def _build_manual_packet_gate(
+    *,
+    readiness: dict[str, Any],
+    repeatability: dict[str, Any],
+    capacity: dict[str, Any],
+    pnl: dict[str, Any],
+    reconciliation: dict[str, Any],
+    conflict: dict[str, Any],
+    fresh_repro: dict[str, Any],
+    safety_reports: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    blockers: list[str] = []
+    if readiness.get("status") != "CANARY_GRADE_LIVE_SIM_PROFITABILITY_PROVEN":
+        blockers.append("CANARY_GRADE_READINESS_NOT_PROVEN")
+    if repeatability.get("status") != "REPEATABILITY_PASSED":
+        blockers.append("REPEATABILITY_NOT_PASSED")
+    if capacity.get("status") != "CAPACITY_TINY_CANARY_PASSED":
+        blockers.append("CAPACITY_TINY_CANARY_NOT_PASSED")
+    if reconciliation.get("status") != "CANARY_GRADE_RECONCILIATION_PASSED":
+        blockers.append("CANARY_GRADE_RECONCILIATION_NOT_PASSED")
+    if int(reconciliation.get("reconciliation_failures") or 0) != 0:
+        blockers.append("RECONCILIATION_FAILURES_PRESENT")
+    if conflict.get("status") != "CONFLICT_DETECTOR_PASSED":
+        blockers.append("CONFLICT_DETECTOR_NOT_PASSED")
+    if float(readiness.get("fake_net_pnl") or 0.0) <= 0.0 or float(pnl.get("fake_net_pnl") or 0.0) <= 0.0:
+        blockers.append("FAKE_NET_PNL_NOT_POSITIVE")
+    if readiness.get("baseline_beaten") is not True:
+        blockers.append("BASELINE_NOT_BEATEN")
+    if readiness.get("placebo_beaten") is not True:
+        blockers.append("PLACEBO_NOT_BEATEN")
+    blockers.extend(_safety_blockers(safety_reports))
+
+    fresh_repro_blocker = None
+    independent_fresh_repro = (
+        fresh_repro.get("status") == "FRESH_REPRO_PASSED"
+        and fresh_repro.get("independent_clean_checkout_verified") is True
+    )
+    if not independent_fresh_repro:
+        fresh_repro_blocker = "INDEPENDENT_FRESH_WORKTREE_PROOF_NOT_AVAILABLE"
+        blockers.append(fresh_repro_blocker)
+
+    blockers = list(dict.fromkeys(blockers))
+    hard_blockers = [blocker for blocker in blockers if blocker != fresh_repro_blocker]
+    if not blockers:
+        status = "FIRST_TINY_MANUAL_CANARY_PACKET_READY"
+    elif not hard_blockers and fresh_repro_blocker:
+        status = "REVIEW_READY_NOT_CANARY_ARMABLE"
+    else:
+        status = "FIRST_TINY_MANUAL_CANARY_PACKET_BLOCKED"
+    return {
+        "status": status,
+        "blockers": blockers,
+        "review_ready": status in {"FIRST_TINY_MANUAL_CANARY_PACKET_READY", "REVIEW_READY_NOT_CANARY_ARMABLE"},
+        "canary_armable": status == "FIRST_TINY_MANUAL_CANARY_PACKET_READY",
+    }
+
+
+def _safety_blockers(reports: dict[str, dict[str, Any]]) -> list[str]:
+    blockers: list[str] = []
+    expected_false = [
+        "live_trading_enabled",
+        "order_transmission_enabled",
+        "authenticated_requests_enabled",
+        "request_signing_enabled",
+        "api_keys_loaded",
+        "private_keys_loaded",
+        "authenticated_endpoint_called",
+        "checked_account_balance",
+        "checked_portfolio",
+    ]
+    expected_zero = [
+        "actual_order_count",
+        "actual_cancel_count",
+        "unsafe_action_attempts",
+        "auth_key_order_attempts",
+    ]
+    for name, payload in reports.items():
+        for key in expected_false:
+            if payload.get(key) is True:
+                blockers.append(f"UNSAFE_FLAG_TRUE:{name}:{key}")
+        for key in expected_zero:
+            if int(payload.get(key) or 0) != 0:
+                blockers.append(f"UNSAFE_COUNTER_NONZERO:{name}:{key}")
+        if payload.get("execution_authority") not in {None, "NONE"}:
+            blockers.append(f"EXECUTION_AUTHORITY_NOT_NONE:{name}")
+    return blockers
 
 
 def _manual_review_markdown(payload: dict[str, Any]) -> str:
