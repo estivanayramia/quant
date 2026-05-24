@@ -1732,6 +1732,8 @@ if "%TARGET%"=="money-worthy-canary-grade-smoke" (
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli readiness money-worthy-canary-grade
   if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness canary-grade-armability
+  if errorlevel 1 exit /b !ERRORLEVEL!
   python -m pytest tests/test_sequence65_money_worthy_canary_grade.py
   exit /b !ERRORLEVEL!
 )
@@ -1743,6 +1745,8 @@ if "%TARGET%"=="money-worthy-canary-grade-public-run" (
   python -m quant_os.cli readiness autonomous-no-transmit-execution-rehearsal
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m quant_os.cli readiness money-worthy-canary-grade
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness canary-grade-armability
   exit /b !ERRORLEVEL!
 )
 if "%TARGET%"=="sequence62-smoke" (

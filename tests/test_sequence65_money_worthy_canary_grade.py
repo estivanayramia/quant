@@ -32,9 +32,19 @@ def _seed_rehearsal(root: Path, *, unsafe: bool = False) -> None:
         "reports/autonomous_live_fire_drill/final/latest_fire_drill_readiness.json",
         {
             **common,
-            "status": "AUTONOMOUS_LIVE_FIRE_DRILL_READY_AWAITING_HUMAN_CREDENTIALS_AND_ARMING",
+            "status": "FIRE_DRILL_BLOCKED_BY_AUDIT",
             "no_executable_real_order_path_exists": True,
         },
+    )
+    _write_json(
+        root,
+        "reports/autonomous_live_fire_drill/watcher/latest_watcher.json",
+        {**common, "status": "AUTONOMOUS_WATCHER_NO_ELIGIBLE_MARKET"},
+    )
+    _write_json(
+        root,
+        "reports/autonomous_live_fire_drill/decision/latest_decision.json",
+        {**common, "status": "AUTONOMOUS_DECISION_NO_TRADE"},
     )
     _write_json(
         root,
@@ -66,6 +76,11 @@ def _seed_rehearsal(root: Path, *, unsafe: bool = False) -> None:
     )
     _write_json(
         root,
+        "reports/autonomous_live_fire_drill/post_trade/latest_post_trade_report.json",
+        {**common, "status": "POST_TRADE_REPORT_READY"},
+    )
+    _write_json(
+        root,
         "reports/autonomous_live_fire_drill/risk/latest_risk.json",
         {**common, "status": "FIRE_DRILL_RISK_PASSED", "kill_switch_status": "FIRE_DRILL_KILL_SWITCH_PASSED"},
     )
@@ -77,7 +92,17 @@ def _seed_rehearsal(root: Path, *, unsafe: bool = False) -> None:
     _write_json(
         root,
         "reports/autonomous_live_fire_drill/scenarios/latest_scenarios.json",
-        {**common, "status": "FIRE_DRILL_SCENARIOS_PASSED"},
+        {
+            **common,
+            "status": "FIRE_DRILL_SCENARIOS_PASSED",
+            "scenarios": [
+                {"name": "timeout_self_disable", "status": "PASSED"},
+                {"name": "exception_path_self_disable", "status": "PASSED"},
+                {"name": "reconciliation_mismatch_kill_switch", "status": "PASSED"},
+                {"name": "attempted_auth_endpoint_call", "status": "PASSED"},
+                {"name": "live_flag_true", "status": "PASSED"},
+            ],
+        },
     )
 
 
@@ -156,6 +181,18 @@ def _seed_canary(root: Path, *, fake_net_pnl: float = 0.65, baseline: bool = Tru
             ],
         },
     )
+    _write_json(
+        root,
+        "reports/canary_grade_live_sim/fresh_repro/latest_fresh_repro.json",
+        {
+            **common,
+            "status": "INDEPENDENT_FRESH_WORKTREE_PROOF_PASSED",
+            "independent_fresh_worktree_proof_status": "INDEPENDENT_FRESH_WORKTREE_PROOF_PASSED",
+            "independent_clean_checkout_verified": True,
+            "attestation_scope": "independent_clean_worktree_public_network",
+            "proof_command_passed": True,
+        },
+    )
 
 
 def test_sequence65_no_transmit_execution_rehearsal_passes_and_blocks_unsafe(
@@ -210,6 +247,46 @@ def test_sequence65_money_worthy_canary_grade_requires_profit_packet_and_rehears
     assert "FAKE_NET_PNL_NOT_POSITIVE" in not_proven["blockers"]
 
 
+def test_sequence65_armability_requires_money_packet_rehearsal_and_independent_proof(
+    local_project: Path,
+) -> None:
+    from quant_os.readiness.autonomous_no_transmit_execution_rehearsal import (
+        write_autonomous_no_transmit_execution_rehearsal_report,
+    )
+    from quant_os.readiness.canary_grade_armability import build_canary_grade_armability
+    from quant_os.readiness.money_worthy_canary_grade import write_money_worthy_canary_grade_report
+
+    _seed_canary(local_project)
+    _seed_rehearsal(local_project)
+    write_autonomous_no_transmit_execution_rehearsal_report(output_root=local_project)
+    write_money_worthy_canary_grade_report(output_root=local_project)
+
+    armable = build_canary_grade_armability(output_root=local_project)
+
+    assert armable["status"] == "ARMABLE_FOR_HUMAN_GOVERNED_AUTONOMOUS_EXECUTION_REVIEW"
+    assert armable["money_worthy_status"] == "MONEY_WORTHY_CANARY_GRADE_PROFITABILITY_PROVEN"
+    assert armable["manual_packet_status"] == "FIRST_TINY_MANUAL_CANARY_PACKET_READY"
+    assert armable["no_transmit_execution_rehearsal_status"] == "AUTONOMOUS_NO_TRANSMIT_EXECUTION_REHEARSAL_PASSED"
+    assert armable["independent_fresh_worktree_proof_status"] == "INDEPENDENT_FRESH_WORKTREE_PROOF_PASSED"
+    assert armable["live_trading_enabled"] is False
+    assert armable["order_transmission_enabled"] is False
+    assert armable["actual_order_count"] == 0
+
+    fresh_path = (
+        local_project
+        / "reports/canary_grade_live_sim/fresh_repro/latest_fresh_repro.json"
+    )
+    fresh = json.loads(fresh_path.read_text(encoding="utf-8"))
+    fresh["independent_clean_checkout_verified"] = False
+    fresh["independent_fresh_worktree_proof_status"] = "INDEPENDENT_FRESH_WORKTREE_PROOF_BLOCKED"
+    fresh_path.write_text(json.dumps(fresh), encoding="utf-8")
+
+    blocked = build_canary_grade_armability(output_root=local_project)
+
+    assert blocked["status"] == "ARMABILITY_BLOCKED"
+    assert "INDEPENDENT_FRESH_WORKTREE_PROOF_NOT_PASSED" in blocked["blockers"]
+
+
 def test_sequence65_cli_make_targets_are_data_only(local_project: Path) -> None:
     _seed_canary(local_project)
     _seed_rehearsal(local_project)
@@ -217,6 +294,7 @@ def test_sequence65_cli_make_targets_are_data_only(local_project: Path) -> None:
     commands = [
         [sys.executable, "-m", "quant_os.cli", "readiness", "autonomous-no-transmit-execution-rehearsal"],
         [sys.executable, "-m", "quant_os.cli", "readiness", "money-worthy-canary-grade"],
+        [sys.executable, "-m", "quant_os.cli", "readiness", "canary-grade-armability"],
     ]
     for command in commands:
         result = subprocess.run(command, cwd=local_project, capture_output=True, text=True, check=False)
@@ -229,3 +307,4 @@ def test_sequence65_cli_make_targets_are_data_only(local_project: Path) -> None:
     assert 'if "%TARGET%"=="money-worthy-canary-grade-smoke"' in make_cmd
     assert 'if "%TARGET%"=="money-worthy-canary-grade-public-run"' in make_cmd
     assert 'if "%TARGET%"=="sequence65-smoke"' in make_cmd
+    assert "canary-grade-armability" in make_cmd

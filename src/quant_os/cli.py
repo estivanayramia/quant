@@ -6618,6 +6618,12 @@ def readiness_canary_grade_live_sim() -> None:
 def readiness_canary_grade_fresh_repro(
     proof_command_passed: bool = typer.Option(False, "--proof-command-passed"),
     proof_command: str = typer.Option(".\\make.cmd canary-grade-live-sim-smoke", "--proof-command"),
+    proof_output_root: str | None = typer.Option(None, "--proof-output-root"),
+    independent_clean_checkout_verified: bool = typer.Option(
+        False,
+        "--independent-clean-checkout-verified",
+    ),
+    proof_head_oid: str | None = typer.Option(None, "--proof-head-oid"),
 ) -> None:
     from quant_os.readiness.canary_grade_fresh_repro import (
         write_canary_grade_fresh_repro_report,
@@ -6627,6 +6633,9 @@ def readiness_canary_grade_fresh_repro(
         output_root=Path("."),
         proof_command_passed=proof_command_passed,
         proof_command=proof_command,
+        proof_output_root=proof_output_root,
+        independent_clean_checkout_verified=independent_clean_checkout_verified,
+        proof_head_oid=proof_head_oid,
     )
     print(
         {
@@ -6693,6 +6702,31 @@ def readiness_money_worthy_canary_grade() -> None:
                 "no_transmit_execution_rehearsal_status"
             ],
             "report": "reports/canary_grade_live_sim/money_worthy/latest_money_worthy_canary_grade.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("canary-grade-armability")
+def readiness_canary_grade_armability() -> None:
+    from quant_os.readiness.canary_grade_armability import (
+        write_canary_grade_armability_report,
+    )
+
+    payload = write_canary_grade_armability_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "money_worthy_status": payload["money_worthy_status"],
+            "manual_packet_status": payload["manual_packet_status"],
+            "no_transmit_execution_rehearsal_status": payload[
+                "no_transmit_execution_rehearsal_status"
+            ],
+            "independent_fresh_worktree_proof_status": payload[
+                "independent_fresh_worktree_proof_status"
+            ],
+            "report": "reports/canary_grade_live_sim/armability/latest_armability.json",
             "live_trading_enabled": payload["live_trading_enabled"],
             "execution_authority": payload["execution_authority"],
         }

@@ -328,7 +328,8 @@ def _build_manual_packet_gate(
 
     fresh_repro_blocker = None
     independent_fresh_repro = (
-        fresh_repro.get("status") == "FRESH_REPRO_PASSED"
+        fresh_repro.get("status")
+        in {"FRESH_REPRO_PASSED", "INDEPENDENT_FRESH_WORKTREE_PROOF_PASSED"}
         and fresh_repro.get("independent_clean_checkout_verified") is True
     )
     if not independent_fresh_repro:

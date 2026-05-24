@@ -14,9 +14,12 @@ SUCCESS = "AUTONOMOUS_NO_TRANSMIT_EXECUTION_REHEARSAL_PASSED"
 
 REPORTS = {
     "fire_drill": "reports/autonomous_live_fire_drill/final/latest_fire_drill_readiness.json",
+    "watcher": "reports/autonomous_live_fire_drill/watcher/latest_watcher.json",
+    "decision": "reports/autonomous_live_fire_drill/decision/latest_decision.json",
     "intent": "reports/autonomous_live_fire_drill/no_transmit_intent/latest_intent.json",
     "mock_lifecycle": "reports/autonomous_live_fire_drill/mock_lifecycle/latest_mock_lifecycle.json",
     "fake_execution": "reports/autonomous_live_fire_drill/fake_execution/latest_fake_execution.json",
+    "post_trade": "reports/autonomous_live_fire_drill/post_trade/latest_post_trade_report.json",
     "risk": "reports/autonomous_live_fire_drill/risk/latest_risk.json",
     "reconciliation": "reports/autonomous_live_fire_drill/reconciliation/latest_reconciliation.json",
     "scenarios": "reports/autonomous_live_fire_drill/scenarios/latest_scenarios.json",
@@ -33,14 +36,20 @@ def build_autonomous_no_transmit_execution_rehearsal(
     gate_statuses = {name: payload.get("status") for name, payload in reports.items()}
     blockers: list[str] = []
 
-    if gate_statuses["fire_drill"] != "AUTONOMOUS_LIVE_FIRE_DRILL_READY_AWAITING_HUMAN_CREDENTIALS_AND_ARMING":
-        blockers.append("AUTONOMOUS_FIRE_DRILL_NOT_READY")
+    if reports["fire_drill"].get("no_executable_real_order_path_exists") is not True:
+        blockers.append("EXECUTABLE_REAL_ORDER_PATH_NOT_EXCLUDED")
+    if gate_statuses["watcher"] not in {"AUTONOMOUS_WATCHER_READY", "AUTONOMOUS_WATCHER_NO_ELIGIBLE_MARKET"}:
+        blockers.append("WATCHER_NOT_READY")
+    if gate_statuses["decision"] not in {"AUTONOMOUS_DECISION_READY", "AUTONOMOUS_DECISION_NO_TRADE"}:
+        blockers.append("DECISION_NOT_READY")
     if gate_statuses["intent"] not in {"NO_TRANSMIT_INTENT_READY", "NO_TRANSMIT_INTENT_NO_TRADE"}:
         blockers.append("NO_TRANSMIT_INTENT_NOT_READY")
     if gate_statuses["mock_lifecycle"] != "MOCK_ORDER_LIFECYCLE_PASSED":
         blockers.append("MOCK_ORDER_LIFECYCLE_NOT_PASSED")
     if gate_statuses["fake_execution"] not in {"FAKE_EXECUTION_PASSED", "FAKE_EXECUTION_NO_TRADE"}:
         blockers.append("FAKE_EXECUTION_NOT_PASSED")
+    if gate_statuses["post_trade"] != "POST_TRADE_REPORT_READY":
+        blockers.append("POST_TRADE_REPORT_NOT_READY")
     if gate_statuses["risk"] != "FIRE_DRILL_RISK_PASSED":
         blockers.append("RISK_NOT_PASSED")
     if reports["risk"].get("kill_switch_status") != "FIRE_DRILL_KILL_SWITCH_PASSED":
@@ -49,6 +58,20 @@ def build_autonomous_no_transmit_execution_rehearsal(
         blockers.append("RECONCILIATION_NOT_PASSED")
     if gate_statuses["scenarios"] != "FIRE_DRILL_SCENARIOS_PASSED":
         blockers.append("SCENARIOS_NOT_PASSED")
+    scenario_names = {
+        str(row.get("name"))
+        for row in reports["scenarios"].get("scenarios", [])
+        if row.get("status") == "PASSED"
+    }
+    for required in {
+        "timeout_self_disable",
+        "exception_path_self_disable",
+        "reconciliation_mismatch_kill_switch",
+        "attempted_auth_endpoint_call",
+        "live_flag_true",
+    }:
+        if required not in scenario_names:
+            blockers.append(f"SELF_DISABLE_SCENARIO_MISSING:{required}")
 
     blockers.extend(_safety_blockers(reports))
     blockers = list(dict.fromkeys(blockers))
@@ -64,6 +87,10 @@ def build_autonomous_no_transmit_execution_rehearsal(
         ],
         blockers=blockers,
         gate_statuses=gate_statuses,
+        fire_drill_status=gate_statuses["fire_drill"],
+        watcher_status=gate_statuses["watcher"],
+        decision_status=gate_statuses["decision"],
+        post_trade_status=gate_statuses["post_trade"],
         no_transmit_intent_status=gate_statuses["intent"],
         fake_execution_status=gate_statuses["fake_execution"],
         fake_order_state=fake_execution.get("fake_order_state"),
@@ -120,8 +147,15 @@ def _safety_blockers(reports: dict[str, dict[str, Any]]) -> list[str]:
         "api_keys_loaded",
         "private_keys_loaded",
         "authenticated_endpoint_called",
+        "checked_account_balance",
+        "checked_portfolio",
     ]
-    expected_zero = ["actual_order_count", "actual_cancel_count"]
+    expected_zero = [
+        "actual_order_count",
+        "actual_cancel_count",
+        "unsafe_action_attempts",
+        "auth_key_order_attempts",
+    ]
     for name, payload in reports.items():
         for key in expected_false:
             if payload.get(key) is True:

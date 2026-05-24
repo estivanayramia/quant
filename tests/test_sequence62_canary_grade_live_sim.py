@@ -274,6 +274,86 @@ def test_sequence62_canary_grade_pipeline_proves_large_fixture(local_project: Pa
     assert not any(term in packet_md for term in forbidden_packet_terms)
 
 
+def test_sequence62_fresh_repro_verifies_independent_public_worktree_reports(
+    local_project: Path,
+) -> None:
+    from quant_os.readiness.canary_grade_fresh_repro import (
+        write_canary_grade_fresh_repro_report,
+    )
+
+    proof_root = local_project / "independent-proof"
+    reports = _manual_packet_source_reports()
+    reports["observer"]["source"] = "kraken_public_rest_unauthenticated_recent_ohlc"
+    reports["observer"]["source_policy"] = "public_read_only_unauthenticated"
+    reports["readiness"]["status"] = "CANARY_GRADE_LIVE_SIM_PROFITABILITY_PROVEN"
+    reports["pnl"]["pnl_rows"] = [
+        {
+            "entry_timestamp": "2026-05-24T01:00:00Z",
+            "mark_timestamp": "2026-05-24T01:01:00Z",
+        }
+    ]
+    _write_manual_packet_source_reports(proof_root, reports)
+    _write_report(
+        proof_root,
+        "reports/canary_grade_live_sim/crypto/latest_ledger.json",
+        {**reports["fills"], "status": "CANARY_GRADE_LEDGER_UPDATED"},
+    )
+
+    fresh = write_canary_grade_fresh_repro_report(
+        output_root=local_project,
+        proof_command_passed=True,
+        proof_command=".\\make.cmd money-worthy-canary-grade-public-run",
+        proof_output_root=str(proof_root),
+        independent_clean_checkout_verified=True,
+        proof_head_oid="abc123",
+    )
+
+    assert fresh["status"] == "INDEPENDENT_FRESH_WORKTREE_PROOF_PASSED"
+    assert fresh["independent_fresh_worktree_proof_status"] == (
+        "INDEPENDENT_FRESH_WORKTREE_PROOF_PASSED"
+    )
+    assert fresh["independent_clean_checkout_verified"] is True
+    assert fresh["proof_output_root"] == str(proof_root)
+    assert fresh["public_data_source"] == "kraken_public_rest_unauthenticated_recent_ohlc"
+    assert fresh["blockers"] == []
+
+
+def test_sequence62_fresh_repro_blocks_independent_fixture_or_losing_proof(
+    local_project: Path,
+) -> None:
+    from quant_os.readiness.canary_grade_fresh_repro import (
+        write_canary_grade_fresh_repro_report,
+    )
+
+    proof_root = local_project / "losing-proof"
+    reports = _manual_packet_source_reports()
+    reports["observer"]["source"] = "fixture_public_canary_grade_kraken_shape"
+    reports["readiness"]["status"] = "CANARY_GRADE_LIVE_SIM_NOT_PROVEN"
+    reports["readiness"]["fake_net_pnl"] = -0.1
+    reports["pnl"]["fake_net_pnl"] = -0.1
+    _write_manual_packet_source_reports(proof_root, reports)
+    _write_report(
+        proof_root,
+        "reports/canary_grade_live_sim/crypto/latest_ledger.json",
+        {**reports["fills"], "status": "CANARY_GRADE_LEDGER_UPDATED"},
+    )
+
+    fresh = write_canary_grade_fresh_repro_report(
+        output_root=local_project,
+        proof_command_passed=True,
+        proof_command=".\\make.cmd money-worthy-canary-grade-public-run",
+        proof_output_root=str(proof_root),
+        independent_clean_checkout_verified=True,
+    )
+
+    assert fresh["status"] == "FRESH_REPRO_BLOCKED"
+    assert fresh["independent_fresh_worktree_proof_status"] == (
+        "INDEPENDENT_FRESH_WORKTREE_PROOF_BLOCKED"
+    )
+    assert "INDEPENDENT_PROOF_READINESS_NOT_PROVEN" in fresh["blockers"]
+    assert "INDEPENDENT_PROOF_NOT_REAL_PUBLIC_KRAKEN" in fresh["blockers"]
+
+
 def test_sequence62_manual_packet_requires_direct_gate_statuses(local_project: Path) -> None:
     from quant_os.readiness.canary_grade_manual_packet import build_canary_grade_manual_packet
 

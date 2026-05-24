@@ -80,7 +80,10 @@ def build_canary_grade_live_sim_readiness(
         blockers.append("DELAYED_ENTRY_STRESS_FAILED")
     if capacity.get("status") != "CAPACITY_TINY_CANARY_PASSED":
         blockers.append("CAPACITY_TINY_CANARY_NOT_PASSED")
-    if fresh_repro.get("status") != "FRESH_REPRO_PASSED":
+    if fresh_repro.get("status") not in {
+        "FRESH_REPRO_PASSED",
+        "INDEPENDENT_FRESH_WORKTREE_PROOF_PASSED",
+    }:
         blockers.append("FRESH_WORKTREE_REPRO_NOT_PASSED")
     if state.get("hidden_local_state_dependency"):
         blockers.append("HIDDEN_LOCAL_STATE_DEPENDENCY")
