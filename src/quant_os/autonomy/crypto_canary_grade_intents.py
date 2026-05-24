@@ -17,7 +17,7 @@ CANARY_PROOF_MARK_HORIZONS = {15, 60}
 CANARY_PROOF_EXCLUDED_SESSION_BUCKETS = {"session_5"}
 CANARY_MIN_PUBLIC_DEPTH_NOTIONAL = 1.0
 CANARY_SIGNAL_QUALITY_GATE = (
-    "public_positive_depth_safe_kraken_60m_reversion_15m_momentum_dip_v4"
+    "public_positive_depth_safe_kraken_cross_snapshot_60m_reversion_15m_momentum_dip_v6"
 )
 CANARY_REVERSION_60M_SYMBOLS = {
     "AKT/USD",
@@ -26,41 +26,24 @@ CANARY_REVERSION_60M_SYMBOLS = {
     "CC/USD",
     "FUN/USD",
     "HYPE/USD",
-    "ICP/USD",
     "MOODENG/USD",
     "ONDO/USD",
-    "QNT/USD",
     "TRX/USD",
     "VVV/USD",
-    "XLM/USD",
     "XMR/USD",
 }
 CANARY_MOMENTUM_15M_SYMBOLS = {
-    "CHIP/USD",
-    "ETH/USD",
     "GIGA/USD",
     "HYPE/USD",
     "ICP/USD",
-    "IN/USD",
-    "JTO/USD",
-    "POL/USD",
     "VVV/USD",
-    "XRP/USD",
 }
 CANARY_DIP_REVERSION_15M_SYMBOLS = {
-    "CFG/USD",
     "DASH/USD",
-    "DOGE/USD",
-    "DOT/USD",
-    "FHE/USD",
-    "FUN/USD",
     "KAS/USD",
     "PLUME/USD",
     "TRX/USD",
-    "VIRTUAL/USD",
     "VVV/USD",
-    "WLD/USD",
-    "XTZ/USD",
 }
 
 

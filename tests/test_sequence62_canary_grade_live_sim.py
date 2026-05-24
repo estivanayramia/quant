@@ -777,7 +777,7 @@ def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() ->
 def test_sequence62_canary_intents_require_signal_quality_gate() -> None:
     from quant_os.autonomy.crypto_canary_grade_intents import build_crypto_canary_grade_intents
 
-    gate = "public_positive_depth_safe_kraken_60m_reversion_15m_momentum_dip_v4"
+    gate = "public_positive_depth_safe_kraken_cross_snapshot_60m_reversion_15m_momentum_dip_v6"
     base = {
         "symbol": "VVV/USD",
         "strategy": "crypto_spot_momentum_reversion_intraday",
@@ -853,7 +853,7 @@ def test_sequence62_canary_intents_require_signal_quality_gate() -> None:
 def test_sequence62_canary_intents_reject_signals_below_conservative_cost_hurdle() -> None:
     from quant_os.autonomy.crypto_canary_grade_intents import build_crypto_canary_grade_intents
 
-    gate = "public_positive_depth_safe_kraken_60m_reversion_15m_momentum_dip_v4"
+    gate = "public_positive_depth_safe_kraken_cross_snapshot_60m_reversion_15m_momentum_dip_v6"
     base = {
         "symbol": "VVV/USD",
         "strategy": "crypto_spot_momentum_reversion_intraday",
