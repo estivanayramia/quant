@@ -15,35 +15,52 @@ from quant_os.readiness.canary_readiness_common import write_json_markdown_repor
 REPORT_DIR = ROOT / "crypto"
 CANARY_PROOF_MARK_HORIZONS = {15, 60}
 CANARY_PROOF_EXCLUDED_SESSION_BUCKETS = {"session_5"}
+CANARY_MIN_PUBLIC_DEPTH_NOTIONAL = 1.0
 CANARY_SIGNAL_QUALITY_GATE = (
-    "broad_kraken_60m_reversion_plus_selected_15m_momentum_cost_hurdled_no_session5"
+    "public_positive_depth_safe_kraken_60m_reversion_15m_momentum_dip_v4"
 )
 CANARY_REVERSION_60M_SYMBOLS = {
-    "ADA/USD",
     "AKT/USD",
-    "BCH/USD",
+    "AVAX/USD",
     "BILL/USD",
-    "BNB/USD",
-    "BTC/USD",
-    "DASH/USD",
-    "DOGE/USD",
-    "ETH/USD",
+    "CC/USD",
     "FUN/USD",
     "HYPE/USD",
     "ICP/USD",
-    "MNT/USD",
-    "PLUME/USD",
-    "POL/USD",
-    "RED/USD",
+    "MOODENG/USD",
+    "ONDO/USD",
+    "QNT/USD",
     "TRX/USD",
-    "WLD/USD",
-    "XRP/USD",
-    "XTZ/USD",
+    "VVV/USD",
+    "XLM/USD",
+    "XMR/USD",
 }
 CANARY_MOMENTUM_15M_SYMBOLS = {
-    "FUN/USD",
+    "CHIP/USD",
+    "ETH/USD",
+    "GIGA/USD",
     "HYPE/USD",
-    "MNT/USD",
+    "ICP/USD",
+    "IN/USD",
+    "JTO/USD",
+    "POL/USD",
+    "VVV/USD",
+    "XRP/USD",
+}
+CANARY_DIP_REVERSION_15M_SYMBOLS = {
+    "CFG/USD",
+    "DASH/USD",
+    "DOGE/USD",
+    "DOT/USD",
+    "FHE/USD",
+    "FUN/USD",
+    "KAS/USD",
+    "PLUME/USD",
+    "TRX/USD",
+    "VIRTUAL/USD",
+    "VVV/USD",
+    "WLD/USD",
+    "XTZ/USD",
 }
 
 
@@ -146,10 +163,20 @@ def _passes_canary_signal_quality_gate(observation: dict[str, Any]) -> bool:
         and "momentum" in strategy
         and raw_ret > 0.0
     )
-    if not (reversion_sleeve or momentum_sleeve):
+    dip_reversion_sleeve = (
+        horizon == 15
+        and symbol in CANARY_DIP_REVERSION_15M_SYMBOLS
+        and "momentum" in strategy
+        and raw_ret < 0.0
+    )
+    if not (reversion_sleeve or momentum_sleeve or dip_reversion_sleeve):
         return False
     entry = float(observation.get("entry_price") or 0.0)
     if entry <= 0.0:
+        return False
+    ask_size = float(observation.get("ask_size") or 0.0)
+    public_depth_notional = float(observation.get("public_depth_notional") or ask_size * entry)
+    if public_depth_notional < CANARY_MIN_PUBLIC_DEPTH_NOTIONAL:
         return False
     notional_usd = 1.0
     quantity = notional_usd / entry
@@ -170,7 +197,11 @@ def _canary_side_for_observation(observation: dict[str, Any]) -> str | None:
     if "liquidity_shock_reversion" in strategy:
         return "buy" if ret < 0.0 else None
     if "momentum" in strategy:
-        if ret > 0.0 and (ret > 0.001 or observation.get("session_bucket") == "session_0"):
+        horizon = int(observation.get("mark_horizon_minutes") or 0)
+        symbol = str(observation.get("symbol") or "")
+        if horizon == 15 and symbol in CANARY_DIP_REVERSION_15M_SYMBOLS and ret < 0.0:
+            return "buy"
+        if horizon == 15 and symbol in CANARY_MOMENTUM_15M_SYMBOLS and ret > 0.0:
             return "buy"
         return None
     if "reversion" in strategy or "reversal" in strategy or "snapback" in strategy:

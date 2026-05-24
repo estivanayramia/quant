@@ -675,13 +675,13 @@ def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() ->
         "observations": [
             {
                 "observation_id": "obs_momentum_down",
-                "symbol": "HYPE/USD",
+                "symbol": "VVV/USD",
                 "strategy": "crypto_spot_momentum_reversion_intraday",
                 "venue": "kraken_public",
                 "entry_timestamp": "2026-05-23T10:00:00Z",
                 "entry_price": 100.0,
-                "mark_timestamp": "2026-05-23T11:00:00Z",
-                "mark_horizon_minutes": 60,
+                "mark_timestamp": "2026-05-23T10:15:00Z",
+                "mark_horizon_minutes": 15,
                 "mark_price": 101.0,
                 "return_1m": -0.01,
                 "spread": 0.02,
@@ -693,7 +693,7 @@ def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() ->
             },
             {
                 "observation_id": "obs_momentum_up",
-                "symbol": "HYPE/USD",
+                "symbol": "VVV/USD",
                 "strategy": "crypto_spot_momentum_reversion_intraday",
                 "venue": "kraken_public",
                 "entry_timestamp": "2026-05-23T10:01:00Z",
@@ -711,7 +711,7 @@ def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() ->
             },
             {
                 "observation_id": "obs_momentum_up_other_session",
-                "symbol": "HYPE/USD",
+                "symbol": "VVV/USD",
                 "strategy": "crypto_spot_momentum_reversion_intraday",
                 "venue": "kraken_public",
                 "entry_timestamp": "2026-05-23T10:01:30Z",
@@ -729,7 +729,7 @@ def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() ->
             },
             {
                 "observation_id": "obs_breakout_down",
-                "symbol": "ETH/USD",
+                "symbol": "HYPE/USD",
                 "strategy": "crypto_spot_liquidity_shock_reversion_long_only",
                 "venue": "kraken_public",
                 "entry_timestamp": "2026-05-23T10:02:00Z",
@@ -756,7 +756,9 @@ def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() ->
 
     sides = {intent["observation_id"]: intent["side"] for intent in intents["intents"]}
     assert sides == {
+        "obs_momentum_down": "buy",
         "obs_momentum_up": "buy",
+        "obs_momentum_up_other_session": "buy",
         "obs_breakout_down": "buy",
     }
     assert all("return_1m" in intent for intent in intents["intents"])
@@ -765,17 +767,19 @@ def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() ->
     assert all("return_1m" in fill for fill in fills["fake_fills"])
     assert all("mark_horizon_minutes" in fill for fill in fills["fake_fills"])
     assert fills["fake_fills"][0]["quantity"] == 0.01
-    assert fills["fake_fills"][1]["quantity"] == 0.02
-    assert fills["fake_fill_count"] == 2
+    assert fills["fake_fills"][1]["quantity"] == 0.01
+    assert fills["fake_fills"][2]["quantity"] == 0.01
+    assert fills["fake_fills"][3]["quantity"] == 0.02
+    assert fills["fake_fill_count"] == 4
     assert fills["fake_no_fill_count"] == 0
 
 
 def test_sequence62_canary_intents_require_signal_quality_gate() -> None:
     from quant_os.autonomy.crypto_canary_grade_intents import build_crypto_canary_grade_intents
 
-    gate = "broad_kraken_60m_reversion_plus_selected_15m_momentum_cost_hurdled_no_session5"
+    gate = "public_positive_depth_safe_kraken_60m_reversion_15m_momentum_dip_v4"
     base = {
-        "symbol": "HYPE/USD",
+        "symbol": "VVV/USD",
         "strategy": "crypto_spot_momentum_reversion_intraday",
         "venue": "kraken_public",
         "entry_price": 100.0,
@@ -836,7 +840,10 @@ def test_sequence62_canary_intents_require_signal_quality_gate() -> None:
 
     payload = build_crypto_canary_grade_intents(observer=observer)
 
-    assert [intent["observation_id"] for intent in payload["intents"]] == ["obs_trade"]
+    assert [intent["observation_id"] for intent in payload["intents"]] == [
+        "obs_trade",
+        "obs_other_session",
+    ]
     assert (
         payload["intents"][0]["signal_quality_gate"]
         == gate
@@ -846,9 +853,9 @@ def test_sequence62_canary_intents_require_signal_quality_gate() -> None:
 def test_sequence62_canary_intents_reject_signals_below_conservative_cost_hurdle() -> None:
     from quant_os.autonomy.crypto_canary_grade_intents import build_crypto_canary_grade_intents
 
-    gate = "broad_kraken_60m_reversion_plus_selected_15m_momentum_cost_hurdled_no_session5"
+    gate = "public_positive_depth_safe_kraken_60m_reversion_15m_momentum_dip_v4"
     base = {
-        "symbol": "HYPE/USD",
+        "symbol": "VVV/USD",
         "strategy": "crypto_spot_momentum_reversion_intraday",
         "venue": "kraken_public",
         "entry_price": 100.0,

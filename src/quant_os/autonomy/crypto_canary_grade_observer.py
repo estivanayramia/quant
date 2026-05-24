@@ -180,14 +180,25 @@ def fixture_canary_snapshot() -> dict[str, Any]:
         "ETH/USD": 60.0,
         "SOL/USD": 30.0,
         "XRP/USD": 10.0,
+        "AKT/USD": 35.0,
+        "BILL/USD": 45.0,
+        "CC/USD": 25.0,
+        "EIGEN/USD": 12.0,
+        "GIGA/USD": 15.0,
         "HYPE/USD": 80.0,
+        "JTO/USD": 28.0,
+        "MORPHO/USD": 55.0,
         "ONDO/USD": 40.0,
+        "PLUME/USD": 18.0,
+        "RED/USD": 22.0,
         "RENDER/USD": 20.0,
         "FUN/USD": 20.0,
+        "VVV/USD": 70.0,
+        "WLD/USD": 8.0,
     }
     for asset_index, (symbol, base) in enumerate(bases.items()):
         candles = []
-        for idx in range(900):
+        for idx in range(1020):
             slow_wave = math.sin(idx / 80 * 2 * math.pi + asset_index) * base * 0.02
             fast_wave = math.sin(idx / 15 * 2 * math.pi) * base * 0.002
             price = round(max(base + slow_wave + fast_wave, base * 0.1), 6)
