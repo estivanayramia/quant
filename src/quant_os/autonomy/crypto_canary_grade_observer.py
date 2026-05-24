@@ -182,7 +182,7 @@ def _observations_from_snapshot(snapshot: dict[str, Any], *, max_observations: i
             ret = (current - prev) / prev if prev else 0.0
             horizon = mark_horizons[(idx + asset_index) % len(mark_horizons)]
             strategy = strategy_cycle[(idx + asset_index) % len(strategy_cycle)]
-            window = f"window_{((idx // len(mark_horizons)) + asset_index) % 3 + 1}"
+            window = f"window_{((idx // 3) + asset_index) % 3 + 1}"
             regime = "high_vol" if idx % 4 in {0, 1} else "low_vol"
             mark_price = float(candles[idx + horizon]["close"])
             spread = float(book.get("spread") or 0.02)

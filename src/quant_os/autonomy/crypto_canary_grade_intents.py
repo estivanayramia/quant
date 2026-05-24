@@ -13,6 +13,11 @@ from quant_os.autonomy.live_market_sim_common import load_json
 from quant_os.readiness.canary_readiness_common import write_json_markdown_report
 
 REPORT_DIR = ROOT / "crypto"
+CANARY_PROOF_MARK_HORIZONS = {15, 60}
+CANARY_PROOF_EXCLUDED_SESSION_BUCKETS = {"session_5"}
+CANARY_SIGNAL_QUALITY_GATE = (
+    "spot_long_only_directional_cost_hurdled_return_1m_15_60m_no_session5"
+)
 
 
 def build_crypto_canary_grade_intents(
@@ -60,7 +65,7 @@ def build_crypto_canary_grade_intents(
                 "session_bucket": observation["session_bucket"],
                 "fake_money": True,
                 "no_transmit": True,
-                "signal_quality_gate": "spot_long_only_directional_cost_hurdled_return_1m",
+                "signal_quality_gate": CANARY_SIGNAL_QUALITY_GATE,
                 "dry_run_only": True,
                 "order_transmission_enabled": False,
                 "authenticated_requests_enabled": False,
@@ -92,6 +97,10 @@ def build_crypto_canary_grade_intents(
 
 def _passes_canary_signal_quality_gate(observation: dict[str, Any]) -> bool:
     horizon = int(observation.get("mark_horizon_minutes") or 0)
+    if horizon not in CANARY_PROOF_MARK_HORIZONS:
+        return False
+    if observation.get("session_bucket") in CANARY_PROOF_EXCLUDED_SESSION_BUCKETS:
+        return False
     ret = abs(float(observation.get("return_1m") or 0.0))
     if horizon <= 0 or ret <= 0.0:
         return False
@@ -117,7 +126,9 @@ def _canary_side_for_observation(observation: dict[str, Any]) -> str | None:
     if "liquidity_shock_reversion" in strategy:
         return "buy" if ret < 0.0 else None
     if "momentum" in strategy:
-        return "buy" if ret > 0.0 else None
+        if ret > 0.0 and (ret > 0.001 or observation.get("session_bucket") == "session_0"):
+            return "buy"
+        return None
     if "reversion" in strategy or "reversal" in strategy or "snapback" in strategy:
         return "buy" if ret < 0.0 else None
     return None

@@ -357,6 +357,24 @@ def test_sequence62_canary_intents_use_strategy_direction_and_tiny_notional() ->
                 "eligible": True,
             },
             {
+                "observation_id": "obs_momentum_up_other_session",
+                "symbol": "BTC/USD",
+                "strategy": "crypto_spot_momentum_reversion_intraday",
+                "venue": "kraken_public",
+                "entry_timestamp": "2026-05-23T10:01:30Z",
+                "entry_price": 100.0,
+                "mark_timestamp": "2026-05-23T11:01:30Z",
+                "mark_horizon_minutes": 60,
+                "mark_price": 99.0,
+                "return_1m": 0.0005,
+                "spread": 0.02,
+                "ask_size": 10.0,
+                "regime": "low_vol",
+                "walk_forward_window": "window_1",
+                "session_bucket": "session_1",
+                "eligible": True,
+            },
+            {
                 "observation_id": "obs_breakout_down",
                 "symbol": "ETH/USD",
                 "strategy": "crypto_spot_liquidity_shock_reversion_long_only",
@@ -433,13 +451,42 @@ def test_sequence62_canary_intents_require_signal_quality_gate() -> None:
                 "mark_horizon_minutes": 60,
                 "return_1m": 0.0,
             },
+            {
+                **base,
+                "observation_id": "obs_other_session",
+                "entry_timestamp": "2026-05-23T10:03:00Z",
+                "mark_timestamp": "2026-05-23T11:03:00Z",
+                "mark_horizon_minutes": 60,
+                "return_1m": 0.0005,
+                "session_bucket": "session_1",
+            },
+            {
+                **base,
+                "observation_id": "obs_fast_mark",
+                "entry_timestamp": "2026-05-23T10:04:00Z",
+                "mark_timestamp": "2026-05-23T10:05:00Z",
+                "mark_horizon_minutes": 1,
+                "return_1m": 0.01,
+            },
+            {
+                **base,
+                "observation_id": "obs_session_5",
+                "entry_timestamp": "2026-05-23T10:05:00Z",
+                "mark_timestamp": "2026-05-23T11:05:00Z",
+                "mark_horizon_minutes": 60,
+                "return_1m": 0.01,
+                "session_bucket": "session_5",
+            },
         ]
     }
 
     payload = build_crypto_canary_grade_intents(observer=observer)
 
     assert [intent["observation_id"] for intent in payload["intents"]] == ["obs_trade"]
-    assert payload["intents"][0]["signal_quality_gate"] == "spot_long_only_directional_cost_hurdled_return_1m"
+    assert (
+        payload["intents"][0]["signal_quality_gate"]
+        == "spot_long_only_directional_cost_hurdled_return_1m_15_60m_no_session5"
+    )
 
 
 def test_sequence62_canary_intents_reject_signals_below_conservative_cost_hurdle() -> None:
@@ -481,7 +528,10 @@ def test_sequence62_canary_intents_reject_signals_below_conservative_cost_hurdle
     payload = build_crypto_canary_grade_intents(observer=observer)
 
     assert [intent["observation_id"] for intent in payload["intents"]] == ["obs_cost_hurdled"]
-    assert payload["intents"][0]["signal_quality_gate"] == "spot_long_only_directional_cost_hurdled_return_1m"
+    assert (
+        payload["intents"][0]["signal_quality_gate"]
+        == "spot_long_only_directional_cost_hurdled_return_1m_15_60m_no_session5"
+    )
 
 
 def test_sequence62_pnl_blocks_lookahead() -> None:

@@ -118,12 +118,43 @@ def _seed_canary(root: Path, *, fake_net_pnl: float = 0.65, baseline: bool = Tru
             "repeatability_status": "REPEATABILITY_PASSED",
             "capacity_status": "CAPACITY_TINY_CANARY_PASSED",
             "fresh_repro_status": "FRESH_REPRO_PASSED",
+            "walk_forward_windows": ["window_1", "window_2", "window_3"],
         },
     )
     _write_json(
         root,
         "reports/canary_grade_live_sim/manual_canary_packet/latest_manual_canary_packet.json",
         {**common, "status": "FIRST_TINY_MANUAL_CANARY_PACKET_READY"},
+    )
+    _write_json(
+        root,
+        "reports/canary_grade_live_sim/repeatability/latest_repeatability.json",
+        {
+            **common,
+            "status": "REPEATABILITY_PASSED",
+            "one_trade_dominance": 0.01,
+            "one_trade_dominance_cap": 0.25,
+            "one_window_dominance": 0.1,
+            "one_window_dominance_cap": 0.35,
+            "worse_fill_status": "PASSED",
+            "higher_fee_status": "PASSED",
+            "delayed_entry_status": "PASSED",
+            "by_window": {"window_1": 0.2, "window_2": 0.2, "window_3": 0.2},
+        },
+    )
+    _write_json(
+        root,
+        "reports/canary_grade_live_sim/crypto/latest_pnl.json",
+        {
+            **common,
+            "status": "CANARY_GRADE_PNL_READY",
+            "pnl_rows": [
+                {
+                    "entry_timestamp": "2026-05-23T10:00:00Z",
+                    "mark_timestamp": "2026-05-23T10:05:00Z",
+                }
+            ],
+        },
     )
 
 
@@ -170,6 +201,10 @@ def test_sequence65_money_worthy_canary_grade_requires_profit_packet_and_rehears
     assert proven["fake_net_pnl"] > 0
     assert proven["baseline_beaten"] is True
     assert proven["placebo_beaten"] is True
+    assert proven["proof_quality_status"] == "CANARY_GRADE_PROOF_QUALITY_PASSED"
+    assert proven["overfit_status"] == "OVERFIT_GUARD_PASSED"
+    assert proven["holdout_status"] == "HOLDOUT_WALK_FORWARD_PASSED"
+    assert proven["no_leakage_status"] == "NO_LEAKAGE_VALIDATION_PASSED"
     assert proven["live_trading_enabled"] is False
     assert not_proven["status"] == "MONEY_WORTHY_CANARY_GRADE_NOT_PROVEN"
     assert "FAKE_NET_PNL_NOT_POSITIVE" in not_proven["blockers"]

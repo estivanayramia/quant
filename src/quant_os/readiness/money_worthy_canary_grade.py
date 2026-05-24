@@ -30,6 +30,14 @@ def build_money_worthy_canary_grade(
         ),
         output_root=output_root,
     ) or {}
+    repeatability = load_json(
+        "reports/canary_grade_live_sim/repeatability/latest_repeatability.json",
+        output_root=output_root,
+    ) or {}
+    pnl = load_json(
+        "reports/canary_grade_live_sim/crypto/latest_pnl.json",
+        output_root=output_root,
+    ) or {}
     blockers: list[str] = []
 
     if readiness.get("status") != "CANARY_GRADE_LIVE_SIM_PROFITABILITY_PROVEN":
@@ -46,6 +54,8 @@ def build_money_worthy_canary_grade(
         blockers.append("PLACEBO_NOT_BEATEN")
     if int(readiness.get("reconciliation_failures") or 0) != 0:
         blockers.append("RECONCILIATION_FAILURES_PRESENT")
+    proof_quality = _proof_quality_status(readiness=readiness, repeatability=repeatability, pnl=pnl)
+    blockers.extend(proof_quality["blockers"])
     blockers.extend(_safety_blockers({"readiness": readiness, "packet": packet, "rehearsal": rehearsal}))
 
     blockers = list(dict.fromkeys(blockers))
@@ -78,6 +88,10 @@ def build_money_worthy_canary_grade(
         repeatability_status=readiness.get("repeatability_status"),
         capacity_status=readiness.get("capacity_status"),
         fresh_repro_status=readiness.get("fresh_repro_status"),
+        overfit_status=proof_quality["overfit_status"],
+        holdout_status=proof_quality["holdout_status"],
+        no_leakage_status=proof_quality["no_leakage_status"],
+        proof_quality_status=proof_quality["status"],
         manual_packet_status=packet.get("status"),
         no_transmit_execution_rehearsal_status=rehearsal.get("status"),
         reconciliation_failures=int(readiness.get("reconciliation_failures") or 0),
@@ -116,6 +130,58 @@ def _blocked_status(blockers: list[str]) -> str:
     if "AUTONOMOUS_NO_TRANSMIT_EXECUTION_REHEARSAL_NOT_PASSED" in blockers:
         return "MONEY_WORTHY_CANARY_GRADE_BLOCKED_BY_REHEARSAL"
     return "MONEY_WORTHY_CANARY_GRADE_NOT_PROVEN"
+
+
+def _proof_quality_status(
+    *,
+    readiness: dict[str, Any],
+    repeatability: dict[str, Any],
+    pnl: dict[str, Any],
+) -> dict[str, Any]:
+    blockers: list[str] = []
+    by_window = repeatability.get("by_window") or {}
+    mark_rows = list(pnl.get("pnl_rows") or [])
+    no_lookahead = (
+        pnl.get("status") == "CANARY_GRADE_PNL_READY"
+        and bool(mark_rows)
+        and all(str(row.get("mark_timestamp")) > str(row.get("entry_timestamp")) for row in mark_rows)
+    )
+    holdout_passed = (
+        len(readiness.get("walk_forward_windows", []) or []) >= 3
+        and bool(by_window)
+        and all(float(value or 0.0) > 0.0 for value in by_window.values())
+    )
+    overfit_passed = (
+        readiness.get("baseline_beaten") is True
+        and readiness.get("placebo_beaten") is True
+        and repeatability.get("status") == "REPEATABILITY_PASSED"
+        and float(repeatability.get("one_trade_dominance") or 1.0)
+        < float(repeatability.get("one_trade_dominance_cap") or 0.0)
+        and float(repeatability.get("one_window_dominance") or 1.0)
+        < float(repeatability.get("one_window_dominance_cap") or 0.0)
+        and repeatability.get("worse_fill_status") == "PASSED"
+        and repeatability.get("higher_fee_status") == "PASSED"
+        and repeatability.get("delayed_entry_status") == "PASSED"
+    )
+    if not overfit_passed:
+        blockers.append("CANARY_GRADE_OVERFIT_GUARD_NOT_PASSED")
+    if not holdout_passed:
+        blockers.append("CANARY_GRADE_HOLDOUT_WALK_FORWARD_NOT_PASSED")
+    if not no_lookahead:
+        blockers.append("CANARY_GRADE_NO_LEAKAGE_NOT_PASSED")
+    return {
+        "status": "CANARY_GRADE_PROOF_QUALITY_PASSED"
+        if not blockers
+        else "CANARY_GRADE_PROOF_QUALITY_BLOCKED",
+        "overfit_status": "OVERFIT_GUARD_PASSED" if overfit_passed else "OVERFIT_GUARD_BLOCKED",
+        "holdout_status": "HOLDOUT_WALK_FORWARD_PASSED"
+        if holdout_passed
+        else "HOLDOUT_WALK_FORWARD_BLOCKED",
+        "no_leakage_status": "NO_LEAKAGE_VALIDATION_PASSED"
+        if no_lookahead
+        else "NO_LEAKAGE_VALIDATION_BLOCKED",
+        "blockers": blockers,
+    }
 
 
 def _safety_blockers(reports: dict[str, dict[str, Any]]) -> list[str]:
