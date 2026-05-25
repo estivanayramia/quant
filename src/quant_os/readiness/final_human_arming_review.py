@@ -78,7 +78,7 @@ def build_final_human_arming_review(*, output_root: str | Path = ".") -> dict[st
         pnl=pnl,
         reconciliation=reconciliation,
     )
-    current_pr_head = _current_head_oid(output_root)
+    report_generated_worktree_head = _current_head_oid(output_root)
     independent_proof_head = fresh_repro.get("proof_head_oid")
     return canary_safe_payload(
         schema_version="final_human_arming_review_v1",
@@ -87,14 +87,20 @@ def build_final_human_arming_review(*, output_root: str | Path = ".") -> dict[st
         blockers=blockers,
         exact_blocker=blockers[0] if blockers else None,
         current_pr="55",
-        pr_head=current_pr_head,
-        current_pr_head=current_pr_head,
+        pr_head=None,
+        pr_head_source="verify_current_pr_head_with_github_during_final_audit",
+        current_pr_head=None,
+        current_pr_head_verification_command=(
+            "gh pr view 55 --repo estivanayramia/quant "
+            "--json headRefOid,mergeStateStatus,statusCheckRollup,isDraft"
+        ),
+        report_generated_worktree_head=report_generated_worktree_head,
         independent_proof_head=independent_proof_head,
         proof_head_oid=independent_proof_head,
-        proof_head_matches_current_pr_head=(
-            current_pr_head != "unknown"
+        proof_head_matches_report_generation_head=(
+            report_generated_worktree_head != "unknown"
             and independent_proof_head is not None
-            and current_pr_head == independent_proof_head
+            and report_generated_worktree_head == independent_proof_head
         ),
         active_market_family=readiness.get("active_market_family"),
         active_strategy=readiness.get("active_strategy"),
@@ -495,7 +501,9 @@ def _review_markdown(payload: dict[str, Any]) -> str:
         "This is an operator-facing review packet only. It does not place, prepare, route, sign, cancel, transmit, authorize, or recommend any real order. It does not load keys, auth, balances, or portfolio.",
         "",
         f"Current PR: {payload.get('current_pr')}",
-        f"Current PR head: {payload.get('current_pr_head') or payload.get('pr_head')}",
+        "Current PR head: verify during final audit with `"
+        f"{payload.get('current_pr_head_verification_command')}`",
+        f"Report generated worktree head: {payload.get('report_generated_worktree_head')}",
         f"Independent proof head: {payload.get('independent_proof_head') or payload.get('proof_head_oid')}",
         f"Exact resume command: `{payload.get('exact_resume_command')}`",
         "",

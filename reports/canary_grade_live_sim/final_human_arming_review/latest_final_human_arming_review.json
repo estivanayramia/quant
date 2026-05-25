@@ -67,7 +67,8 @@
     "Do not let green status override safety flags, blocker fields, or stale contradictory reports."
   ],
   "current_pr": "55",
-  "current_pr_head": "135c2c13d7860abf468e973b1362a807cafae9ff",
+  "current_pr_head": null,
+  "current_pr_head_verification_command": "gh pr view 55 --repo estivanayramia/quant --json headRefOid,mergeStateStatus,statusCheckRollup,isDraft",
   "eligible_intent_count": 339,
   "evidence_only": true,
   "exact_blocker": null,
@@ -100,7 +101,8 @@
   "order_transmission_enabled": false,
   "placebo_edge": 1.05054856,
   "placebo_pnl": 0.04572139,
-  "pr_head": "135c2c13d7860abf468e973b1362a807cafae9ff",
+  "pr_head": null,
+  "pr_head_source": "verify_current_pr_head_with_github_during_final_audit",
   "private_keys_loaded": false,
   "project_improvement_review": [
     "Make this final human arming review the canonical operator memo and avoid keeping stale parallel memos.",
@@ -110,9 +112,10 @@
     "Keep exact public data provenance, proof head, and independent clean checkout status together in each final report.",
     "Before marking any high-stakes task done, run an adversarial subagent review and record/fix Critical or Important findings."
   ],
-  "proof_head_matches_current_pr_head": false,
+  "proof_head_matches_report_generation_head": false,
   "proof_head_oid": "d09456eb2d062687f397b2891370e2c8db062dd9",
   "public_data_source": "kraken_public_rest_unauthenticated_recent_ohlc",
+  "report_generated_worktree_head": "2615bfce27680d92766bfb7fb0cccc790fb130ef",
   "report_paths": {
     "json": "reports\\canary_grade_live_sim\\final_human_arming_review\\latest_final_human_arming_review.json",
     "markdown": "reports\\canary_grade_live_sim\\final_human_arming_review\\latest_final_human_arming_review.md"

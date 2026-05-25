@@ -5,7 +5,8 @@ Final status: READY_FOR_FINAL_HUMAN_ARMING_REVIEW
 This is an operator-facing review packet only. It does not place, prepare, route, sign, cancel, transmit, authorize, or recommend any real order. It does not load keys, auth, balances, or portfolio.
 
 Current PR: 55
-Current PR head: 135c2c13d7860abf468e973b1362a807cafae9ff
+Current PR head: verify during final audit with `gh pr view 55 --repo estivanayramia/quant --json headRefOid,mergeStateStatus,statusCheckRollup,isDraft`
+Report generated worktree head: 2615bfce27680d92766bfb7fb0cccc790fb130ef
 Independent proof head: d09456eb2d062687f397b2891370e2c8db062dd9
 Exact resume command: `.\make.cmd final-human-arming-review`
 
