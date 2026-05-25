@@ -10,6 +10,7 @@ from quant_os.adapters.event_store_jsonl import JsonlEventStore
 from quant_os.adapters.market_data_parquet import LocalParquetMarketData
 from quant_os.autonomy.daemon import daemon_status, run_daemon, stop_daemon
 from quant_os.autonomy.dry_run_proving import DryRunProvingConfig, run_dry_run_proving_cycle
+from quant_os.autonomy.forward_capture_plan import write_forward_capture_plan
 from quant_os.autonomy.proving_cycle import run_proving_once
 from quant_os.autonomy.supervisor import Supervisor
 from quant_os.autonomy.tasks import run_drift_checks
@@ -83,10 +84,21 @@ from quant_os.ops.freqtrade_reporting import (
 )
 from quant_os.ops.reporting import generate_daily_report
 from quant_os.projections.rebuild import rebuild_read_models as rebuild_read_models_projection
+from quant_os.proving.crypto_spot_public_paper_proving import (
+    write_crypto_spot_public_paper_proving_report,
+)
 from quant_os.proving.incident_log import summarize_incidents
 from quant_os.proving.proving_report import write_proving_report
 from quant_os.proving.readiness import evaluate_proving_readiness
+from quant_os.proving.relentless_profit_campaign_runner import run_relentless_profit_campaign
+from quant_os.proving.relentless_profit_campaign_state import (
+    load_campaign_state,
+    write_campaign_state,
+)
 from quant_os.proving.run_history import load_proving_history, write_proving_status
+from quant_os.readiness.profit_candidate_autonomy_path import (
+    write_profit_candidate_autonomy_path,
+)
 from quant_os.readiness.sequence2 import write_sequence2_readiness_report
 from quant_os.replay.engine import ReplayEngine, ReplayOrderIntent
 from quant_os.replay.realism_report import write_replay_realism_report
@@ -195,6 +207,7 @@ from quant_os.watchdog.health_checks import run_watchdog
 
 app = typer.Typer(help="Local deterministic QuantOps simulation foundation.")
 autonomous_app = typer.Typer(help="Autonomous safe-mode runbooks.")
+autonomy_app = typer.Typer(help="Data-only autonomy planning commands.")
 data_app = typer.Typer(help="Market-agnostic data spine commands.")
 features_app = typer.Typer(help="Deterministic feature-building commands.")
 research_app = typer.Typer(help="Research lane commands.")
@@ -210,7 +223,10 @@ historical_app = typer.Typer(help="Historical data ingestion commands.")
 proving_app = typer.Typer(help="Autonomous proving-mode commands.")
 canary_app = typer.Typer(help="Tiny-live canary policy gates and default-off execution lane.")
 readiness_app = typer.Typer(help="Evidence-based readiness reports.")
+execution_app = typer.Typer(help="Offline execution and reconciliation proof commands.")
+risk_app = typer.Typer(help="Risk envelope and kill-switch proof commands.")
 app.add_typer(autonomous_app, name="autonomous")
+app.add_typer(autonomy_app, name="autonomy")
 app.add_typer(data_app, name="data")
 app.add_typer(features_app, name="features")
 app.add_typer(research_app, name="research")
@@ -226,6 +242,8 @@ app.add_typer(historical_app, name="historical")
 app.add_typer(proving_app, name="proving")
 app.add_typer(canary_app, name="canary")
 app.add_typer(readiness_app, name="readiness")
+app.add_typer(execution_app, name="execution")
+app.add_typer(risk_app, name="risk")
 
 DEFAULT_POLYMARKET_WALLET_FIXTURE = (
     Path("tests") / "fixtures" / "prediction_markets" / "polymarket_wallet_activity_sample.json"
@@ -983,6 +1001,50 @@ def data_weather_source_match() -> None:
             "market_id": payload["market_id"],
             "report": "reports/sequence51/weather_source_matching/latest_weather_source_matching.json",
             "live_trading_enabled": False,
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@data_app.command("current-weather-market-discovery")
+def data_current_weather_market_discovery(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    from quant_os.data.weather.current_weather_market_discovery import (
+        write_current_weather_market_discovery_report,
+    )
+
+    payload = write_current_weather_market_discovery_report(
+        output_root=Path("."),
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/first_dollar_preflight/current_market_discovery/latest_current_market_discovery.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@data_app.command("current-weather-forecast-match")
+def data_current_weather_forecast_match(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    from quant_os.data.weather.current_weather_forecast_match import (
+        write_current_forecast_match_report,
+    )
+
+    payload = write_current_forecast_match_report(
+        output_root=Path("."),
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/first_dollar_preflight/current_forecast/latest_current_forecast.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
             "execution_authority": payload["execution_authority"],
         }
     )
@@ -5158,6 +5220,2157 @@ def research_external_benchmark_report() -> None:
             "prediction_market_execution_authority_added": payload[
                 "prediction_market_execution_authority_added"
             ],
+        }
+    )
+
+
+@research_app.command("relentless-profit-campaign")
+def research_relentless_profit_campaign(
+    max_lanes: int = typer.Option(1, min=1),
+    public_network_ok: bool = typer.Option(False),
+) -> None:
+    payload = run_relentless_profit_campaign(
+        output_root=Path("."),
+        max_lanes=max_lanes,
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["campaign_status"],
+            "paper_profit_status": payload["paper_profit_status"],
+            "profit_claim_guard_status": payload["profit_claim_guard_status"],
+            "lanes_attempted_this_run": payload["run_summary"]["lanes_attempted_this_run"],
+            "report": "reports/profit_campaign/latest_profit_campaign.json",
+            "state": "reports/profit_campaign/state/latest_state.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("relentless-profit-campaign-run")
+def proving_relentless_profit_campaign_run(
+    max_lanes: int = typer.Option(6, min=1),
+    public_network_ok: bool = typer.Option(False),
+) -> None:
+    payload = run_relentless_profit_campaign(
+        output_root=Path("."),
+        max_lanes=max_lanes,
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["campaign_status"],
+            "paper_profit_status": payload["paper_profit_status"],
+            "profit_claim_guard_status": payload["profit_claim_guard_status"],
+            "lanes_attempted_this_run": payload["run_summary"]["lanes_attempted_this_run"],
+            "report": "reports/profit_campaign/latest_profit_campaign.json",
+            "state": "reports/profit_campaign/state/latest_state.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("crypto-spot-public-paper-proving")
+def proving_crypto_spot_public_paper_proving(
+    public_network_ok: bool = typer.Option(False),
+) -> None:
+    payload = write_crypto_spot_public_paper_proving_report(
+        output_root=Path("."),
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["readiness_status"],
+            "paper_profit_candidate": payload["paper_profit_candidate"],
+            "capture_status": payload["capture_status"],
+            "proof_rows": payload["proof_row_count"],
+            "profit_claim_guard_status": payload["profit_claim_guard"]["claim_status"],
+            "report": (
+                "reports/profit_campaign/crypto_spot_public_paper_proving/"
+                "latest_crypto_spot_public_paper_proving.json"
+            ),
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("regenerate-profit-candidate-artifacts")
+def proving_regenerate_profit_candidate_artifacts() -> None:
+    from quant_os.proving.profit_candidate_artifacts import (
+        regenerate_profit_candidate_artifacts,
+    )
+
+    payload = regenerate_profit_candidate_artifacts(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "strategy": payload["strategy"],
+            "proof_row_count": payload["proof_row_count"],
+            "report": "reports/profit_campaign/latest_profit_campaign.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("relentless-profit-campaign-state")
+def proving_relentless_profit_campaign_state() -> None:
+    payload = write_campaign_state(load_campaign_state(output_root=Path(".")), output_root=Path("."))
+    print(
+        {
+            "status": payload["current_campaign_status"],
+            "paper_profit_status": payload["current_paper_status"],
+            "profit_claim_guard_status": payload["profit_claim_status"],
+            "state": "reports/profit_campaign/state/latest_state.json",
+            "resume": payload["exact_resume_command"],
+            "live_trading_enabled": payload["safety_constraints"]["live_trading_enabled"],
+            "execution_authority": payload["safety_constraints"]["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("forward-capture-plan")
+def autonomy_forward_capture_plan() -> None:
+    payload = write_forward_capture_plan(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "lane_id": payload["lane_id"],
+            "data_only": payload["data_only"],
+            "report": "reports/profit_campaign/forward_capture/latest_forward_capture_plan.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("current-market-watch-plan")
+def autonomy_current_market_watch_plan() -> None:
+    from quant_os.autonomy.current_market_watch_plan import write_current_market_watch_plan
+
+    payload = write_current_market_watch_plan(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "data_only": payload["data_only"],
+            "report": "reports/first_dollar_preflight/current_market_watch/latest_current_market_watch.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-paper-observer")
+def autonomy_live_market_paper_observer(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    from quant_os.autonomy.live_market_paper_observer import (
+        write_live_market_paper_observer_report,
+    )
+
+    payload = write_live_market_paper_observer_report(
+        output_root=Path("."),
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "observation_id": payload["observation_id"],
+            "report": "reports/live_market_paper_rehearsal/observer/latest_observer.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-paper-intents")
+def autonomy_live_market_paper_intents() -> None:
+    from quant_os.autonomy.live_market_paper_intents import write_live_market_paper_intents_report
+
+    payload = write_live_market_paper_intents_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_money": payload["fake_money"],
+            "report": "reports/live_market_paper_rehearsal/intents/latest_intents.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-fake-fill")
+def autonomy_live_market_fake_fill() -> None:
+    from quant_os.autonomy.live_market_fake_fill_model import write_live_market_fake_fill_report
+
+    payload = write_live_market_fake_fill_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "guaranteed_fill": payload["guaranteed_fill"],
+            "report": "reports/live_market_paper_rehearsal/fills/latest_fake_fills.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-paper-ledger")
+def autonomy_live_market_paper_ledger() -> None:
+    from quant_os.autonomy.live_market_paper_ledger import write_live_market_paper_ledger_report
+
+    payload = write_live_market_paper_ledger_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "position_state": payload["fake_position"]["state"],
+            "report": "reports/live_market_paper_rehearsal/ledger/latest_paper_ledger.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-paper-reconciliation")
+def autonomy_live_market_paper_reconciliation() -> None:
+    from quant_os.autonomy.live_market_paper_reconciliation import (
+        write_live_market_paper_reconciliation_report,
+    )
+
+    payload = write_live_market_paper_reconciliation_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/live_market_paper_rehearsal/reconciliation/latest_reconciliation.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-paper-rehearsal-schedule")
+def autonomy_live_market_paper_rehearsal_schedule() -> None:
+    from quant_os.autonomy.live_market_paper_rehearsal_schedule import (
+        write_live_market_paper_rehearsal_schedule_report,
+    )
+
+    payload = write_live_market_paper_rehearsal_schedule_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "data_only": payload["data_only"],
+            "report": "reports/live_market_paper_rehearsal/schedule/latest_schedule.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-profit-observer")
+def autonomy_live_market_profit_observer(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    from quant_os.autonomy.live_market_profit_observer import (
+        write_live_market_profit_observer_report,
+    )
+
+    payload = write_live_market_profit_observer_report(
+        output_root=Path("."),
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "observation_id": payload["observation_id"],
+            "report": "reports/live_market_sim_profitability/observer/latest_observer.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-sim-intents")
+def autonomy_live_market_sim_intents() -> None:
+    from quant_os.autonomy.live_market_sim_intents import write_live_market_sim_intents_report
+
+    payload = write_live_market_sim_intents_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_money": payload["fake_money"],
+            "report": "reports/live_market_sim_profitability/intents/latest_intents.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-sim-fill")
+def autonomy_live_market_sim_fill() -> None:
+    from quant_os.autonomy.live_market_sim_fill_model import write_live_market_sim_fill_report
+
+    payload = write_live_market_sim_fill_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "guaranteed_fill": payload["guaranteed_fill"],
+            "report": "reports/live_market_sim_profitability/fills/latest_fills.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-sim-ledger")
+def autonomy_live_market_sim_ledger() -> None:
+    from quant_os.autonomy.live_market_sim_ledger import write_live_market_sim_ledger_report
+
+    payload = write_live_market_sim_ledger_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "position_state": payload["fake_position"]["state"],
+            "report": "reports/live_market_sim_profitability/ledger/latest_ledger.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-sim-outcomes")
+def autonomy_live_market_sim_outcomes(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    from quant_os.autonomy.live_market_sim_outcomes import write_live_market_sim_outcomes_report
+
+    payload = write_live_market_sim_outcomes_report(
+        output_root=Path("."),
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "resolved_outcome_count": payload["resolved_outcome_count"],
+            "pending_outcome_count": payload["pending_outcome_count"],
+            "report": "reports/live_market_sim_profitability/outcomes/latest_outcomes.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-sim-pnl")
+def autonomy_live_market_sim_pnl() -> None:
+    from quant_os.autonomy.live_market_sim_pnl import write_live_market_sim_pnl_report
+
+    payload = write_live_market_sim_pnl_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_net_pnl": payload["fake_net_pnl"],
+            "report": "reports/live_market_sim_profitability/pnl/latest_pnl.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("live-market-sim-comparison")
+def proving_live_market_sim_comparison() -> None:
+    from quant_os.proving.live_market_sim_comparison_report import (
+        write_live_market_sim_comparison_report,
+    )
+
+    payload = write_live_market_sim_comparison_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "baseline_beaten": payload["baseline_beaten"],
+            "placebo_beaten": payload["placebo_beaten"],
+            "report": "reports/live_market_sim_profitability/comparison/latest_comparison.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-sim-reconciliation")
+def autonomy_live_market_sim_reconciliation() -> None:
+    from quant_os.autonomy.live_market_sim_reconciliation import (
+        write_live_market_sim_reconciliation_report,
+    )
+
+    payload = write_live_market_sim_reconciliation_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/live_market_sim_profitability/reconciliation/latest_reconciliation.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-sim-profitability-schedule")
+def autonomy_live_market_sim_profitability_schedule() -> None:
+    from quant_os.autonomy.live_market_sim_profitability_schedule import (
+        write_live_market_sim_profitability_schedule_report,
+    )
+
+    payload = write_live_market_sim_profitability_schedule_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "data_only": payload["data_only"],
+            "report": "reports/live_market_sim_profitability/schedule/latest_schedule.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+def _run_live_market_sim_outcome_recheck(*, public_network_ok: bool) -> None:
+    from quant_os.autonomy.live_market_sim_outcomes import write_live_market_sim_outcomes_report
+    from quant_os.autonomy.live_market_sim_pnl import write_live_market_sim_pnl_report
+    from quant_os.autonomy.live_market_sim_profitability_schedule import (
+        write_live_market_sim_profitability_schedule_report,
+    )
+    from quant_os.autonomy.live_market_sim_reconciliation import (
+        write_live_market_sim_reconciliation_report,
+    )
+    from quant_os.proving.live_market_sim_comparison_report import (
+        write_live_market_sim_comparison_report,
+    )
+    from quant_os.readiness.live_market_sim_profitability import (
+        write_live_market_sim_profitability_report,
+    )
+
+    write_live_market_sim_outcomes_report(output_root=Path("."), public_network_ok=public_network_ok)
+    write_live_market_sim_pnl_report(output_root=Path("."))
+    write_live_market_sim_comparison_report(output_root=Path("."))
+    write_live_market_sim_reconciliation_report(output_root=Path("."))
+    final = write_live_market_sim_profitability_report(output_root=Path("."))
+    schedule = write_live_market_sim_profitability_schedule_report(output_root=Path("."))
+    print(
+        {
+            "status": final["status"],
+            "fake_net_pnl": final["fake_net_pnl"],
+            "resolved_outcome_count": final["resolved_outcome_count"],
+            "pending_outcome_count": final["pending_outcome_count"],
+            "exact_resume_command": schedule["exact_resume_command"],
+            "report": "reports/live_market_sim_profitability/final/latest_live_market_sim_profitability.json",
+            "live_trading_enabled": final["live_trading_enabled"],
+            "execution_authority": final["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("live-market-sim-profitability-outcome-recheck")
+def autonomy_live_market_sim_profitability_outcome_recheck(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    _run_live_market_sim_outcome_recheck(public_network_ok=public_network_ok)
+
+
+@autonomy_app.command("live-market-sim-outcome-recheck")
+def autonomy_live_market_sim_outcome_recheck(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    _run_live_market_sim_outcome_recheck(public_network_ok=public_network_ok)
+
+
+@autonomy_app.command("live-market-sim-start-new-run")
+def autonomy_live_market_sim_start_new_run() -> None:
+    from quant_os.autonomy.live_market_sim_run_manager import (
+        write_live_market_sim_start_new_run_report,
+    )
+
+    payload = write_live_market_sim_start_new_run_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "archived_run_status": payload["archived_run_status"],
+            "archived_fake_net_pnl": payload["archived_fake_net_pnl"],
+            "new_policy_version": payload["new_policy_version"],
+            "report": "reports/live_market_sim_profitability/runs/latest_start_new_run.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("multi-market-live-sim-router")
+def autonomy_multi_market_live_sim_router() -> None:
+    from quant_os.autonomy.multi_market_live_sim_router import (
+        write_multi_market_live_sim_router_report,
+    )
+
+    payload = write_multi_market_live_sim_router_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "selected_market_family": payload["selected_market_family"],
+            "report": "reports/multi_market_live_sim/router/latest_router.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-spot-live-sim-observer")
+def autonomy_crypto_spot_live_sim_observer(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    from quant_os.autonomy.crypto_spot_live_sim_observer import (
+        write_crypto_spot_live_sim_observer_report,
+    )
+
+    payload = write_crypto_spot_live_sim_observer_report(
+        output_root=Path("."),
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "observation_count": payload["observation_count"],
+            "report": "reports/multi_market_live_sim/crypto_spot/latest_crypto_observer.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-spot-live-sim-intents")
+def autonomy_crypto_spot_live_sim_intents() -> None:
+    from quant_os.autonomy.crypto_spot_live_sim_intents import (
+        write_crypto_spot_live_sim_intents_report,
+    )
+
+    payload = write_crypto_spot_live_sim_intents_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "eligible_intent_count": payload["eligible_intent_count"],
+            "report": "reports/multi_market_live_sim/crypto_spot/latest_crypto_intents.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-spot-live-sim-fill")
+def autonomy_crypto_spot_live_sim_fill() -> None:
+    from quant_os.autonomy.crypto_spot_live_sim_fill import write_crypto_spot_live_sim_fill_report
+
+    payload = write_crypto_spot_live_sim_fill_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_fill_count": payload["fake_fill_count"],
+            "report": "reports/multi_market_live_sim/crypto_spot/latest_crypto_fills.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-spot-live-sim-ledger")
+def autonomy_crypto_spot_live_sim_ledger() -> None:
+    from quant_os.autonomy.crypto_spot_live_sim_ledger import (
+        write_crypto_spot_live_sim_ledger_report,
+    )
+
+    payload = write_crypto_spot_live_sim_ledger_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "position_state": payload["position_state"],
+            "report": "reports/multi_market_live_sim/crypto_spot/latest_crypto_ledger.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-spot-live-sim-pnl")
+def autonomy_crypto_spot_live_sim_pnl() -> None:
+    from quant_os.autonomy.crypto_spot_live_sim_pnl import write_crypto_spot_live_sim_pnl_report
+
+    payload = write_crypto_spot_live_sim_pnl_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_net_pnl": payload["fake_net_pnl"],
+            "report": "reports/multi_market_live_sim/crypto_spot/latest_crypto_pnl.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("crypto-spot-live-sim-comparison")
+def proving_crypto_spot_live_sim_comparison() -> None:
+    from quant_os.proving.crypto_spot_live_sim_comparison import (
+        write_crypto_spot_live_sim_comparison_report,
+    )
+
+    payload = write_crypto_spot_live_sim_comparison_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "baseline_beaten": payload["baseline_beaten"],
+            "placebo_beaten": payload["placebo_beaten"],
+            "report": "reports/multi_market_live_sim/crypto_spot/latest_crypto_comparison.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("crypto-live-sim-repeatability")
+def proving_crypto_live_sim_repeatability() -> None:
+    from quant_os.proving.crypto_live_sim_repeatability import (
+        write_crypto_live_sim_repeatability_report,
+    )
+
+    payload = write_crypto_live_sim_repeatability_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "baseline_beaten": payload["baseline_beaten"],
+            "placebo_beaten": payload["placebo_beaten"],
+            "report": "reports/canary_grade_live_sim/repeatability/latest_repeatability.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("crypto-live-sim-capacity")
+def proving_crypto_live_sim_capacity() -> None:
+    from quant_os.proving.crypto_live_sim_capacity import write_crypto_live_sim_capacity_report
+
+    payload = write_crypto_live_sim_capacity_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "max_safe_notional": payload["max_safe_notional"],
+            "report": "reports/canary_grade_live_sim/capacity/latest_capacity.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-spot-live-sim-reconciliation")
+def autonomy_crypto_spot_live_sim_reconciliation() -> None:
+    from quant_os.autonomy.crypto_spot_live_sim_reconciliation import (
+        write_crypto_spot_live_sim_reconciliation_report,
+    )
+
+    payload = write_crypto_spot_live_sim_reconciliation_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/multi_market_live_sim/crypto_spot/latest_crypto_reconciliation.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("multi-market-live-sim-schedule")
+def autonomy_multi_market_live_sim_schedule() -> None:
+    from quant_os.autonomy.multi_market_live_sim_schedule import (
+        write_multi_market_live_sim_schedule_report,
+    )
+
+    payload = write_multi_market_live_sim_schedule_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "data_only": payload["data_only"],
+            "report": "reports/multi_market_live_sim/schedule/latest_schedule.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-canary-grade-observer")
+def autonomy_crypto_canary_grade_observer(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    from quant_os.autonomy.crypto_canary_grade_observer import (
+        write_crypto_canary_grade_observer_report,
+    )
+
+    payload = write_crypto_canary_grade_observer_report(
+        output_root=Path("."),
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "observation_count": payload["observation_count"],
+            "report": "reports/canary_grade_live_sim/crypto/latest_observer.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-canary-grade-intents")
+def autonomy_crypto_canary_grade_intents() -> None:
+    from quant_os.autonomy.crypto_canary_grade_intents import (
+        write_crypto_canary_grade_intents_report,
+    )
+
+    payload = write_crypto_canary_grade_intents_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "eligible_intent_count": payload["eligible_intent_count"],
+            "report": "reports/canary_grade_live_sim/crypto/latest_intents.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-canary-grade-fill")
+def autonomy_crypto_canary_grade_fill() -> None:
+    from quant_os.autonomy.crypto_canary_grade_fill import write_crypto_canary_grade_fill_report
+
+    payload = write_crypto_canary_grade_fill_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_fill_count": payload["fake_fill_count"],
+            "report": "reports/canary_grade_live_sim/crypto/latest_fills.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-canary-grade-ledger")
+def autonomy_crypto_canary_grade_ledger() -> None:
+    from quant_os.autonomy.crypto_canary_grade_ledger import write_crypto_canary_grade_ledger_report
+
+    payload = write_crypto_canary_grade_ledger_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_fill_count": payload["fake_fill_count"],
+            "report": "reports/canary_grade_live_sim/crypto/latest_ledger.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-canary-grade-pnl")
+def autonomy_crypto_canary_grade_pnl() -> None:
+    from quant_os.autonomy.crypto_canary_grade_pnl import write_crypto_canary_grade_pnl_report
+
+    payload = write_crypto_canary_grade_pnl_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "completed_mark_count": payload["completed_mark_count"],
+            "fake_net_pnl": payload["fake_net_pnl"],
+            "report": "reports/canary_grade_live_sim/crypto/latest_pnl.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("crypto-canary-grade-reconciliation")
+def autonomy_crypto_canary_grade_reconciliation() -> None:
+    from quant_os.autonomy.crypto_canary_grade_reconciliation import (
+        write_crypto_canary_grade_reconciliation_report,
+    )
+
+    payload = write_crypto_canary_grade_reconciliation_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "reconciliation_failures": payload["reconciliation_failures"],
+            "report": "reports/canary_grade_live_sim/crypto/latest_reconciliation.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("canary-grade-live-sim-schedule")
+def autonomy_canary_grade_live_sim_schedule() -> None:
+    from quant_os.autonomy.canary_grade_live_sim_schedule import (
+        write_canary_grade_live_sim_schedule_report,
+    )
+
+    payload = write_canary_grade_live_sim_schedule_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "data_only": payload["data_only"],
+            "report": "reports/canary_grade_live_sim/schedule/latest_schedule.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("autonomous-market-watcher")
+def autonomy_autonomous_market_watcher() -> None:
+    from quant_os.autonomy.autonomous_market_watcher import write_autonomous_market_watcher_report
+
+    payload = write_autonomous_market_watcher_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "market_state": payload["market_state"],
+            "report": "reports/autonomous_live_fire_drill/watcher/latest_watcher.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("autonomous-decision-engine")
+def autonomy_autonomous_decision_engine() -> None:
+    from quant_os.autonomy.autonomous_decision_engine import write_autonomous_decision_report
+
+    payload = write_autonomous_decision_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "decision": payload["decision"],
+            "report": "reports/autonomous_live_fire_drill/decision/latest_decision.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("autonomous-no-transmit-intent")
+def autonomy_autonomous_no_transmit_intent() -> None:
+    from quant_os.autonomy.autonomous_no_transmit_intent import write_no_transmit_intent_report
+
+    payload = write_no_transmit_intent_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_money": payload["fake_money"],
+            "report": "reports/autonomous_live_fire_drill/no_transmit_intent/latest_intent.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@execution_app.command("mock-order-lifecycle")
+def execution_mock_order_lifecycle() -> None:
+    from quant_os.execution.mock_order_lifecycle import write_mock_order_lifecycle_report
+
+    payload = write_mock_order_lifecycle_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/autonomous_live_fire_drill/mock_lifecycle/latest_mock_lifecycle.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@execution_app.command("autonomous-fake-execution")
+def execution_autonomous_fake_execution() -> None:
+    from quant_os.execution.autonomous_fake_execution_runner import write_fake_execution_report
+
+    payload = write_fake_execution_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_order_state": payload["fake_order_state"],
+            "report": "reports/autonomous_live_fire_drill/fake_execution/latest_fake_execution.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@risk_app.command("autonomous-fire-drill-risk")
+def risk_autonomous_fire_drill_risk() -> None:
+    from quant_os.risk.autonomous_fire_drill_risk import write_fire_drill_risk_report
+
+    payload = write_fire_drill_risk_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "kill_switch_status": payload["kill_switch_status"],
+            "report": "reports/autonomous_live_fire_drill/risk/latest_risk.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@execution_app.command("autonomous-fake-reconciliation")
+def execution_autonomous_fake_reconciliation() -> None:
+    from quant_os.execution.autonomous_fake_reconciliation import write_fake_reconciliation_report
+    from quant_os.execution.autonomous_post_trade_report import write_post_trade_report
+
+    payload = write_fake_reconciliation_report(output_root=Path("."))
+    write_post_trade_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/autonomous_live_fire_drill/reconciliation/latest_reconciliation.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@validation_app.command("autonomous-fire-drill-scenarios")
+def validation_autonomous_fire_drill_scenarios() -> None:
+    from quant_os.validation.autonomous_fire_drill_scenarios import (
+        write_fire_drill_scenarios_report,
+    )
+
+    payload = write_fire_drill_scenarios_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "scenario_count": payload["scenario_count"],
+            "report": "reports/autonomous_live_fire_drill/scenarios/latest_scenarios.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("autonomous-live-fire-drill")
+def readiness_autonomous_live_fire_drill() -> None:
+    from quant_os.readiness.autonomous_live_fire_drill_readiness import (
+        write_fire_drill_readiness_report,
+    )
+
+    payload = write_fire_drill_readiness_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/autonomous_live_fire_drill/final/latest_fire_drill_readiness.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("human-live-boundary-packet")
+def readiness_human_live_boundary_packet() -> None:
+    from quant_os.readiness.human_live_boundary_packet import (
+        write_human_live_boundary_packet_report,
+    )
+
+    payload = write_human_live_boundary_packet_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/autonomous_live_fire_drill/human_boundary/latest_human_boundary_packet.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("profit-candidate-autonomy-path")
+def readiness_profit_candidate_autonomy_path() -> None:
+    payload = write_profit_candidate_autonomy_path(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "selected_lane": payload["selected_lane"],
+            "next_gate": payload["next_gate"],
+            "report": "reports/profit_campaign/autonomy_path/latest_autonomy_path.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("paper-candidate-audit")
+def readiness_paper_candidate_audit() -> None:
+    from quant_os.readiness.paper_candidate_audit import write_paper_candidate_audit_report
+
+    payload = write_paper_candidate_audit_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/paper_candidate_audit/latest_paper_candidate_audit.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("weather-lineage-audit")
+def readiness_weather_lineage_audit() -> None:
+    from quant_os.readiness.weather_candidate_lineage_audit import (
+        write_weather_candidate_lineage_audit_report,
+    )
+
+    payload = write_weather_candidate_lineage_audit_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/lineage_audit/latest_lineage_audit.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("weather-replay-recompute")
+def proving_weather_replay_recompute() -> None:
+    from quant_os.proving.weather_candidate_replay_recompute import (
+        write_weather_candidate_replay_recompute_report,
+    )
+
+    payload = write_weather_candidate_replay_recompute_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/replay_recompute/latest_replay_recompute.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("weather-robustness")
+def proving_weather_robustness() -> None:
+    from quant_os.proving.weather_candidate_robustness import (
+        write_weather_candidate_robustness_report,
+    )
+
+    payload = write_weather_candidate_robustness_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/robustness/latest_robustness.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("weather-cost-fill-stress")
+def proving_weather_cost_fill_stress() -> None:
+    from quant_os.proving.weather_candidate_cost_fill_stress import (
+        write_weather_candidate_cost_fill_stress_report,
+    )
+
+    payload = write_weather_candidate_cost_fill_stress_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/cost_fill_stress/latest_cost_fill_stress.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("weather-bounded-shadow-rehearsal")
+def proving_weather_bounded_shadow_rehearsal() -> None:
+    from quant_os.proving.weather_bounded_shadow_rehearsal import (
+        write_weather_bounded_shadow_rehearsal_report,
+    )
+
+    payload = write_weather_bounded_shadow_rehearsal_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/shadow_rehearsal/latest_shadow_rehearsal.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@execution_app.command("weather-dry-run-parity")
+def execution_weather_dry_run_parity() -> None:
+    from quant_os.execution.weather_dry_run_parity import write_weather_dry_run_parity_report
+
+    payload = write_weather_dry_run_parity_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/dry_run_parity/latest_dry_run_parity.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@risk_app.command("weather-tiny-canary-risk")
+def risk_weather_tiny_canary_risk() -> None:
+    from quant_os.risk.weather_tiny_canary_risk import write_weather_tiny_canary_risk_report
+
+    payload = write_weather_tiny_canary_risk_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/risk/latest_tiny_canary_risk.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@risk_app.command("weather-canary-kill-switch")
+def risk_weather_canary_kill_switch() -> None:
+    from quant_os.risk.weather_canary_kill_switch import write_weather_canary_kill_switch_report
+
+    payload = write_weather_canary_kill_switch_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/kill_switch/latest_kill_switch.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@execution_app.command("weather-canary-reconciliation")
+def execution_weather_canary_reconciliation() -> None:
+    from quant_os.execution.weather_canary_reconciliation import (
+        write_weather_canary_reconciliation_report,
+    )
+
+    payload = write_weather_canary_reconciliation_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/reconciliation/latest_reconciliation.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("weather-manual-canary-packet")
+def readiness_weather_manual_canary_packet() -> None:
+    from quant_os.readiness.weather_manual_canary_packet import (
+        write_weather_manual_canary_packet_report,
+    )
+
+    payload = write_weather_manual_canary_packet_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/manual_packet/latest_manual_canary_packet.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("tiny-canary-readiness")
+def readiness_tiny_canary_readiness() -> None:
+    from quant_os.readiness.tiny_canary_readiness import write_tiny_canary_readiness_report
+
+    payload = write_tiny_canary_readiness_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_readiness/final/latest_tiny_canary_readiness.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("first-dollar-provenance-audit")
+def readiness_first_dollar_provenance_audit() -> None:
+    from quant_os.readiness.first_dollar_provenance_audit import (
+        write_first_dollar_provenance_audit_report,
+    )
+
+    payload = write_first_dollar_provenance_audit_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/first_dollar_preflight/provenance/latest_provenance_audit.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("first-dollar-provenance-repair")
+def readiness_first_dollar_provenance_repair() -> None:
+    from quant_os.readiness.first_dollar_provenance_repair import (
+        write_first_dollar_provenance_repair_report,
+    )
+
+    payload = write_first_dollar_provenance_repair_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/first_dollar_preflight/provenance_repair/latest_provenance_repair.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("first-dollar-security-scan")
+def readiness_first_dollar_security_scan() -> None:
+    from quant_os.readiness.first_dollar_security_scan import (
+        write_first_dollar_security_scan_report,
+    )
+
+    payload = write_first_dollar_security_scan_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/first_dollar_preflight/security/latest_first_dollar_security_scan.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("current-market-eligibility")
+def readiness_current_market_eligibility() -> None:
+    from quant_os.readiness.current_market_eligibility import (
+        write_current_market_eligibility_report,
+    )
+
+    payload = write_current_market_eligibility_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/first_dollar_preflight/current_market/latest_current_market_eligibility.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("first-dollar-order-preview")
+def readiness_first_dollar_order_preview() -> None:
+    from quant_os.readiness.first_dollar_order_preview import (
+        write_first_dollar_order_preview_report,
+    )
+
+    payload = write_first_dollar_order_preview_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/first_dollar_preflight/order_preview/latest_order_preview.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("first-dollar-human-review")
+def readiness_first_dollar_human_review() -> None:
+    from quant_os.readiness.first_dollar_human_review import (
+        write_first_dollar_human_review_report,
+    )
+
+    payload = write_first_dollar_human_review_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/first_dollar_preflight/human_review/latest_human_review.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("first-dollar-preflight")
+def readiness_first_dollar_preflight() -> None:
+    from quant_os.readiness.first_dollar_preflight import (
+        write_first_dollar_preflight_report,
+    )
+
+    payload = write_first_dollar_preflight_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/first_dollar_preflight/final/latest_first_dollar_preflight.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("live-market-paper-rehearsal")
+def readiness_live_market_paper_rehearsal() -> None:
+    from quant_os.readiness.live_market_paper_rehearsal_readiness import (
+        write_live_market_paper_rehearsal_readiness_report,
+    )
+
+    payload = write_live_market_paper_rehearsal_readiness_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "observation_count": payload["observation_count"],
+            "report": "reports/live_market_paper_rehearsal/final/latest_live_market_paper_rehearsal.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("live-market-sim-profitability")
+def readiness_live_market_sim_profitability() -> None:
+    from quant_os.readiness.live_market_sim_profitability import (
+        write_live_market_sim_profitability_report,
+    )
+
+    payload = write_live_market_sim_profitability_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "observation_count": payload["observation_count"],
+            "eligible_intent_count": payload["eligible_intent_count"],
+            "fake_net_pnl": payload["fake_net_pnl"],
+            "report": "reports/live_market_sim_profitability/final/latest_live_market_sim_profitability.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("crypto-spot-live-sim-profitability")
+def readiness_crypto_spot_live_sim_profitability() -> None:
+    from quant_os.readiness.crypto_spot_live_sim_profitability import (
+        write_crypto_spot_live_sim_profitability_report,
+    )
+
+    payload = write_crypto_spot_live_sim_profitability_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "observation_count": payload["observation_count"],
+            "eligible_intent_count": payload["eligible_intent_count"],
+            "fake_net_pnl": payload["fake_net_pnl"],
+            "report": "reports/multi_market_live_sim/crypto_spot/latest_crypto_profitability.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("multi-market-live-sim-profitability")
+def readiness_multi_market_live_sim_profitability() -> None:
+    from quant_os.readiness.multi_market_live_sim_profitability import (
+        write_multi_market_live_sim_profitability_report,
+    )
+
+    payload = write_multi_market_live_sim_profitability_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "proven_market_families": payload["proven_market_families"],
+            "report": "reports/multi_market_live_sim/final/latest_multi_market_live_sim_profitability.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("canary-grade-live-sim")
+def readiness_canary_grade_live_sim() -> None:
+    from quant_os.readiness.canary_grade_live_sim_readiness import (
+        write_canary_grade_live_sim_readiness_report,
+    )
+
+    payload = write_canary_grade_live_sim_readiness_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "observations_count": payload["observations_count"],
+            "eligible_intent_count": payload["eligible_intent_count"],
+            "fake_net_pnl": payload["fake_net_pnl"],
+            "report": "reports/canary_grade_live_sim/final/latest_canary_grade_live_sim_readiness.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("canary-grade-fresh-repro")
+def readiness_canary_grade_fresh_repro(
+    proof_command_passed: bool = typer.Option(False, "--proof-command-passed"),
+    proof_command: str = typer.Option(".\\make.cmd canary-grade-live-sim-smoke", "--proof-command"),
+    proof_output_root: str | None = typer.Option(None, "--proof-output-root"),
+    independent_clean_checkout_verified: bool = typer.Option(
+        False,
+        "--independent-clean-checkout-verified",
+    ),
+    proof_head_oid: str | None = typer.Option(None, "--proof-head-oid"),
+) -> None:
+    from quant_os.readiness.canary_grade_fresh_repro import (
+        write_canary_grade_fresh_repro_report,
+    )
+
+    payload = write_canary_grade_fresh_repro_report(
+        output_root=Path("."),
+        proof_command_passed=proof_command_passed,
+        proof_command=proof_command,
+        proof_output_root=proof_output_root,
+        independent_clean_checkout_verified=independent_clean_checkout_verified,
+        proof_head_oid=proof_head_oid,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "blockers": payload["blockers"],
+            "report": "reports/canary_grade_live_sim/fresh_repro/latest_fresh_repro.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("canary-grade-manual-packet")
+def readiness_canary_grade_manual_packet() -> None:
+    from quant_os.readiness.canary_grade_manual_packet import (
+        write_canary_grade_manual_packet_report,
+    )
+
+    payload = write_canary_grade_manual_packet_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/canary_grade_live_sim/manual_canary_packet/latest_manual_canary_packet.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("autonomous-no-transmit-execution-rehearsal")
+def readiness_autonomous_no_transmit_execution_rehearsal() -> None:
+    from quant_os.readiness.autonomous_no_transmit_execution_rehearsal import (
+        write_autonomous_no_transmit_execution_rehearsal_report,
+    )
+
+    payload = write_autonomous_no_transmit_execution_rehearsal_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_execution_status": payload["fake_execution_status"],
+            "report": (
+                "reports/autonomous_live_fire_drill/no_transmit_execution_rehearsal/"
+                "latest_no_transmit_execution_rehearsal.json"
+            ),
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("money-worthy-canary-grade")
+def readiness_money_worthy_canary_grade() -> None:
+    from quant_os.readiness.money_worthy_canary_grade import (
+        write_money_worthy_canary_grade_report,
+    )
+
+    payload = write_money_worthy_canary_grade_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "fake_net_pnl": payload["fake_net_pnl"],
+            "manual_packet_status": payload["manual_packet_status"],
+            "no_transmit_execution_rehearsal_status": payload[
+                "no_transmit_execution_rehearsal_status"
+            ],
+            "report": "reports/canary_grade_live_sim/money_worthy/latest_money_worthy_canary_grade.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("canary-grade-armability")
+def readiness_canary_grade_armability() -> None:
+    from quant_os.readiness.canary_grade_armability import (
+        write_canary_grade_armability_report,
+    )
+
+    payload = write_canary_grade_armability_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "money_worthy_status": payload["money_worthy_status"],
+            "manual_packet_status": payload["manual_packet_status"],
+            "no_transmit_execution_rehearsal_status": payload[
+                "no_transmit_execution_rehearsal_status"
+            ],
+            "independent_fresh_worktree_proof_status": payload[
+                "independent_fresh_worktree_proof_status"
+            ],
+            "report": "reports/canary_grade_live_sim/armability/latest_armability.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("final-human-arming-review")
+def readiness_final_human_arming_review() -> None:
+    from quant_os.readiness.final_human_arming_review import (
+        write_final_human_arming_review_report,
+    )
+
+    payload = write_final_human_arming_review_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "exact_blocker": payload["exact_blocker"],
+            "fake_net_pnl": payload["fake_net_pnl"],
+            "baseline_edge": payload["baseline_edge"],
+            "placebo_edge": payload["placebo_edge"],
+            "report": (
+                "reports/canary_grade_live_sim/final_human_arming_review/"
+                "latest_final_human_arming_review.json"
+            ),
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("x-quant-hypothesis-intake")
+def research_x_quant_hypothesis_intake(
+    zip_path: Annotated[Path | None, typer.Option("--zip-path")] = None,
+) -> None:
+    from quant_os.research.social_hypotheses.x_quant_batch_intake import (
+        write_x_quant_hypotheses_report,
+    )
+
+    payload = write_x_quant_hypotheses_report(output_root=Path("."), zip_path=zip_path)
+    print(
+        {
+            "status": payload["status"],
+            "safe_hypotheses_count": payload["safe_hypotheses_count"],
+            "unsafe_claims_rejected": payload["unsafe_claims_rejected"],
+            "report": "reports/thousand_strategy_campaign/social_hypotheses/latest_x_quant_hypotheses.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("strategy-research")
+def research_thousand_strategy_research() -> None:
+    from quant_os.research.strategy_factory.strategy_research import (
+        write_strategy_research_report,
+    )
+
+    payload = write_strategy_research_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "families": len(payload["families"]),
+            "report": "reports/thousand_strategy_campaign/research/latest_strategy_research.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("source-pack-intake")
+def research_source_pack_intake(
+    primary_source_pack: Annotated[Path, typer.Option("--primary-source-pack")] = Path(
+        "C:/Users/estiv/Downloads/quant_project_source_pack_20260520_v4_github_repo_research.zip"
+    ),
+    supporting_source_pack: Annotated[Path | None, typer.Option("--supporting-source-pack")] = Path(
+        "C:/Users/estiv/Downloads/quant_project_source_pack_20260520_v3_media_researched.zip"
+    ),
+) -> None:
+    from quant_os.research.strategy_factory.source_pack_intake import (
+        write_source_pack_intake_report,
+    )
+
+    payload = write_source_pack_intake_report(
+        output_root=Path("."),
+        primary_source_pack=primary_source_pack,
+        supporting_source_pack=supporting_source_pack,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "accepted_idea_count": payload["accepted_idea_count"],
+            "rejected_idea_count": payload["rejected_idea_count"],
+            "proof_status_changed": payload["proof_status_changed"],
+            "report": "reports/thousand_strategy_campaign/source_pack_intake/latest_source_pack_intake.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("source-backed-tranche-plan")
+def research_source_backed_tranche_plan() -> None:
+    from quant_os.research.strategy_factory.source_backed_tranche_plan import (
+        write_source_backed_tranche_plan_report,
+    )
+
+    payload = write_source_backed_tranche_plan_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "target_next_variants": payload["target_next_variants"],
+            "families_added": payload["families_added"],
+            "proof_status_changed": payload["proof_status_changed"],
+            "report": "reports/thousand_strategy_campaign/source_backed_tranche_plan/latest_source_backed_tranche_plan.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("generate-strategy-variants")
+def research_generate_strategy_variants(
+    target_count: int = typer.Option(1000, "--target-count", min=1000),
+    batch_index: int = typer.Option(1, "--batch-index", min=1),
+) -> None:
+    from quant_os.research.strategy_factory.strategy_variant_generator import (
+        write_strategy_variants_report,
+    )
+
+    payload = write_strategy_variants_report(
+        output_root=Path("."),
+        target_count=target_count,
+        batch_index=batch_index,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "batch_index": payload["batch_index"],
+            "variant_count": payload["variant_count"],
+            "cumulative_variant_count": payload["cumulative_variant_count"],
+            "report": "reports/thousand_strategy_campaign/variants/latest_strategy_variants.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("strategy-tournament")
+def research_strategy_tournament(
+    batch_index: int = typer.Option(1, "--batch-index", min=1),
+) -> None:
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_strategy_tournament_report,
+    )
+
+    payload = write_strategy_tournament_report(output_root=Path("."), batch_index=batch_index)
+    print(
+        {
+            "status": payload["status"],
+            "batch_index": payload["batch_index"],
+            "variants_generated": payload["variants_generated"],
+            "cumulative_variants_generated": payload["cumulative_variants_generated"],
+            "variants_tested": payload["variants_tested"],
+            "cumulative_variants_tested": payload["cumulative_variants_tested"],
+            "report": "reports/thousand_strategy_campaign/tournament/latest_tournament.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@research_app.command("strategy-next-tranche")
+def research_strategy_next_tranche(
+    target_count: int | None = typer.Option(None, "--target-count", min=1),
+) -> None:
+    from quant_os.research.strategy_factory.strategy_tournament import (
+        write_next_strategy_tranche_report,
+    )
+
+    payload = write_next_strategy_tranche_report(
+        output_root=Path("."),
+        target_count=target_count,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "batch_index": payload["batch_index"],
+            "variants_generated": payload["variants_generated"],
+            "cumulative_variants_generated": payload["cumulative_variants_generated"],
+            "variants_tested": payload["variants_tested"],
+            "cumulative_variants_tested": payload["cumulative_variants_tested"],
+            "campaign_complete": payload["campaign_complete"],
+            "resume": payload["exact_resume_command"],
+            "report": "reports/thousand_strategy_campaign/tournament/latest_tournament.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("variant-live-sim-run")
+def autonomy_variant_live_sim_run() -> None:
+    from quant_os.autonomy.variant_live_sim_common import write_live_sim_summary
+    from quant_os.autonomy.variant_live_sim_fill import write_variant_live_sim_fill_report
+    from quant_os.autonomy.variant_live_sim_intents import write_variant_live_sim_intents_report
+    from quant_os.autonomy.variant_live_sim_ledger import write_variant_live_sim_ledger_report
+    from quant_os.autonomy.variant_live_sim_observer import write_variant_live_sim_observer_report
+    from quant_os.autonomy.variant_live_sim_pnl import write_variant_live_sim_pnl_report
+    from quant_os.autonomy.variant_live_sim_reconciliation import (
+        write_variant_live_sim_reconciliation_report,
+    )
+
+    write_variant_live_sim_observer_report(output_root=Path("."))
+    intents = write_variant_live_sim_intents_report(output_root=Path("."))
+    write_variant_live_sim_fill_report(output_root=Path("."))
+    write_variant_live_sim_ledger_report(output_root=Path("."))
+    pnl = write_variant_live_sim_pnl_report(output_root=Path("."))
+    write_variant_live_sim_reconciliation_report(output_root=Path("."))
+    summary = write_live_sim_summary(output_root=Path("."))
+    print(
+        {
+            "status": summary["status"],
+            "eligible_intent_count": intents["eligible_intent_count"],
+            "fake_net_pnl": pnl["fake_net_pnl"],
+            "report": "reports/thousand_strategy_campaign/live_sim/latest_live_sim_summary.json",
+            "live_trading_enabled": summary["live_trading_enabled"],
+            "execution_authority": summary["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("variant-public-forward-live-sim")
+def autonomy_variant_public_forward_live_sim() -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_live_sim_summary,
+    )
+
+    payload = write_variant_public_forward_live_sim_summary(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "selected_strategy_id": payload["selected_strategy_id"],
+            "public_forward_evidence_proven": payload["public_forward_evidence_proven"],
+            "report": "reports/thousand_strategy_campaign/live_sim/latest_live_sim_summary.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("variant-public-forward-observe")
+def autonomy_variant_public_forward_observe(
+    asset: str = typer.Option("BTC/USD", "--asset"),
+    bid: float = typer.Option(0.0, "--bid"),
+    ask: float = typer.Option(0.0, "--ask"),
+    source: str = typer.Option(
+        "kraken_public_rest_unauthenticated_forward_pending",
+        "--source",
+    ),
+    timestamp: str = typer.Option("pending", "--timestamp"),
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        append_variant_public_forward_observations,
+        append_variant_public_forward_public_snapshot,
+    )
+
+    if public_network_ok:
+        payload = append_variant_public_forward_public_snapshot(
+            output_root=Path("."),
+            public_network_ok=True,
+        )
+    else:
+        payload = append_variant_public_forward_observations(
+            output_root=Path("."),
+            observations=[
+                {
+                    "asset": asset,
+                    "bid": bid,
+                    "ask": ask,
+                    "source": source,
+                    "timestamp": timestamp,
+                }
+            ],
+        )
+    print(
+        {
+            "status": payload["status"],
+            "selected_strategy_id": payload["selected_strategy_id"],
+            "observation_count": payload["observation_count"],
+            "public_forward_evidence_proven": payload["public_forward_evidence_proven"],
+            "report": "reports/thousand_strategy_campaign/live_sim/latest_live_sim_summary.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("variant-public-forward-intents")
+def autonomy_variant_public_forward_intents() -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_intents_report,
+    )
+
+    payload = write_variant_public_forward_intents_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "selected_strategy_id": payload["selected_strategy_id"],
+            "eligible_intent_count": payload["eligible_intent_count"],
+            "public_forward_evidence_proven": payload["public_forward_evidence_proven"],
+            "report": "reports/thousand_strategy_campaign/live_sim/latest_public_forward_intents.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("variant-public-forward-fills-and-marks")
+def autonomy_variant_public_forward_fills_and_marks() -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_fills_and_marks_report,
+    )
+
+    payload = write_variant_public_forward_fills_and_marks_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "selected_strategy_id": payload["selected_strategy_id"],
+            "fake_fill_count": payload["fake_fill_count"],
+            "completed_mark_count": payload["completed_mark_count"],
+            "fake_net_pnl": payload["fake_net_pnl"],
+            "public_forward_evidence_proven": payload["public_forward_evidence_proven"],
+            "report": (
+                "reports/thousand_strategy_campaign/live_sim/"
+                "latest_public_forward_fills_and_marks.json"
+            ),
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("variant-public-forward-cycle")
+def autonomy_variant_public_forward_cycle(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_collection_cycle,
+    )
+
+    payload = write_variant_public_forward_collection_cycle(
+        output_root=Path("."),
+        public_network_ok=public_network_ok,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "selected_strategy_id": payload["selected_strategy_id"],
+            "observation_count": payload["observation_count"],
+            "eligible_intent_count": payload["eligible_intent_count"],
+            "fake_fill_count": payload["fake_fill_count"],
+            "completed_mark_count": payload["completed_mark_count"],
+            "fake_net_pnl": payload["fake_net_pnl"],
+            "public_forward_evidence_status": payload["public_forward_evidence_status"],
+            "report": "reports/thousand_strategy_campaign/live_sim/latest_public_forward_cycle.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("variant-public-forward-batch-cycle")
+def autonomy_variant_public_forward_batch_cycle(
+    public_network_ok: bool = typer.Option(False, "--public-network-ok"),
+    cycle_count: int = typer.Option(1, "--cycle-count", min=1, max=50),
+    sleep_seconds: float = typer.Option(0.0, "--sleep-seconds", min=0.0, max=60.0),
+) -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_batch_cycle,
+    )
+
+    payload = write_variant_public_forward_batch_cycle(
+        output_root=Path("."),
+        public_network_ok=public_network_ok,
+        cycle_count=cycle_count,
+        sleep_seconds=sleep_seconds,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "selected_strategy_id": payload["selected_strategy_id"],
+            "cycle_count_completed": payload["cycle_count_completed"],
+            "observation_count": payload["observation_count"],
+            "eligible_intent_count": payload["eligible_intent_count"],
+            "fake_fill_count": payload["fake_fill_count"],
+            "completed_mark_count": payload["completed_mark_count"],
+            "fake_net_pnl": payload["fake_net_pnl"],
+            "public_forward_evidence_status": payload["public_forward_evidence_status"],
+            "report": (
+                "reports/thousand_strategy_campaign/live_sim/"
+                "latest_public_forward_batch_cycle.json"
+            ),
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("variant-public-forward-candidate-archive")
+def autonomy_variant_public_forward_candidate_archive() -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_candidate_archive,
+    )
+
+    payload = write_variant_public_forward_candidate_archive(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "candidate_count": payload["candidate_count"],
+            "selected_strategy_id": payload["selected_strategy_id"],
+            "public_forward_evidence_proven": payload["public_forward_evidence_proven"],
+            "report": (
+                "reports/thousand_strategy_campaign/live_sim/"
+                "latest_public_forward_candidate_archive.json"
+            ),
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("variant-public-forward-candidate-rotation")
+def autonomy_variant_public_forward_candidate_rotation() -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_candidate_rotation,
+    )
+
+    payload = write_variant_public_forward_candidate_rotation(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "retired_candidate_id": payload["retired_candidate_id"],
+            "selected_strategy_id": payload["selected_strategy_id"],
+            "retirement_reasons": payload["retirement_reasons"],
+            "report": (
+                "reports/thousand_strategy_campaign/live_sim/"
+                "latest_public_forward_candidate_rotation.json"
+            ),
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("variant-public-forward-proof-finalizer")
+def autonomy_variant_public_forward_proof_finalizer() -> None:
+    from quant_os.autonomy.variant_public_forward_live_sim import (
+        write_variant_public_forward_proof_finalizer,
+    )
+
+    payload = write_variant_public_forward_proof_finalizer(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "selected_strategy_id": payload["selected_strategy_id"],
+            "blockers": payload["blockers"],
+            "public_forward_evidence_proven": payload["public_forward_evidence_proven"],
+            "report": (
+                "reports/thousand_strategy_campaign/live_sim/"
+                "latest_public_forward_proof_finalizer.json"
+            ),
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("thousand-strategy-overfit-guard")
+def proving_thousand_strategy_overfit_guard() -> None:
+    from quant_os.proving.thousand_strategy_overfit_guard import (
+        write_thousand_strategy_overfit_guard_report,
+    )
+
+    payload = write_thousand_strategy_overfit_guard_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "blockers": payload["blockers"],
+            "report": "reports/thousand_strategy_campaign/overfit/latest_overfit_guard.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("thousand-strategy-public-forward-evidence")
+def proving_thousand_strategy_public_forward_evidence() -> None:
+    from quant_os.proving.thousand_strategy_public_forward_evidence import (
+        write_thousand_strategy_public_forward_evidence_report,
+    )
+
+    payload = write_thousand_strategy_public_forward_evidence_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "blockers": payload["blockers"],
+            "report": (
+                "reports/thousand_strategy_campaign/public_forward_evidence/"
+                "latest_public_forward_evidence.json"
+            ),
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@risk_app.command("strategy-conflict-detector")
+def risk_strategy_conflict_detector() -> None:
+    from quant_os.risk.strategy_conflict_detector import write_strategy_conflict_detector_report
+
+    payload = write_strategy_conflict_detector_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "veto_reasons": payload["veto_reasons"],
+            "report": "reports/thousand_strategy_campaign/conflict_detector/latest_conflict_detector.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("thousand-strategy-repeatability")
+def proving_thousand_strategy_repeatability() -> None:
+    from quant_os.proving.thousand_strategy_repeatability import (
+        write_thousand_strategy_repeatability_report,
+    )
+
+    payload = write_thousand_strategy_repeatability_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "blockers": payload["blockers"],
+            "report": "reports/thousand_strategy_campaign/repeatability/latest_repeatability.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@proving_app.command("thousand-strategy-capacity")
+def proving_thousand_strategy_capacity() -> None:
+    from quant_os.proving.thousand_strategy_capacity import write_thousand_strategy_capacity_report
+
+    payload = write_thousand_strategy_capacity_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "max_safe_notional_usd": payload["max_safe_notional_usd"],
+            "report": "reports/thousand_strategy_campaign/capacity/latest_capacity.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("thousand-strategy-fresh-repro")
+def readiness_thousand_strategy_fresh_repro(
+    proof_command_passed: bool = typer.Option(False, "--proof-command-passed"),
+    audit_worktree: str = typer.Option(
+        "C:/Users/estiv/quant-thousand-strategy-audit",
+        "--audit-worktree",
+    ),
+) -> None:
+    from quant_os.readiness.thousand_strategy_fresh_repro import (
+        write_thousand_strategy_fresh_repro_report,
+    )
+
+    payload = write_thousand_strategy_fresh_repro_report(
+        output_root=Path("."),
+        proof_command_passed=proof_command_passed,
+        audit_worktree=audit_worktree,
+    )
+    print(
+        {
+            "status": payload["status"],
+            "blockers": payload["blockers"],
+            "report": "reports/thousand_strategy_campaign/fresh_repro/latest_fresh_repro.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("money-worthy-strategy")
+def readiness_money_worthy_strategy() -> None:
+    from quant_os.readiness.money_worthy_strategy_readiness_report import (
+        write_money_worthy_strategy_readiness_report,
+    )
+
+    payload = write_money_worthy_strategy_readiness_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "blockers": payload["blockers"],
+            "report": "reports/thousand_strategy_campaign/final/latest_money_worthy_readiness.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@readiness_app.command("thousand-strategy-manual-canary-packet")
+def readiness_thousand_strategy_manual_canary_packet() -> None:
+    from quant_os.readiness.thousand_strategy_manual_canary_packet import (
+        write_thousand_strategy_manual_canary_packet,
+    )
+
+    payload = write_thousand_strategy_manual_canary_packet(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "report": "reports/thousand_strategy_campaign/manual_canary_packet/latest_manual_canary_packet.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
+@autonomy_app.command("thousand-strategy-schedule")
+def autonomy_thousand_strategy_schedule() -> None:
+    from quant_os.autonomy.thousand_strategy_campaign_schedule import (
+        write_thousand_strategy_campaign_schedule_report,
+    )
+
+    payload = write_thousand_strategy_campaign_schedule_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "data_only": payload["data_only"],
+            "report": "reports/thousand_strategy_campaign/schedule/latest_schedule.json",
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
         }
     )
 

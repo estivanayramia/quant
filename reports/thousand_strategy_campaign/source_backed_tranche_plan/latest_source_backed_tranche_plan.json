@@ -1,0 +1,352 @@
+{
+  "actual_cancel_count": 0,
+  "actual_order_count": 0,
+  "api_keys_loaded": false,
+  "authenticated_requests_enabled": false,
+  "blockers_addressed": [
+    "OVERFIT_GUARD_NOT_PASSED",
+    "PUBLIC_FORWARD_EVIDENCE_NOT_PROVEN",
+    "REPEATABILITY_NOT_PASSED",
+    "REPLAY_REALISM_STRESS_NOT_APPLIED"
+  ],
+  "checked_account_balance": false,
+  "checked_portfolio": false,
+  "executable_signal_families": [
+    "crypto_public_data_quality_filtered_momentum",
+    "volatility_regime_momentum",
+    "range_breakout_cost_filtered",
+    "volatility_compression_breakout",
+    "cross_asset_lead_lag",
+    "volume_impulse_continuation",
+    "volume_impulse_reversal",
+    "trend_pullback_continuation",
+    "extreme_move_snapback",
+    "liquidity_shock_reversion",
+    "spread_normalization_signal",
+    "market_microstructure_no_trade_filter"
+  ],
+  "execution_authority": "NONE",
+  "families_added": [
+    "prediction_market_read_only_clob_replay",
+    "replay_realism_veto_layer",
+    "crypto_public_data_quality_filtered_momentum",
+    "source_quality_filtering_and_evidence_pack",
+    "calibration_holdout_walk_forward_protocol",
+    "prediction_market_structural_consistency_checks",
+    "dependency_license_security_gate",
+    "source_backed_no_trade_veto_behavior"
+  ],
+  "families_deferred": [
+    "weather_forecast_market_calibration"
+  ],
+  "families_removed_or_deprioritized": [
+    "coinflip_open_hour_bias",
+    "copy_trading_wallet_mirroring",
+    "final_seconds_resolution_gap",
+    "stealth_scraping_or_anti_bot_collection",
+    "unreviewed_public_bot_clone_strategy"
+  ],
+  "live_public_market_priority_order": [
+    "crypto_public_forward_spot",
+    "prediction_market_read_only_clob",
+    "event_driven_replay_architecture",
+    "weather_issue_time_calibration"
+  ],
+  "live_trading_enabled": false,
+  "next_resume_command": ".\\make.cmd thousand-strategy-next-tranche",
+  "order_transmission_enabled": false,
+  "parameter_range_changes": {
+    "entry_z": {
+      "after": [
+        0.75,
+        1.0,
+        1.5
+      ],
+      "before": [
+        0.25,
+        0.5,
+        0.75,
+        1.0,
+        1.5
+      ]
+    },
+    "holding_windows": {
+      "after": [
+        5,
+        15,
+        30
+      ],
+      "before": [
+        5,
+        15,
+        30,
+        60,
+        240
+      ]
+    },
+    "liquidity_cap_usd": {
+      "after": [
+        1.0,
+        5.0
+      ],
+      "before": [
+        1.0,
+        5.0,
+        25.0
+      ]
+    },
+    "lookbacks": {
+      "after": [
+        5,
+        15,
+        30
+      ],
+      "before": [
+        5,
+        15,
+        30,
+        60,
+        120
+      ]
+    },
+    "no_trade_edge_bps": {
+      "change": "raise floor when execution uncertainty exceeds edge"
+    },
+    "spread_cap_bps": {
+      "after": [
+        5.0,
+        10.0
+      ],
+      "before": [
+        5.0,
+        10.0,
+        20.0
+      ]
+    }
+  },
+  "priority_repo_leads": [
+    {
+      "adoption_decision": "REFERENCE_PUBLIC_DATA_ONLY",
+      "allows_live_orders": false,
+      "id": "spl_509a2a7f8d13",
+      "market_lane": "crypto_public_forward_spot",
+      "repo": "binance/binance-public-data",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "use_for": "public historical candles/trades benchmark and provenance checks",
+      "validation_blocker": "BINANCE_PUBLIC_DATA_FIXTURE_NOT_REPLAYED"
+    },
+    {
+      "adoption_decision": "REFERENCE_PUBLIC_DATA_ONLY",
+      "allows_live_orders": false,
+      "id": "spl_428808ea55d6",
+      "market_lane": "crypto_public_forward_spot",
+      "repo": "ccxt/ccxt",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "use_for": "exchange-symbol normalization and public market-data interface patterns",
+      "validation_blocker": "DEPENDENCY_REVIEW_NOT_COMPLETED"
+    },
+    {
+      "adoption_decision": "REFERENCE_DRY_RUN_ONLY",
+      "allows_live_orders": false,
+      "id": "spl_25d830673c22",
+      "market_lane": "crypto_public_forward_spot",
+      "repo": "freqtrade/freq",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "use_for": "dry-run validation discipline and crypto strategy report patterns",
+      "validation_blocker": "FREQTRADE_DRY_RUN_ONLY_VALIDATION_REQUIRED"
+    },
+    {
+      "adoption_decision": "REFERENCE_READ_ONLY_FIRST",
+      "allows_live_orders": false,
+      "id": "spl_a789e97765de",
+      "market_lane": "prediction_market_read_only_clob",
+      "repo": "Polymarket/py-clob-client-v2",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "use_for": "current CLOB field names and read-only market discovery design",
+      "validation_blocker": "AUTH_AND_ORDER_EXAMPLES_MUST_STAY_UNWIRED"
+    },
+    {
+      "adoption_decision": "REFERENCE_PUBLIC_DATA_ONLY",
+      "allows_live_orders": false,
+      "id": "spl_703a50a1d2fd",
+      "market_lane": "prediction_market_read_only_clob",
+      "repo": "warproxxx/poly_data",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "use_for": "Polymarket historical market, trade, and order-filled event schema",
+      "validation_blocker": "PUBLIC_PREDICTION_MARKET_DATA_LANE_NOT_BUILT"
+    },
+    {
+      "adoption_decision": "REFERENCE_REPLAY_ARCHITECTURE_ONLY",
+      "allows_live_orders": false,
+      "id": "spl_fed4d57ee96b",
+      "market_lane": "prediction_market_read_only_clob",
+      "repo": "evan-kolberg/prediction-market-backtesting",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "use_for": "event-driven prediction-market replay and fill realism patterns",
+      "validation_blocker": "REPLAY_REALISM_STRESS_NOT_APPLIED"
+    },
+    {
+      "adoption_decision": "REFERENCE_ARCHITECTURE_ONLY",
+      "allows_live_orders": false,
+      "id": "spl_fe4dafb1c174",
+      "market_lane": "event_driven_replay_architecture",
+      "repo": "nautechsystems/nautilus_trader",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "use_for": "deterministic event-driven replay architecture benchmark",
+      "validation_blocker": "EVENT_DRIVEN_REPLAY_NOT_IMPLEMENTED"
+    },
+    {
+      "adoption_decision": "REFERENCE_BENCHMARK_ONLY",
+      "allows_live_orders": false,
+      "id": "spl_468e274da1a2",
+      "market_lane": "prediction_market_read_only_clob",
+      "repo": "PolyBench/PolyBench",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/priority_repo_decisions.md",
+      "use_for": "timestamp-locked benchmark framing for CLOB/news evaluation",
+      "validation_blocker": "TIMESTAMP_LOCKED_BENCHMARK_NOT_BUILT"
+    },
+    {
+      "adoption_decision": "DEFER_UNTIL_OUTCOME_ALIGNMENT",
+      "allows_live_orders": false,
+      "id": "spl_23bb2ba4b2e0",
+      "market_lane": "weather_issue_time_calibration",
+      "repo": "yangyuan-zhen/PolyWeather",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/repo_cards/yangyuan-zhen__PolyWeather.md",
+      "use_for": "weather market hypothesis origin and forecast/outcome schema ideas",
+      "validation_blocker": "WEATHER_OUTCOME_DATA_PATH_NOT_READY"
+    },
+    {
+      "adoption_decision": "ARCHIVE_FAILURE_MODES_ONLY",
+      "allows_live_orders": false,
+      "id": "spl_32d584974003",
+      "market_lane": "prediction_market_cross_platform_structure",
+      "repo": "TopTrenDev/polymarket-kalshi-arbitrage-bot",
+      "requires_auth": false,
+      "social_or_repo_claim_is_proof": false,
+      "source_pack_file_or_card": "github_repo_research/repo_cards/TopTrenDev__polymarket-kalshi-arbitrage-bot.md",
+      "use_for": "cross-platform relation hypotheses and settlement-rule failure modes only",
+      "validation_blocker": "COPY_OR_LIVE_BOT_LOGIC_REJECTED"
+    }
+  ],
+  "private_keys_loaded": false,
+  "proof_status_changed": false,
+  "report_paths": {
+    "json": "reports\\thousand_strategy_campaign\\source_backed_tranche_plan\\latest_source_backed_tranche_plan.json",
+    "markdown": "reports\\thousand_strategy_campaign\\source_backed_tranche_plan\\latest_source_backed_tranche_plan.md"
+  },
+  "request_signing_enabled": false,
+  "required_public_data_paths": [
+    {
+      "changes_public_forward_collection": true,
+      "markets": [
+        "BTC/USD",
+        "ETH/USD",
+        "SOL/USD",
+        "XRP/USD"
+      ],
+      "name": "crypto_public_forward_spot",
+      "required_fields": [
+        "bid",
+        "ask",
+        "mid",
+        "spread_bps",
+        "timestamp",
+        "future_mark"
+      ],
+      "requires_auth": false
+    },
+    {
+      "changes_public_forward_collection": true,
+      "markets": [
+        "Polymarket/Kalshi public CLOB markets"
+      ],
+      "name": "prediction_market_read_only_clob",
+      "required_fields": [
+        "market_id",
+        "outcome",
+        "best_bid",
+        "best_ask",
+        "book_depth",
+        "trade_event",
+        "resolved_outcome"
+      ],
+      "requires_auth": false
+    },
+    {
+      "changes_public_forward_collection": false,
+      "markets": [
+        "temperature bucket markets"
+      ],
+      "name": "weather_issue_time_calibration",
+      "required_fields": [
+        "forecast_issue_time",
+        "bucket",
+        "market_price",
+        "resolved_temperature"
+      ],
+      "requires_auth": false
+    }
+  ],
+  "schema_version": "source_backed_tranche_plan_v1",
+  "source_quality_filters": [
+    "prefer official docs, maintained data repos, and reproducible fixtures",
+    "reject PnL screenshots, popularity, stars, and social claims as evidence",
+    "require license/source/security review before adopting dependencies"
+  ],
+  "status": "SOURCE_BACKED_TRANCHE_PLAN_READY",
+  "target_next_variants": 360,
+  "validation_overlay_families": [
+    "replay_realism_veto_layer",
+    "source_quality_filtering_and_evidence_pack",
+    "calibration_holdout_walk_forward_protocol",
+    "dependency_license_security_gate",
+    "source_backed_no_trade_veto_behavior"
+  ],
+  "variants_should_be_generated_next": [
+    {
+      "count": 120,
+      "family": "crypto_public_data_quality_filtered_momentum",
+      "purpose": "continue current fast public-forward lane with tighter spread/liquidity/provenance filters"
+    },
+    {
+      "count": 120,
+      "family": "prediction_market_read_only_clob_replay",
+      "purpose": "build replayable CLOB fixtures before any public-forward prediction-market sampling"
+    },
+    {
+      "count": 80,
+      "family": "replay_realism_veto_layer",
+      "purpose": "stress candidates with stale book, latency, partial-fill, and adverse-selection vetoes"
+    },
+    {
+      "count": 40,
+      "family": "weather_forecast_market_calibration",
+      "purpose": "deferred until issue-time forecasts and resolved outcomes are aligned"
+    }
+  ],
+  "variants_should_no_longer_be_generated": [
+    "copy_trading_wallet_mirroring",
+    "stealth_scraping_or_anti_bot_collection",
+    "coinflip_open_hour_bias without venue-specific opening auction evidence",
+    "final_seconds_resolution_gap without timestamp-latency and book-staleness proof",
+    "wide spread cap variants where edge is below execution uncertainty"
+  ]
+}

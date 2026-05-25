@@ -114,6 +114,26 @@ def _forecast_fixture() -> dict:
     }
 
 
+def _iem_mos_fixture() -> dict:
+    rows = []
+    for hour, temp in [
+        ("2026-05-12T12:00:00.000", 70),
+        ("2026-05-12T15:00:00.000", 73),
+        ("2026-05-12T18:00:00.000", 74),
+        ("2026-05-12T21:00:00.000", 72),
+    ]:
+        rows.append(
+            {
+                "model": "GFS",
+                "station": "KNYC",
+                "runtime_utc": "2026-05-11T12:00:00.000",
+                "ftime_utc": hour,
+                "tmp": temp,
+            }
+        )
+    return {"data": rows}
+
+
 def _orderbook_fixture() -> dict:
     return {
         "orderbooks": {
@@ -146,6 +166,99 @@ def _label_payloads() -> dict[str, str]:
         "KXHIGHNY-26MAY14-B80.5": "CLIMATE REPORT\nMAXIMUM 80\nISSUED 1200 AM EDT MAY 15 2026\n",
         "KXHIGHNY-26MAY15-T65": "",
     }
+
+
+def test_sequence52_weather_archive_source_policy_prefers_iem_and_blocks_open_meteo_for_profit() -> None:
+    from quant_os.data.weather.weather_historical_forecast_archive import (
+        evaluate_weather_historical_forecast_sources,
+    )
+
+    payload = evaluate_weather_historical_forecast_sources(campaign_context="profit_campaign")
+    by_source = {item["source_id"]: item for item in payload["sources"]}
+
+    assert payload["status"] == "WEATHER_ARCHIVE_SOURCE_POLICY_EVALUATED"
+    assert by_source["iem_mos_historical_forecast"]["status"] == "WEATHER_ARCHIVE_SOURCE_ALLOWED"
+    assert by_source["iem_mos_historical_forecast"]["auth_required"] is False
+    assert by_source["iem_mos_historical_forecast"]["paid_required"] is False
+    assert by_source["open_meteo_historical_forecast"]["status"] == "WEATHER_ARCHIVE_SOURCE_BLOCKED"
+    assert by_source["open_meteo_historical_forecast"]["exact_reason"] == (
+        "FREE_TIER_NON_COMMERCIAL_ONLY_FOR_PROFIT_CAMPAIGN"
+    )
+
+
+def test_sequence52_iem_mos_archive_preserves_issue_valid_and_known_at_times() -> None:
+    from quant_os.data.weather.weather_historical_forecast_archive import (
+        build_weather_historical_forecast_archive,
+    )
+
+    market = _resolved_markets_fixture()["markets"][0]
+    payload = build_weather_historical_forecast_archive(
+        markets=[market],
+        mos_payloads_by_market={market["ticker"]: _iem_mos_fixture()},
+        captured_at="2026-05-11T13:00:00Z",
+    )
+
+    snapshot = payload["forecasts_by_market"][market["ticker"]]
+    assert payload["status"] == "WEATHER_HISTORICAL_FORECASTS_CAPTURED"
+    assert snapshot["forecast_source"] == "iem_mos_historical_forecast"
+    assert snapshot["forecast_ts"] == "2026-05-11T12:00:00Z"
+    assert snapshot["known_at_ts"] == "2026-05-11T12:00:00Z"
+    assert snapshot["forecast_value"] == 74.0
+    assert snapshot["valid_times"] == [
+        "2026-05-12T12:00:00Z",
+        "2026-05-12T15:00:00Z",
+        "2026-05-12T18:00:00Z",
+        "2026-05-12T21:00:00Z",
+    ]
+    assert snapshot["uses_realized_weather"] is False
+    assert snapshot["uses_resolution_as_forecast"] is False
+
+
+def test_sequence52_batch_capture_can_use_iem_historical_forecast_archive(
+    local_project: Path,
+) -> None:
+    from quant_os.data.weather.weather_historical_forecast_archive import (
+        build_weather_historical_forecast_archive,
+    )
+    from quant_os.data.weather.weather_market_batch_capture import (
+        run_weather_market_batch_capture,
+    )
+    from quant_os.research.replay_candidates.weather_market_resolved_dataset_builder import (
+        build_weather_market_resolved_dataset_from_batch_capture,
+    )
+
+    market = _resolved_markets_fixture()["markets"][0]
+    archive = build_weather_historical_forecast_archive(
+        markets=[market],
+        mos_payloads_by_market={market["ticker"]: _iem_mos_fixture()},
+        captured_at="2026-05-11T13:00:00Z",
+    )
+    capture = run_weather_market_batch_capture(
+        output_root=local_project,
+        public_network_ok=True,
+        run_id="fixture_iem_archive_052",
+        series_payload=_series_fixture(),
+        markets_payload={"markets": [market]},
+        orderbook_payload=_orderbook_fixture(),
+        forecast_archive_payload=archive,
+        label_payloads=_label_payloads(),
+        captured_at="2026-05-11T13:05:00Z",
+    )
+    dataset = build_weather_market_resolved_dataset_from_batch_capture(
+        capture_manifest_path=capture["manifest_path"],
+        output_root=local_project,
+    )
+
+    row = dataset["rows"][0]
+    assert capture["status"] == "WEATHER_HISTORICAL_FORECASTS_CAPTURED"
+    assert capture["proof_rows_created"] == 1
+    assert dataset["dataset_status"] == "WEATHER_PROOF_ROWS_BUILT"
+    assert row["forecast_source"] == "iem_mos_historical_forecast"
+    assert row["forecast_ts"] == "2026-05-11T12:00:00Z"
+    assert row["known_at_ts"] == "2026-05-11T12:00:00Z"
+    assert row["orderbook_ts"] == "2026-05-13T04:59:00Z"
+    assert row["forecast_value"] == 74.0
+    assert row["resolution_value"] == 73.0
 
 
 def test_sequence52_resolved_market_discovery_is_deterministic_under_fixtures(
@@ -369,6 +482,46 @@ def test_sequence52_readiness_blocks_thin_samples_one_row_dominance_and_live_cla
     assert readiness["live_readiness_claimed"] is False
 
 
+def test_sequence52_readiness_records_baseline_and_placebo_guard_failures(
+    local_project: Path,
+) -> None:
+    from quant_os.readiness.weather_market_batch_paper_readiness import (
+        evaluate_weather_market_batch_paper_readiness,
+    )
+
+    paper = {
+        "readiness_status": "PAPER_PROFIT_BLOCKED",
+        "costs_included": True,
+        "fill_assumptions_included": True,
+        "baseline_comparison": {"included": True, "paper_beats_comparison": False},
+        "placebo_comparison": {"included": True, "paper_beats_comparison": False},
+        "one_row_dominance": {"detected": False},
+        "oos_walk_forward_status": "OOS_WALK_FORWARD_AVAILABLE",
+        "synthetic_rows_counted_as_profit_evidence": False,
+        "execution_authority": "NONE",
+        "live_trading_enabled": False,
+        "sample_warnings": [],
+    }
+    readiness = evaluate_weather_market_batch_paper_readiness(
+        dataset_payload={
+            "dataset_status": "WEATHER_PROOF_ROWS_BUILT",
+            "rows": [{} for _ in range(30)],
+            "pending_rows": [],
+            "real_public_row_count": 30,
+            "proof_row_count": 30,
+            "fixture_row_count": 0,
+            "blockers": [],
+        },
+        paper_payload=paper,
+        output_root=local_project,
+    )
+
+    assert readiness["readiness_status"] == "PAPER_PROFIT_BLOCKED_BY_BASELINE"
+    assert "BASELINE_COMPARISON_NOT_BEATEN" in readiness["blockers"]
+    assert "PLACEBO_COMPARISON_NOT_BEATEN" in readiness["blockers"]
+    assert readiness["paper_profit_candidate"] is False
+
+
 def test_sequence52_pending_monitor_tracks_phase51_unresolved_market(local_project: Path) -> None:
     from quant_os.data.weather.weather_pending_resolution_monitor import (
         write_weather_pending_resolution_monitor_report,
@@ -419,6 +572,7 @@ def test_sequence52_no_auth_signing_order_cancel_wallet_copy_trade_or_evasion_pa
     repo_root = Path(__file__).resolve().parents[1]
     source_paths = [
         "src/quant_os/data/weather/weather_resolved_market_discovery.py",
+        "src/quant_os/data/weather/weather_historical_forecast_archive.py",
         "src/quant_os/data/weather/weather_resolution_label_fetcher.py",
         "src/quant_os/data/weather/weather_market_batch_capture.py",
         "src/quant_os/research/replay_candidates/weather_market_resolved_dataset_builder.py",

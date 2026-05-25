@@ -1,7 +1,8 @@
 """List or download a bounded pmxt Polymarket orderbook archive sample.
 
-Default behavior only lists candidates. Download requires --download and keeps
-the selected file under ignored data/external/pmxt_orderbooks.
+Default behavior is offline-safe and refuses network access. Listing archive
+candidates requires --public-network-ok. Download also requires --download and
+keeps the selected file under ignored data/external/pmxt_orderbooks.
 """
 
 from __future__ import annotations
@@ -122,6 +123,11 @@ def inspect_parquet(path: Path) -> dict[str, object]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--public-network-ok",
+        action="store_true",
+        help="allow public unauthenticated archive index reads",
+    )
     parser.add_argument("--download", action="store_true", help="download the smallest bounded sample")
     parser.add_argument("--max-mb", type=float, default=125.0)
     parser.add_argument("--limit", type=int, default=5)
@@ -131,6 +137,20 @@ def main() -> int:
 
     if args.inspect:
         print(json.dumps(inspect_parquet(args.inspect), indent=2, default=str))
+        return 0
+    if not args.public_network_ok:
+        print(
+            json.dumps(
+                {
+                    "archive_index": ARCHIVE_INDEX_URL,
+                    "network_used": False,
+                    "downloaded": False,
+                    "status": "PUBLIC_NETWORK_NOT_ENABLED",
+                    "next_action": "Rerun with --public-network-ok to list public archive candidates.",
+                },
+                indent=2,
+            )
+        )
         return 0
 
     candidates = fetch_candidates()

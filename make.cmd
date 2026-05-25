@@ -3,6 +3,19 @@ setlocal EnableDelayedExpansion
 set TARGET=%1
 if "%TARGET%"=="" set TARGET=help
 set "REPO_ROOT=%~dp0"
+set "BUNDLED_PYTHON=%USERPROFILE%\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe"
+if defined PYTHON (
+  set "PYTHON_EXE=%PYTHON%"
+) else if exist "%REPO_ROOT%.venv\Scripts\python.exe" (
+  set "PYTHON_EXE=%REPO_ROOT%.venv\Scripts\python.exe"
+) else if exist "%BUNDLED_PYTHON%" (
+  set "PYTHON_EXE=%BUNDLED_PYTHON%"
+) else (
+  set "PYTHON_EXE=python"
+)
+if not "%PYTHON_EXE%"=="python" (
+  for %%I in ("%PYTHON_EXE%") do set "PATH=%%~dpI;%PATH%"
+)
 set "PYTHONPATH=%REPO_ROOT%src;%PYTHONPATH%"
 
 if "%TARGET%"=="install" (
@@ -1398,6 +1411,498 @@ if "%TARGET%"=="sequence52-smoke" (
   python -m quant_os.cli data weather-pending-resolution-monitor
   if errorlevel 1 exit /b !ERRORLEVEL!
   python -m pytest tests/test_sequence52_weather_resolved_batch_paper_proving.py
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="relentless-profit-campaign-smoke" (
+  python -m quant_os.cli research relentless-profit-campaign
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving relentless-profit-campaign-run
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving relentless-profit-campaign-state
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy forward-capture-plan
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness profit-candidate-autonomy-path
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence53-smoke" (
+  call "%~f0" relentless-profit-campaign-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence53_relentless_profit_campaign.py
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="crypto-spot-public-paper-proving-smoke" (
+  python -m quant_os.cli proving crypto-spot-public-paper-proving
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence54-smoke" (
+  call "%~f0" crypto-spot-public-paper-proving-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence54_crypto_spot_public_paper_proving.py
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="canary-readiness-smoke" (
+  python -m quant_os.cli readiness paper-candidate-audit
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness weather-lineage-audit
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving weather-replay-recompute
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving weather-robustness
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving weather-cost-fill-stress
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving weather-bounded-shadow-rehearsal
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli execution weather-dry-run-parity
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli risk weather-tiny-canary-risk
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli risk weather-canary-kill-switch
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli execution weather-canary-reconciliation
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness weather-manual-canary-packet
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness tiny-canary-readiness
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence55-smoke" (
+  call "%~f0" canary-readiness-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence55_tiny_canary_readiness.py
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="profit-candidate-artifacts-smoke" (
+  python -m quant_os.cli proving regenerate-profit-candidate-artifacts
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="first-dollar-preflight-smoke" (
+  call "%~f0" profit-candidate-artifacts-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness first-dollar-provenance-audit
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness first-dollar-provenance-repair
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" canary-readiness-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness first-dollar-security-scan
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness current-market-eligibility
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness first-dollar-order-preview
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness first-dollar-human-review
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness first-dollar-preflight
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence56-smoke" (
+  call "%~f0" first-dollar-preflight-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence56_first_dollar_preflight.py
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="current-market-preflight-smoke" (
+  python -m quant_os.cli data current-weather-market-discovery
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli data current-weather-forecast-match
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness current-market-eligibility
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness first-dollar-order-preview
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness first-dollar-human-review
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness first-dollar-preflight
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy current-market-watch-plan
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence57-smoke" (
+  call "%~f0" sequence56-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" current-market-preflight-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence57_current_market_preflight.py
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="live-market-paper-rehearsal-smoke" (
+  python -m quant_os.cli autonomy live-market-paper-observer
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-paper-intents
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-fake-fill
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-paper-ledger
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-paper-reconciliation
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness live-market-paper-rehearsal
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-paper-rehearsal-schedule
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence58-smoke" (
+  call "%~f0" live-market-paper-rehearsal-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence58_live_market_paper_rehearsal.py
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="autonomous-live-fire-drill-smoke" (
+  python -m quant_os.cli autonomy autonomous-market-watcher
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy autonomous-decision-engine
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy autonomous-no-transmit-intent
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli execution mock-order-lifecycle
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli execution autonomous-fake-execution
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli risk autonomous-fire-drill-risk
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli execution autonomous-fake-reconciliation
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli validation autonomous-fire-drill-scenarios
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness autonomous-live-fire-drill
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness human-live-boundary-packet
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence59_autonomous_live_fire_drill.py
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence59-smoke" (
+  call "%~f0" sequence58-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" autonomous-live-fire-drill-smoke
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="live-market-sim-profitability-smoke" (
+  python -m quant_os.cli autonomy live-market-profit-observer
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-intents
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-fill
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-ledger
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-outcomes
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-pnl
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving live-market-sim-comparison
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-reconciliation
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness live-market-sim-profitability
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-profitability-schedule
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="live-market-sim-profitability-public-run" (
+  python -m quant_os.cli autonomy live-market-profit-observer --public-network-ok
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-intents
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-fill
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-ledger
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-outcomes --public-network-ok
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-pnl
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving live-market-sim-comparison
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-reconciliation
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness live-market-sim-profitability
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy live-market-sim-profitability-schedule
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="live-market-sim-profitability-outcome-recheck" (
+  python -m quant_os.cli autonomy live-market-sim-profitability-outcome-recheck --public-network-ok
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="live-market-sim-profitability-start-new-run" (
+  python -m quant_os.cli autonomy live-market-sim-start-new-run
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence60-smoke" (
+  call "%~f0" sequence59-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" live-market-sim-profitability-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence60_live_market_sim_profitability.py
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="multi-market-live-sim-smoke" (
+  python -m quant_os.cli autonomy multi-market-live-sim-router
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-spot-live-sim-observer
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-spot-live-sim-intents
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-spot-live-sim-fill
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-spot-live-sim-ledger
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-spot-live-sim-pnl
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving crypto-spot-live-sim-comparison
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-spot-live-sim-reconciliation
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness crypto-spot-live-sim-profitability
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness multi-market-live-sim-profitability
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy multi-market-live-sim-schedule
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence61-smoke" (
+  call "%~f0" sequence60-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" multi-market-live-sim-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence61_multi_market_live_sim.py
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="canary-grade-live-sim-smoke" (
+  python -m quant_os.cli autonomy crypto-canary-grade-observer
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-canary-grade-intents
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-canary-grade-fill
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-canary-grade-ledger
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-canary-grade-pnl
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-canary-grade-reconciliation
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving crypto-live-sim-repeatability
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving crypto-live-sim-capacity
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness canary-grade-fresh-repro --proof-command-passed --proof-command ".\make.cmd canary-grade-live-sim-smoke"
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness canary-grade-live-sim
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness canary-grade-manual-packet
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy canary-grade-live-sim-schedule
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="canary-grade-live-sim-public-run" (
+  python -m quant_os.cli autonomy crypto-canary-grade-observer --public-network-ok
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-canary-grade-intents
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-canary-grade-fill
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-canary-grade-ledger
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-canary-grade-pnl
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy crypto-canary-grade-reconciliation
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving crypto-live-sim-repeatability
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving crypto-live-sim-capacity
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness canary-grade-fresh-repro --proof-command-passed --proof-command ".\make.cmd canary-grade-live-sim-public-run"
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness canary-grade-live-sim
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness canary-grade-manual-packet
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy canary-grade-live-sim-schedule
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="money-worthy-canary-grade-smoke" (
+  call "%~f0" canary-grade-live-sim-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" autonomous-live-fire-drill-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness autonomous-no-transmit-execution-rehearsal
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness money-worthy-canary-grade
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness canary-grade-armability
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness final-human-arming-review
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence65_money_worthy_canary_grade.py
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="money-worthy-canary-grade-public-run" (
+  call "%~f0" canary-grade-live-sim-public-run
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" autonomous-live-fire-drill-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness autonomous-no-transmit-execution-rehearsal
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness money-worthy-canary-grade
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness canary-grade-armability
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness final-human-arming-review
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="final-human-arming-review" (
+  python -m quant_os.cli readiness final-human-arming-review
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence62-smoke" (
+  call "%~f0" sequence61-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  call "%~f0" canary-grade-live-sim-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence62_canary_grade_live_sim.py
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="thousand-strategy-campaign-smoke" (
+  python -m quant_os.cli research x-quant-hypothesis-intake
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research strategy-research
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research generate-strategy-variants
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research strategy-tournament
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-live-sim-run
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-live-sim
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-observe
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-intents
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-fills-and-marks
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-cycle
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-batch-cycle
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-candidate-archive
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-proof-finalizer
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-public-forward-evidence
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-overfit-guard
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli risk strategy-conflict-detector
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-repeatability
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-capacity
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness thousand-strategy-fresh-repro
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness money-worthy-strategy
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness thousand-strategy-manual-canary-packet
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy thousand-strategy-schedule
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="thousand-strategy-public-run" (
+  call "%~f0" thousand-strategy-next-tranche
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="thousand-strategy-next-tranche" (
+  python -m quant_os.cli research strategy-next-tranche
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-live-sim-run
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-live-sim
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-observe
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-intents
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-fills-and-marks
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-cycle
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-batch-cycle
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-candidate-archive
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-proof-finalizer
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-public-forward-evidence
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-overfit-guard
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli risk strategy-conflict-detector
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-repeatability
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-capacity
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness money-worthy-strategy
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness thousand-strategy-manual-canary-packet
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy thousand-strategy-schedule
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence63-smoke" (
+  call "%~f0" thousand-strategy-campaign-smoke
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence63_thousand_strategy_campaign.py
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence64-smoke" (
+  python -m quant_os.cli research generate-strategy-variants --batch-index 2
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli research strategy-tournament --batch-index 2
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-live-sim-run
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-live-sim
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-observe
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-intents
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-fills-and-marks
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-cycle
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-batch-cycle
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-candidate-archive
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy variant-public-forward-proof-finalizer
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-public-forward-evidence
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-overfit-guard
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli risk strategy-conflict-detector
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-repeatability
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli proving thousand-strategy-capacity
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness money-worthy-strategy
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli readiness thousand-strategy-manual-canary-packet
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m quant_os.cli autonomy thousand-strategy-schedule
+  if errorlevel 1 exit /b !ERRORLEVEL!
+  python -m pytest tests/test_sequence64_thousand_strategy_continuation.py
+  exit /b !ERRORLEVEL!
+)
+if "%TARGET%"=="sequence65-smoke" (
+  call "%~f0" money-worthy-canary-grade-smoke
   exit /b !ERRORLEVEL!
 )
 if "%TARGET%"=="venue-capture" (

@@ -6,6 +6,9 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from quant_os.data.weather.weather_historical_forecast_archive import (
+    build_weather_historical_forecast_archive,
+)
 from quant_os.data.weather.weather_market_batch_import import import_weather_batch_capture
 from quant_os.data.weather.weather_market_capture_artifacts import (
     canonical_provenance_hash,
@@ -87,6 +90,7 @@ def run_weather_market_batch_capture(
     markets_payload: dict[str, Any] | None = None,
     orderbook_payload: dict[str, Any] | None = None,
     forecast_payload: dict[str, Any] | None = None,
+    forecast_archive_payload: dict[str, Any] | None = None,
     label_payloads: dict[str, str] | None = None,
     captured_at: str | None = None,
 ) -> dict[str, Any]:
@@ -98,6 +102,7 @@ def run_weather_market_batch_capture(
             markets_payload,
             orderbook_payload,
             forecast_payload,
+            forecast_archive_payload,
             label_payloads,
         )
     )
@@ -144,6 +149,18 @@ def run_weather_market_batch_capture(
         allow_exchange_result_labels=network_fetch_attempted,
     )
     labels_by_ticker = {item["market_id"]: item for item in labels_payload["labels"]}
+    if forecast_archive_payload is None and public_network_ok:
+        forecast_archive_payload = build_weather_historical_forecast_archive(
+            markets=[raw_markets_by_ticker[item["ticker"]] for item in markets if item["ticker"] in raw_markets_by_ticker],
+            public_network_ok=network_fetch_attempted,
+            captured_at=captured_at,
+            output_root=output_root,
+        )
+    archive_by_ticker = (
+        forecast_archive_payload.get("forecasts_by_market", {})
+        if forecast_archive_payload
+        else {}
+    )
 
     root = Path(output_root) / Path(capture_root) / run_id
     market_records = []
@@ -154,6 +171,17 @@ def run_weather_market_batch_capture(
         market = raw_markets_by_ticker[ticker]
         label = labels_by_ticker.get(ticker, {})
         orderbook = _orderbook_for_market(orderbook_payload, market)
+        forecast_record = archive_by_ticker.get(ticker)
+        selected_forecast_payload = (
+            forecast_record["forecast_payload"]
+            if forecast_record
+            else forecast_payload
+        )
+        forecast_source_id = (
+            "iem_mos_historical_forecast"
+            if forecast_record
+            else "nws_api"
+        )
         market_dir = root / str(ticker)
         artifacts = {
             "market_metadata": write_capture_artifact(
@@ -183,12 +211,15 @@ def run_weather_market_batch_capture(
             "forecast_snapshot": write_capture_artifact(
                 market_dir / "forecast_snapshot.json",
                 {
-                    "forecast_url": NWS_FORECAST_URL,
-                    "forecast": forecast_payload,
+                    "forecast_url": forecast_record.get("forecast_url", NWS_FORECAST_URL)
+                    if forecast_record
+                    else NWS_FORECAST_URL,
+                    "forecast": selected_forecast_payload,
+                    "forecast_archive": forecast_record,
                     "captured_at": captured_at,
                 },
                 artifact_type="forecast_snapshot",
-                source_id="nws_api",
+                source_id=forecast_source_id,
                 captured_at=captured_at,
             ),
             "resolution_snapshot": write_capture_artifact(
@@ -217,10 +248,12 @@ def run_weather_market_batch_capture(
                 "artifacts": artifacts,
                 "proof_row_ready": bool(label.get("resolution_label")),
                 "pending_label": not bool(label.get("resolution_label")),
-                "blocked_by_missing_market_data": False,
+                "blocked_by_missing_market_data": bool(forecast_archive_payload)
+                and not bool(forecast_record),
                 "blocked_by_ambiguous_mapping": candidate.get("source_matching_status")
                 != "WEATHER_SOURCE_MATCHED",
                 "source_quality": "PUBLIC_READ_ONLY_ALLOWED",
+                "forecast_source_id": forecast_source_id,
             }
         )
 
@@ -266,13 +299,16 @@ def run_weather_market_batch_capture(
     imported = import_weather_batch_capture(manifest["path"])
     proof_rows = imported["proof_rows_created"]
     pending_rows = imported["rows_pending_labels"]
-    status = (
-        "RESOLVED_WEATHER_BATCH_READY"
-        if proof_rows
-        else "RESOLUTION_LABELS_MISSING"
-        if pending_rows
-        else "WEATHER_MARKET_BACKFILL_BLOCKED"
-    )
+    if proof_rows and forecast_archive_payload and archive_by_ticker:
+        status = "WEATHER_HISTORICAL_FORECASTS_CAPTURED"
+    elif proof_rows:
+        status = "RESOLVED_WEATHER_BATCH_READY"
+    elif forecast_archive_payload and not archive_by_ticker:
+        status = "WEATHER_ARCHIVE_SOURCE_BLOCKED"
+    elif pending_rows:
+        status = "RESOLUTION_LABELS_MISSING"
+    else:
+        status = "WEATHER_MARKET_BACKFILL_BLOCKED"
     payload = {
         "schema_version": "weather_market_batch_capture_v1",
         "sequence": "52",
@@ -289,6 +325,10 @@ def run_weather_market_batch_capture(
         "rows_pending_labels": pending_rows,
         "rows_blocked_by_missing_market_data": imported["rows_blocked_by_missing_market_data"],
         "rows_blocked_by_ambiguous_mapping": imported["rows_blocked_by_ambiguous_mapping"],
+        "forecast_archive_status": forecast_archive_payload.get("status")
+        if forecast_archive_payload
+        else None,
+        "historical_forecast_count": len(archive_by_ticker),
         "source_quality_distribution": imported["source_quality_distribution"],
         "combined_provenance_hash": manifest_payload["combined_provenance_hash"],
         "read_only": True,
@@ -301,7 +341,11 @@ def run_weather_market_batch_capture(
         "order_cancellation_allowed": False,
         "anti_bot_evasion_allowed": False,
         "raw_captures_commit_allowed": False,
-        "blockers": [] if proof_rows else ["RESOLUTION_LABELS_MISSING"],
+        "blockers": []
+        if proof_rows
+        else forecast_archive_payload.get("blockers", ["WEATHER_ARCHIVE_SOURCE_BLOCKED"])
+        if forecast_archive_payload and not archive_by_ticker
+        else ["RESOLUTION_LABELS_MISSING"],
         "live_allowed": False,
         "live_promotion_status": "LIVE_BLOCKED",
         "evidence_only": True,

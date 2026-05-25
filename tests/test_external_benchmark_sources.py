@@ -99,13 +99,86 @@ def test_pmxt_and_reference_dataset_manifest_readers_are_local_only() -> None:
     assert pmxt["status"] == "PASS"
     assert pmxt["source_id"] == "pmxt_orderbook_archives"
     assert pmxt["internet_required"] is False
+    assert pmxt["api_key_required"] is False
+    assert pmxt["hosted_api_used"] is False
+    assert pmxt["credential_sources_used"] == []
+    assert pmxt["execution_authority_added"] is False
+    assert "submitOrder" in pmxt["forbidden_surfaces"]
     assert pmxt["files_by_kind"] == {"market": 1, "orderbook": 1}
+    assert pmxt["orderbook_rows"] == 12
+    assert pmxt["proof_grade_ready"] is False
+    assert "PMXT_ORDERBOOK_ROWS_BELOW_PROOF_GRADE_MINIMUM" in pmxt["proof_grade_blockers"]
+    assert pmxt["depth_ready_orderbook_files"] == ["cache/pmxt/orderbooks/sample.parquet"]
     assert datasets["status"] == "PASS"
     assert datasets["internet_required"] is False
     assert datasets["datasets_by_source"] == {
         "polymarket_data": 1,
         "prediction_market_analysis": 1,
     }
+
+
+def test_pmxt_manifest_blocks_auth_paid_cookie_and_trading_surfaces(local_project: Path) -> None:
+    manifest = local_project / "unsafe_pmxt_manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "api_key_required": True,
+                "hosted_api_used": True,
+                "paid_api_used": True,
+                "browser_cookies_used": True,
+                "auth_required": True,
+                "signing_required": True,
+                "credential_sources_used": ["PMXT_API_KEY"],
+                "surfaces_used": ["fetchOrderBook", "submitOrder", "fetchBalance"],
+                "files": [
+                    {
+                        "kind": "orderbook",
+                        "path": "cache/pmxt/orderbooks/unsafe.parquet",
+                        "rows": 2000,
+                        "columns": [
+                            "market_id",
+                            "token_id",
+                            "timestamp",
+                            "bid_price",
+                            "ask_price",
+                            "bid_size",
+                            "ask_size",
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = summarize_pmxt_manifest(manifest)
+
+    assert payload["status"] == "WARN"
+    assert payload["api_key_required"] is True
+    assert payload["hosted_api_used"] is True
+    assert payload["paid_api_used"] is True
+    assert payload["browser_cookies_used"] is True
+    assert payload["credential_sources_used"] == ["PMXT_API_KEY"]
+    assert payload["manifest_forbidden_surfaces_used"] == ["fetchBalance", "submitOrder"]
+    assert payload["proof_grade_ready"] is False
+    assert "PMXT_MANIFEST_API_KEY_REQUIRED_BLOCKED" in payload["proof_grade_blockers"]
+    assert "PMXT_MANIFEST_FORBIDDEN_SURFACES_USED" in payload["proof_grade_blockers"]
+
+
+def test_pmxt_orderbook_sample_requires_public_network_flag() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    result = subprocess.run(
+        [sys.executable, "scripts/data/pmxt_orderbook_sample.py"],
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = json.loads(result.stdout)
+
+    assert payload["status"] == "PUBLIC_NETWORK_NOT_ENABLED"
+    assert payload["network_used"] is False
+    assert payload["downloaded"] is False
 
 
 def test_source_registry_report_writes_deterministic_payload(local_project: Path) -> None:

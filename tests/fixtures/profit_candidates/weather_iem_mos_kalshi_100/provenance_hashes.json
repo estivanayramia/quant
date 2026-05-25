@@ -1,0 +1,6 @@
+{
+  "hashes": {
+    "weather_resolved_rows.json": "sha256:1c2ca2250a5d585ee072737bd4d7172a870fbc119d1ac87ea4acb33e18fe616d"
+  },
+  "schema_version": "profit_candidate_fixture_hashes_v1"
+}
