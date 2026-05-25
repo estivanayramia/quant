@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -77,6 +78,8 @@ def build_final_human_arming_review(*, output_root: str | Path = ".") -> dict[st
         pnl=pnl,
         reconciliation=reconciliation,
     )
+    current_pr_head = _current_head_oid(output_root)
+    independent_proof_head = fresh_repro.get("proof_head_oid")
     return canary_safe_payload(
         schema_version="final_human_arming_review_v1",
         status=status,
@@ -84,7 +87,15 @@ def build_final_human_arming_review(*, output_root: str | Path = ".") -> dict[st
         blockers=blockers,
         exact_blocker=blockers[0] if blockers else None,
         current_pr="55",
-        pr_head=fresh_repro.get("proof_head_oid"),
+        pr_head=current_pr_head,
+        current_pr_head=current_pr_head,
+        independent_proof_head=independent_proof_head,
+        proof_head_oid=independent_proof_head,
+        proof_head_matches_current_pr_head=(
+            current_pr_head != "unknown"
+            and independent_proof_head is not None
+            and current_pr_head == independent_proof_head
+        ),
         active_market_family=readiness.get("active_market_family"),
         active_strategy=readiness.get("active_strategy"),
         assets_tested=readiness.get("assets_tested", []),
@@ -153,6 +164,22 @@ def write_final_human_arming_review_report(*, output_root: str | Path = ".") -> 
     legacy_path.parent.mkdir(parents=True, exist_ok=True)
     legacy_path.write_text(markdown, encoding="utf-8")
     return payload
+
+
+def _current_head_oid(output_root: str | Path) -> str:
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=Path(output_root),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except (FileNotFoundError, OSError):
+        return "unknown"
+    if result.returncode != 0:
+        return "unknown"
+    return result.stdout.strip() or "unknown"
 
 
 def _review_pack(
@@ -236,7 +263,7 @@ def _review_pack(
         ],
         "later_human_actions_required": [
             "A human must separately decide whether any real-money action is legally, financially, and operationally acceptable.",
-            "A human must separately control any account, credentials, funding, venue UI, and execution authority outside this repo.",
+            "Any account, credentials, funding, venue UI, and execution authority remain outside this repo and outside automation.",
             "A human must verify the packet remains fresh and all abort conditions are still false immediately before any separate action.",
             "A human must keep the action spot-only, cash-only, isolated from portfolio margin, and within the tiny risk envelope.",
             "A human must record a separate action note if they act; this repo must not transmit or sign anything.",
@@ -468,7 +495,8 @@ def _review_markdown(payload: dict[str, Any]) -> str:
         "This is an operator-facing review packet only. It does not place, prepare, route, sign, cancel, transmit, authorize, or recommend any real order. It does not load keys, auth, balances, or portfolio.",
         "",
         f"Current PR: {payload.get('current_pr')}",
-        f"PR head / proof head: {payload.get('pr_head')}",
+        f"Current PR head: {payload.get('current_pr_head') or payload.get('pr_head')}",
+        f"Independent proof head: {payload.get('independent_proof_head') or payload.get('proof_head_oid')}",
         f"Exact resume command: `{payload.get('exact_resume_command')}`",
         "",
     ]

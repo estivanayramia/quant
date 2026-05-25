@@ -5,7 +5,8 @@ Final status: READY_FOR_FINAL_HUMAN_ARMING_REVIEW
 This is an operator-facing review packet only. It does not place, prepare, route, sign, cancel, transmit, authorize, or recommend any real order. It does not load keys, auth, balances, or portfolio.
 
 Current PR: 55
-PR head / proof head: d09456eb2d062687f397b2891370e2c8db062dd9
+Current PR head: 135c2c13d7860abf468e973b1362a807cafae9ff
+Independent proof head: d09456eb2d062687f397b2891370e2c8db062dd9
 Exact resume command: `.\make.cmd final-human-arming-review`
 
 ## 1. Exact Strategy/Lane Armable For Review
@@ -96,7 +97,7 @@ Exact resume command: `.\make.cmd final-human-arming-review`
 
 ## 7. Exact Human Actions Required Later
 - A human must separately decide whether any real-money action is legally, financially, and operationally acceptable.
-- A human must separately control any account, credentials, funding, venue UI, and execution authority outside this repo.
+- Any account, credentials, funding, venue UI, and execution authority remain outside this repo and outside automation.
 - A human must verify the packet remains fresh and all abort conditions are still false immediately before any separate action.
 - A human must keep the action spot-only, cash-only, isolated from portfolio margin, and within the tiny risk envelope.
 - A human must record a separate action note if they act; this repo must not transmit or sign anything.

@@ -67,6 +67,7 @@
     "Do not let green status override safety flags, blocker fields, or stale contradictory reports."
   ],
   "current_pr": "55",
+  "current_pr_head": "135c2c13d7860abf468e973b1362a807cafae9ff",
   "eligible_intent_count": 339,
   "evidence_only": true,
   "exact_blocker": null,
@@ -77,6 +78,7 @@
   "hidden_local_state_dependency": false,
   "human_credentials_account_legal_approval_remain_separate": true,
   "independent_fresh_worktree_proof_status": "INDEPENDENT_FRESH_WORKTREE_PROOF_PASSED",
+  "independent_proof_head": "d09456eb2d062687f397b2891370e2c8db062dd9",
   "live_trading_enabled": false,
   "manual_approval_required": true,
   "next_action": "Operator may review the no-transmit armability packet; no real order is authorized.",
@@ -98,7 +100,7 @@
   "order_transmission_enabled": false,
   "placebo_edge": 1.05054856,
   "placebo_pnl": 0.04572139,
-  "pr_head": "d09456eb2d062687f397b2891370e2c8db062dd9",
+  "pr_head": "135c2c13d7860abf468e973b1362a807cafae9ff",
   "private_keys_loaded": false,
   "project_improvement_review": [
     "Make this final human arming review the canonical operator memo and avoid keeping stale parallel memos.",
@@ -108,6 +110,8 @@
     "Keep exact public data provenance, proof head, and independent clean checkout status together in each final report.",
     "Before marking any high-stakes task done, run an adversarial subagent review and record/fix Critical or Important findings."
   ],
+  "proof_head_matches_current_pr_head": false,
+  "proof_head_oid": "d09456eb2d062687f397b2891370e2c8db062dd9",
   "public_data_source": "kraken_public_rest_unauthenticated_recent_ohlc",
   "report_paths": {
     "json": "reports\\canary_grade_live_sim\\final_human_arming_review\\latest_final_human_arming_review.json",
@@ -154,7 +158,7 @@
     },
     "later_human_actions_required": [
       "A human must separately decide whether any real-money action is legally, financially, and operationally acceptable.",
-      "A human must separately control any account, credentials, funding, venue UI, and execution authority outside this repo.",
+      "Any account, credentials, funding, venue UI, and execution authority remain outside this repo and outside automation.",
       "A human must verify the packet remains fresh and all abort conditions are still false immediately before any separate action.",
       "A human must keep the action spot-only, cash-only, isolated from portfolio margin, and within the tiny risk envelope.",
       "A human must record a separate action note if they act; this repo must not transmit or sign anything."

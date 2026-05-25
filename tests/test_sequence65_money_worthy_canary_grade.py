@@ -360,6 +360,9 @@ def test_sequence65_final_human_arming_review_answers_operator_questions_and_blo
     ready = build_final_human_arming_review(output_root=local_project)
 
     assert ready["status"] == "READY_FOR_FINAL_HUMAN_ARMING_REVIEW"
+    assert ready["pr_head"] == ready["current_pr_head"]
+    assert ready["independent_proof_head"] == "abc123"
+    assert ready["proof_head_oid"] == "abc123"
     assert ready["operator_questions_answered"] == list(range(1, 12))
     assert ready["baseline_edge"] == 0.45
     assert ready["placebo_edge"] == 0.6
@@ -421,6 +424,8 @@ def test_sequence65_final_human_arming_review_cli_and_legacy_memo_are_current(
         / "reports/canary_grade_live_sim/manual_canary_packet/latest_final_canary_review_memo.md"
     ).read_text(encoding="utf-8")
     assert "Final status: READY_FOR_FINAL_HUMAN_ARMING_REVIEW" in report
+    assert "Current PR head:" in report
+    assert "Independent proof head: abc123" in report
     assert "Portfolio Margin Controls" in report
     assert "Final status: READY_FOR_FINAL_HUMAN_ARMING_REVIEW" in legacy
     assert "REVIEW_READY_NOT_CANARY_ARMABLE" not in legacy
