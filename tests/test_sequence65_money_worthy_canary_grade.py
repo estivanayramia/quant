@@ -149,7 +149,27 @@ def _seed_canary(root: Path, *, fake_net_pnl: float = 0.65, baseline: bool = Tru
     _write_json(
         root,
         "reports/canary_grade_live_sim/manual_canary_packet/latest_manual_canary_packet.json",
-        {**common, "status": "FIRST_TINY_MANUAL_CANARY_PACKET_READY"},
+        {
+            **common,
+            "status": "FIRST_TINY_MANUAL_CANARY_PACKET_READY",
+            "risk_envelope": {
+                "tiny_manual_canary_only": True,
+                "margin": False,
+                "portfolio_margin_allowed": False,
+                "cross_collateral_allowed": False,
+                "leverage": False,
+                "shorting": False,
+                "futures_perps_options": False,
+                "portfolio_checks_must_remain_disabled": True,
+            },
+            "conflict_summary": {"status": "CONFLICT_DETECTOR_PASSED"},
+            "final_review_pack": {
+                "selected_strategy_lane": {
+                    "source": "kraken_public_rest_unauthenticated_recent_ohlc",
+                    "source_policy": "public_read_only_unauthenticated",
+                }
+            },
+        },
     )
     _write_json(
         root,
@@ -157,6 +177,9 @@ def _seed_canary(root: Path, *, fake_net_pnl: float = 0.65, baseline: bool = Tru
         {
             **common,
             "status": "REPEATABILITY_PASSED",
+            "baseline_pnl": 0.2,
+            "best_baseline_name": "same_cost_mean_reversion",
+            "placebo_pnl": 0.05,
             "one_trade_dominance": 0.01,
             "one_trade_dominance_cap": 0.25,
             "one_window_dominance": 0.1,
@@ -169,10 +192,24 @@ def _seed_canary(root: Path, *, fake_net_pnl: float = 0.65, baseline: bool = Tru
     )
     _write_json(
         root,
+        "reports/canary_grade_live_sim/capacity/latest_capacity.json",
+        {
+            **common,
+            "status": "CAPACITY_TINY_CANARY_PASSED",
+            "max_safe_notional": 9.0,
+            "capacity_by_size": {"1_usd": {"supported": True, "notional": 1.0}},
+        },
+    )
+    _write_json(
+        root,
         "reports/canary_grade_live_sim/crypto/latest_pnl.json",
         {
             **common,
             "status": "CANARY_GRADE_PNL_READY",
+            "fake_gross_pnl": fake_net_pnl + 0.1,
+            "fake_net_pnl": fake_net_pnl,
+            "gross_profit": fake_net_pnl + 0.2,
+            "gross_loss": 0.1,
             "pnl_rows": [
                 {
                     "entry_timestamp": "2026-05-23T10:00:00Z",
@@ -180,6 +217,11 @@ def _seed_canary(root: Path, *, fake_net_pnl: float = 0.65, baseline: bool = Tru
                 }
             ],
         },
+    )
+    _write_json(
+        root,
+        "reports/canary_grade_live_sim/crypto/latest_reconciliation.json",
+        {**common, "status": "CANARY_GRADE_RECONCILIATION_PASSED", "reconciliation_failures": 0},
     )
     _write_json(
         root,
@@ -191,6 +233,15 @@ def _seed_canary(root: Path, *, fake_net_pnl: float = 0.65, baseline: bool = Tru
             "independent_clean_checkout_verified": True,
             "attestation_scope": "independent_clean_worktree_public_network",
             "proof_command_passed": True,
+            "proof_head_oid": "abc123",
+            "public_data_source": "kraken_public_rest_unauthenticated_recent_ohlc",
+            "independent_proof_summary": {
+                "observation_count": 1200,
+                "eligible_intent_count": 320,
+                "fake_fill_count": 300,
+                "completed_mark_count": 300,
+                "fake_net_pnl": fake_net_pnl,
+            },
         },
     )
 
@@ -271,6 +322,9 @@ def test_sequence65_armability_requires_money_packet_rehearsal_and_independent_p
     assert armable["live_trading_enabled"] is False
     assert armable["order_transmission_enabled"] is False
     assert armable["actual_order_count"] == 0
+    assert armable["api_keys_loaded"] is False
+    assert armable["private_keys_loaded"] is False
+    assert armable["checked_portfolio"] is False
 
     fresh_path = (
         local_project
@@ -287,6 +341,91 @@ def test_sequence65_armability_requires_money_packet_rehearsal_and_independent_p
     assert "INDEPENDENT_FRESH_WORKTREE_PROOF_NOT_PASSED" in blocked["blockers"]
 
 
+def test_sequence65_final_human_arming_review_answers_operator_questions_and_blocks_margin(
+    local_project: Path,
+) -> None:
+    from quant_os.readiness.autonomous_no_transmit_execution_rehearsal import (
+        write_autonomous_no_transmit_execution_rehearsal_report,
+    )
+    from quant_os.readiness.canary_grade_armability import write_canary_grade_armability_report
+    from quant_os.readiness.final_human_arming_review import build_final_human_arming_review
+    from quant_os.readiness.money_worthy_canary_grade import write_money_worthy_canary_grade_report
+
+    _seed_canary(local_project)
+    _seed_rehearsal(local_project)
+    write_autonomous_no_transmit_execution_rehearsal_report(output_root=local_project)
+    write_money_worthy_canary_grade_report(output_root=local_project)
+    write_canary_grade_armability_report(output_root=local_project)
+
+    ready = build_final_human_arming_review(output_root=local_project)
+
+    assert ready["status"] == "READY_FOR_FINAL_HUMAN_ARMING_REVIEW"
+    assert ready["operator_questions_answered"] == list(range(1, 12))
+    assert ready["baseline_edge"] == 0.45
+    assert ready["placebo_edge"] == 0.6
+    assert ready["review_pack"]["portfolio_margin_controls"]["portfolio_margin_allowed"] is False
+    assert ready["review_pack"]["portfolio_margin_controls"]["cross_collateral_allowed"] is False
+    assert ready["adversarial_review_required_before_done"] is True
+    assert ready["adversarial_review_record"]["status"] == "ADVERSARIAL_REVIEW_FINDINGS_RESOLVED"
+    assert ready["live_trading_enabled"] is False
+    assert ready["order_transmission_enabled"] is False
+    assert ready["actual_order_count"] == 0
+
+    packet_path = (
+        local_project
+        / "reports/canary_grade_live_sim/manual_canary_packet/latest_manual_canary_packet.json"
+    )
+    packet = json.loads(packet_path.read_text(encoding="utf-8"))
+    packet["risk_envelope"]["margin"] = True
+    packet_path.write_text(json.dumps(packet), encoding="utf-8")
+
+    blocked = build_final_human_arming_review(output_root=local_project)
+
+    assert blocked["status"] == "FINAL_HUMAN_ARMING_REVIEW_BLOCKED"
+    assert "MARGIN_NOT_DISABLED" in blocked["blockers"]
+
+
+def test_sequence65_final_human_arming_review_cli_and_legacy_memo_are_current(
+    local_project: Path,
+) -> None:
+    from quant_os.readiness.autonomous_no_transmit_execution_rehearsal import (
+        write_autonomous_no_transmit_execution_rehearsal_report,
+    )
+    from quant_os.readiness.canary_grade_armability import write_canary_grade_armability_report
+    from quant_os.readiness.money_worthy_canary_grade import write_money_worthy_canary_grade_report
+
+    _seed_canary(local_project)
+    _seed_rehearsal(local_project)
+    write_autonomous_no_transmit_execution_rehearsal_report(output_root=local_project)
+    write_money_worthy_canary_grade_report(output_root=local_project)
+    write_canary_grade_armability_report(output_root=local_project)
+
+    result = subprocess.run(
+        [sys.executable, "-m", "quant_os.cli", "readiness", "final-human-arming-review"],
+        cwd=local_project,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "READY_FOR_FINAL_HUMAN_ARMING_REVIEW" in result.stdout
+    assert "ORDER_SENT" not in result.stdout
+    assert "LIVE_READY" not in result.stdout
+    report = (
+        local_project
+        / "reports/canary_grade_live_sim/final_human_arming_review/latest_final_human_arming_review.md"
+    ).read_text(encoding="utf-8")
+    legacy = (
+        local_project
+        / "reports/canary_grade_live_sim/manual_canary_packet/latest_final_canary_review_memo.md"
+    ).read_text(encoding="utf-8")
+    assert "Final status: READY_FOR_FINAL_HUMAN_ARMING_REVIEW" in report
+    assert "Portfolio Margin Controls" in report
+    assert "Final status: READY_FOR_FINAL_HUMAN_ARMING_REVIEW" in legacy
+    assert "REVIEW_READY_NOT_CANARY_ARMABLE" not in legacy
+
+
 def test_sequence65_cli_make_targets_are_data_only(local_project: Path) -> None:
     _seed_canary(local_project)
     _seed_rehearsal(local_project)
@@ -295,6 +434,7 @@ def test_sequence65_cli_make_targets_are_data_only(local_project: Path) -> None:
         [sys.executable, "-m", "quant_os.cli", "readiness", "autonomous-no-transmit-execution-rehearsal"],
         [sys.executable, "-m", "quant_os.cli", "readiness", "money-worthy-canary-grade"],
         [sys.executable, "-m", "quant_os.cli", "readiness", "canary-grade-armability"],
+        [sys.executable, "-m", "quant_os.cli", "readiness", "final-human-arming-review"],
     ]
     for command in commands:
         result = subprocess.run(command, cwd=local_project, capture_output=True, text=True, check=False)
@@ -306,5 +446,6 @@ def test_sequence65_cli_make_targets_are_data_only(local_project: Path) -> None:
     make_cmd = (Path(__file__).resolve().parents[1] / "make.cmd").read_text(encoding="utf-8")
     assert 'if "%TARGET%"=="money-worthy-canary-grade-smoke"' in make_cmd
     assert 'if "%TARGET%"=="money-worthy-canary-grade-public-run"' in make_cmd
+    assert 'if "%TARGET%"=="final-human-arming-review"' in make_cmd
     assert 'if "%TARGET%"=="sequence65-smoke"' in make_cmd
     assert "canary-grade-armability" in make_cmd

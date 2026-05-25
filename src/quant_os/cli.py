@@ -6733,6 +6733,30 @@ def readiness_canary_grade_armability() -> None:
     )
 
 
+@readiness_app.command("final-human-arming-review")
+def readiness_final_human_arming_review() -> None:
+    from quant_os.readiness.final_human_arming_review import (
+        write_final_human_arming_review_report,
+    )
+
+    payload = write_final_human_arming_review_report(output_root=Path("."))
+    print(
+        {
+            "status": payload["status"],
+            "exact_blocker": payload["exact_blocker"],
+            "fake_net_pnl": payload["fake_net_pnl"],
+            "baseline_edge": payload["baseline_edge"],
+            "placebo_edge": payload["placebo_edge"],
+            "report": (
+                "reports/canary_grade_live_sim/final_human_arming_review/"
+                "latest_final_human_arming_review.json"
+            ),
+            "live_trading_enabled": payload["live_trading_enabled"],
+            "execution_authority": payload["execution_authority"],
+        }
+    )
+
+
 @research_app.command("x-quant-hypothesis-intake")
 def research_x_quant_hypothesis_intake(
     zip_path: Annotated[Path | None, typer.Option("--zip-path")] = None,

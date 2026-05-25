@@ -103,9 +103,12 @@ def build_canary_grade_manual_packet(*, output_root: str | Path = ".") -> dict[s
         risk_envelope={
             "tiny_manual_canary_only": True,
             "margin": False,
+            "portfolio_margin_allowed": False,
+            "cross_collateral_allowed": False,
             "leverage": False,
             "shorting": False,
             "futures_perps_options": False,
+            "portfolio_checks_must_remain_disabled": True,
         },
         no_transmit_preview={
             "fake_money": True,
@@ -248,10 +251,13 @@ def _build_final_review_pack(
             "max_safe_notional": capacity.get("max_safe_notional"),
             "supported_size": "1_usd",
             "margin": False,
+            "portfolio_margin_allowed": False,
+            "cross_collateral_allowed": False,
             "leverage": False,
             "shorting": False,
             "futures_perps_options": False,
             "order_transmission_enabled": False,
+            "portfolio_checks_must_remain_disabled": True,
         },
         "kill_switch_block_conditions": [
             "Block if any live/auth/order/signing/key/balance/portfolio flag becomes true or nonzero.",

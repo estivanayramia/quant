@@ -100,6 +100,7 @@ def write_json_markdown_report(
     root.mkdir(parents=True, exist_ok=True)
     json_path = root / json_name
     md_path = root / md_name
+    payload["report_paths"] = {"json": str(json_path), "markdown": str(md_path)}
     json_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
     lines = [
         f"# {title}",
@@ -117,7 +118,7 @@ def write_json_markdown_report(
     if payload.get("next_action"):
         lines.extend(["", "## Next Action", f"- {payload['next_action']}"])
     md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    return {"json": str(json_path), "markdown": str(md_path)}
+    return payload["report_paths"]
 
 
 def update_canary_state(

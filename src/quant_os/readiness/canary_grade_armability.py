@@ -3,9 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from quant_os.autonomy.canary_grade_live_sim_common import canary_safe_payload
 from quant_os.autonomy.live_market_sim_common import load_json
 from quant_os.readiness.canary_readiness_common import (
-    safety_payload,
     write_json_markdown_report,
 )
 
@@ -69,7 +69,7 @@ def build_canary_grade_armability(*, output_root: str | Path = ".") -> dict[str,
 
     blockers = list(dict.fromkeys(blockers))
     status = SUCCESS if not blockers else "ARMABILITY_BLOCKED"
-    return safety_payload(
+    return canary_safe_payload(
         schema_version="canary_grade_armability_v1",
         status=status,
         allowed_statuses=[SUCCESS, "ARMABILITY_BLOCKED"],

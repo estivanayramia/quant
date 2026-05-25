@@ -4,6 +4,12 @@
 
 **Goal:** Promote the existing weather paper profit candidate through deterministic offline readiness gates to `TINY_CANARY_READY_FOR_MANUAL_ARMING` without enabling live trading, authentication, signing, order transmission, or cancellation.
 
+**Current continuation note:** Later PR #55 work extended this original Sequence 55 plan into canary-grade crypto spot, money-worthy proof, autonomous no-transmit rehearsal, independent fresh-worktree proof, and final human-governed armability review under `reports/canary_grade_live_sim/**`. Treat those later lanes as a continuation of the same safety boundary, not as weather Sequence 55 output.
+
+**Done rule update:** Before marking any high-stakes task in this plan or its continuation as done, validate it with an adversarial subagent review. Resolve Critical or Important findings, and record the review outcome in the generated report or final response.
+
+**Portfolio margin note:** Tiny canary review remains spot-only and cash-only. Portfolio margin, cross-collateral, leverage, shorting, futures, perps, options, portfolio checks, and account-balance checks must remain disabled unless a later human-owned plan explicitly changes the safety model.
+
 **Architecture:** Add Sequence 55 gate modules that read the existing profit campaign and weather Sequence 52 reports, produce gate-specific JSON/Markdown reports under `reports/canary_readiness`, and keep a resumable `latest_state`. Execution-facing gates emit only unsigned local intent previews and ledger placeholders with explicit no-send flags.
 
 **Tech Stack:** Python, Typer CLI, pytest, existing Quant OS reports, `make.cmd` smoke targets.
